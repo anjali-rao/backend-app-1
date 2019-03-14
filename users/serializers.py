@@ -1,9 +1,57 @@
 from rest_framework import serializers
 
 from django.contrib.auth.hashers import make_password
+from django.core.cache import cache
 
 from users.models import User, Account
-from utils import constants
+from utils import constants, genrate_random_string
+
+
+class OTPGenrationSerializer(serializers.Serializer):
+    phone_no = serializers.CharField(required=True)
+
+    def validate_phone_no(self, value):
+        if not value.isdigit() or len(value) != 10:
+            raise serializers.ValidationError(
+                constants.INVALID_PHONE_NO)
+        User.send_otp(value)
+        return value
+
+    @property
+    def response(self):
+        return {
+            'message': constants.OTP_GENERATED
+        }
+
+
+class OTPVerificationSerializer(serializers.Serializer):
+    phone_no = serializers.CharField(required=True)
+    otp = serializers.IntegerField(required=True)
+
+    def validate_phone_no(self, value):
+        if not value.isdigit() or len(value) != 10:
+            raise serializers.ValidationError(
+                constants.INVALID_PHONE_NO)
+        return value
+
+    def validate_otp(self, value):
+        if not User.verify_otp(
+                self.initial_data['phone_no'], value):
+            raise serializers.ValidationError(
+                constants.OTP_VALIDATION_FAILED)
+        return value
+
+    @property
+    def response(self):
+        return {
+            'transaction_id': self.get_transaction_id(),
+            'message': constants.OTP_SUCCESS
+        }
+
+    def get_transaction_id(self):
+        txn_id = genrate_random_string(12)
+        cache.set(self.data['phone_no'], txn_id, constants.TRANSACTION_TTL)
+        return txn_id
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
@@ -12,6 +60,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     pan_no = serializers.CharField(
         required=False, allow_blank=True, max_length=10)
     phone_no = serializers.CharField(required=True)
+    transaction_id = serializers.CharField(required=True)
 
     def validate_username(self, value):
         return value.lower()
@@ -25,12 +74,24 @@ class CreateUserSerializer(serializers.ModelSerializer):
                 constants.REFERRAL_CODE_EXCEPTION)
         return value
 
+    def validate_phone_no(self, value):
+        if not value.isdigit() or len(value) != 10:
+            raise serializers.ValidationError(
+                constants.INVALID_PHONE_NO)
+        return value
+
+    def validate_transaction_id(self, value):
+        if not cache.get(self.initial_data.get('phone_no')) == value:
+            raise serializers.ValidationError(
+                constants.INVALID_TRANSACTION_ID)
+        return value
+
     class Meta:
         model = User
         fields = (
             'username', 'first_name', 'last_name', 'email', 'password',
             'referral_code', 'referral_reference', 'user_type', 'pincode',
-            'pan_no', 'phone_no'
+            'pan_no', 'phone_no', 'transaction_id'
         )
         extra_kwargs = {
             'password': {'write_only': True}
@@ -64,7 +125,7 @@ class AccountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = ('phone_no', 'pincode', 'pan_no', 'alternate_no')
+        fields = '__all__'
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -79,3 +140,34 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'user_type', 'email',
             'active', 'account', 'company'
         )
+
+
+class AuthorizationSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
+
+    def validate_username(self, value):
+        users = User.objects.filter(username=value)
+        if not users.exists():
+            raise serializers.ValidationError(
+                constants.INVALID_USERNAME)
+        user = users.get()
+        user.check_password
+
+    def validate_password(self, value):
+        user = User.objects.get(username=self.initial_data.get('username'))
+        if not user.check_password(value):
+            raise serializers.ValidationError(
+                constants.INVALID_PASSWORD)
+        return value
+
+    def get_user(self):
+        return User.objects.get(username=self.validated_data['username'])
+
+    @property
+    def response(self):
+        return {
+            'authorization': self.get_user().get_authorization_key(),
+            'username': self.validated_data['username'],
+            'message': constants.AUTHORIZATION_GENERATED
+        }

@@ -9,6 +9,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db.models.signals import post_save
 from django.utils.timezone import now
 from django.dispatch import receiver
+from django.core.cache import cache
 
 from goplannr.settings import JWT_SECRET
 
@@ -39,7 +40,7 @@ class User(AbstractUser):
     account = models.ForeignKey(Account, null=True, blank=True)
     user_type = models.CharField(
         choices=get_choices(constants.USER_TYPE), max_length=16,
-        default='enterprise')
+        default=constants.DEFAULT_USER_TYPE)
     campaign = models.ForeignKey(Campaign, null=True, blank=True)
     hexa_code = models.CharField(max_length=8)
     logo = models.FileField()
@@ -76,7 +77,7 @@ class User(AbstractUser):
     def validate_referral_code(cls, code):
         return cls.objects.filter(referral_code=code) or not code
 
-    def get_token(self):
+    def get_authorization_key(self):
         return jwt.encode(
             {'user_id': str(self.account.id)},
             JWT_SECRET, algorithm='HS256')
@@ -95,6 +96,26 @@ class User(AbstractUser):
     @property
     def bank_name(self):
         return self.bankaccount_set.get(default=True).branch.bank.name
+
+    @classmethod
+    def send_otp(cls, phone_no):
+        from users.tasks import send_sms
+        return send_sms(
+            phone_no,
+            constants.OTP_MESSAGE % cls.generate_otp(phone_no))
+
+    @staticmethod
+    def generate_otp(phone_no):
+        import random
+        otp = cache.get(phone_no)
+        if not otp:
+            otp = random.randint(1000, 9999)
+            cache.set(phone_no, otp, constants.OTP_TTL)
+        return otp
+
+    @staticmethod
+    def verify_otp(phone_no, otp):
+        return otp == cache.get(phone_no)
 
 
 class UserDetails(BaseModel):

@@ -1,9 +1,29 @@
 from __future__ import unicode_literals
-from rest_framework import views, permissions, status, generics
+from rest_framework import permissions, status, generics
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
 
-from utils import constants
-from users.serializers import CreateUserSerializer, UserSerializer
+from users.serializers import (
+    CreateUserSerializer, UserSerializer,
+    OTPGenrationSerializer, OTPVerificationSerializer,
+    AuthorizationSerializer
+)
+
+
+@api_view(['POST'])
+def generate_otp(request, version):
+    serializer = OTPGenrationSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    return Response(
+        serializer.response, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def verify_otp(request, version):
+    serializer = OTPVerificationSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    return Response(
+        serializer.response, status=status.HTTP_200_OK)
 
 
 class RegisterUser(generics.CreateAPIView):
@@ -25,3 +45,11 @@ class RegisterUser(generics.CreateAPIView):
         if self.action:
             return self.read_serializer_class
         return super(RegisterUser, self).get_serializer_class()
+
+
+@api_view(['POST'])
+def generate_authorization(request, version):
+    serializer = AuthorizationSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    return Response(
+        serializer.response, status=status.HTTP_200_OK)
