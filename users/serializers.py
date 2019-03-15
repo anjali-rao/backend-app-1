@@ -106,6 +106,8 @@ class CreateUserSerializer(serializers.ModelSerializer):
         instance.account = self.get_or_create_account(validated_data)
         instance.referral_code = instance.generate_referral_code()
         instance.referral_reference = validated_data.get('referral_reference')
+        # need to followed up latter: hriks
+        instance.active = True
         instance.save()
         return instance
 
@@ -154,7 +156,11 @@ class AuthorizationSerializer(serializers.Serializer):
         return value
 
     def validate_password(self, value):
-        user = User.objects.get(username=self.initial_data.get('username'))
+        users = User.objects.filter(username=self.initial_data.get('username'))
+        if not users.exists():
+            raise serializers.ValidationError(
+                constants.INVALID_USERNAME)
+        user = users.get()
         if not user.check_password(value):
             raise serializers.ValidationError(
                 constants.INVALID_PASSWORD)
