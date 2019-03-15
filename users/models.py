@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from utils.model import BaseModel, models
-from utils import constants, get_choices, get_upload_path
+from utils import constants, get_choices, get_upload_path, genrate_random_string
 
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.contrib.auth.models import AbstractUser
@@ -71,11 +71,7 @@ class User(AbstractUser):
             while User.objects.filter(referral_code=code).exists():
                 code = '%s%s' % (
                     self.first_name.lower()[:3], random.randint(111, 999))
-        return code
-
-    @classmethod
-    def validate_referral_code(cls, code):
-        return cls.objects.filter(referral_code=code) or not code
+        self.referral_code = code
 
     def get_authorization_key(self):
         return jwt.encode(
@@ -84,6 +80,25 @@ class User(AbstractUser):
 
     def get_accounts(self):
         return self.bankaccount_set.filter(is_active=True)
+
+    def send_notification(self, **kwargs):
+        return getattr(self, 'send_%s' % kwargs['type'])(kwargs)
+
+    def send_sms(self, kwargs):
+        from users.tasks import send_sms
+        send_sms(self.account.phone_no, kwargs['message'])
+
+    @classmethod
+    def generate_username(cls):
+        username = genrate_random_string(7)
+        if User.objects.filter(username=username).exists():
+            while User.objects.filter(username=username).exists():
+                username = genrate_random_string(7)
+        return username
+
+    @classmethod
+    def validate_referral_code(cls, code):
+        return cls.objects.filter(referral_code=code) or not code
 
     @property
     def account_no(self):
@@ -181,8 +196,22 @@ class BankAccount(BaseModel):
         super(BankAccount, self).save(*args, **kwargs)
 
 
-@receiver(post_save, sender=User, dispatch_uid="post_save_action%s" % str(
-    now()))
+@receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))
 def user_post_save(sender, instance, created, **kwargs):
     if created:
-        pass
+        if instance.account:
+            message = {
+                'message': constants.USER_CREATION_MESSAGE,
+                'type': 'sms'
+            }
+            instance.send_notification(**message)
+
+
+@receiver(post_save, sender=Account, dispatch_uid="action%s" % str(now()))
+def account_post_save(sender, instance, created, **kwargs):
+    if created:
+        message = {
+            'message': constants.USER_CREATION_MESSAGE,
+            'type': 'sms'
+        }
+        instance.send_notification(**message)

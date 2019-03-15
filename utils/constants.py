@@ -17,6 +17,7 @@ OTP_SUCCESS = 'OTP verified successfully.'
 OTP_GENERATED = 'OTP send successfully.'
 AUTHORIZATION_GENERATED = 'Authorization key generated successfully.'
 PASSWORD_CHANGED = 'Password changed successfully.'
+USER_CREATION_MESSAGE = 'Hi %s. Your account with GoPlannr has been created successfully.\nYour username is %s genrated under phone no %s.\n\nRegards\nTeam GoPlannr' # noqa
 
 # TTL's (seconds)
 OTP_TTL = 1800

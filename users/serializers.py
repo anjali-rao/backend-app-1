@@ -62,9 +62,6 @@ class CreateUserSerializer(serializers.ModelSerializer):
     phone_no = serializers.CharField(required=True)
     transaction_id = serializers.CharField(required=True)
 
-    def validate_username(self, value):
-        return value.lower()
-
     def validate_password(self, value):
         return make_password(value)
 
@@ -89,7 +86,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'username', 'first_name', 'last_name', 'email', 'password',
+            'first_name', 'last_name', 'email', 'password',
             'referral_code', 'referral_reference', 'user_type', 'pincode',
             'pan_no', 'phone_no', 'transaction_id'
         )
@@ -99,13 +96,15 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         data = dict()
+        self.validated_data['username'] = data['username'] = User.generate_username() # noqa
         for key in validated_data.iterkeys():
             if key in constants.USER_CREATION_FIELDS:
                 data[key] = validated_data[key]
+
         instance = User.objects.create(**data)
         instance.account = self.get_or_create_account(validated_data)
-        instance.referral_code = instance.generate_referral_code()
         instance.referral_reference = validated_data.get('referral_reference')
+        instance.generate_referral_code()
         # need to followed up latter: hriks
         instance.active = True
         instance.save()
@@ -180,8 +179,7 @@ class AuthorizationSerializer(serializers.Serializer):
 
 class ChangePasswordSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
-    password1 = serializers.CharField(required=True)
-    password2 = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
     phone_no = serializers.CharField(required=True)
     transaction_id = serializers.CharField(required=True)
 
@@ -200,12 +198,6 @@ class ChangePasswordSerializer(serializers.Serializer):
         if not value.isdigit() or len(value) != 10:
             raise serializers.ValidationError(
                 constants.INVALID_PHONE_NO)
-        return value
-
-    def validate_password1(self, value):
-        if value != self.initial_data.get('password2'):
-            raise serializers.ValidationError(
-                constants.PASSWORD_MISMATCH)
         return value
 
     def validate_transaction_id(self, value):
