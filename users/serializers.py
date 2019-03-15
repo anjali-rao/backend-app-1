@@ -151,8 +151,7 @@ class AuthorizationSerializer(serializers.Serializer):
         if not users.exists():
             raise serializers.ValidationError(
                 constants.INVALID_USERNAME)
-        user = users.get()
-        user.check_password
+        return value
 
     def validate_password(self, value):
         user = User.objects.get(username=self.initial_data.get('username'))
@@ -170,4 +169,54 @@ class AuthorizationSerializer(serializers.Serializer):
             'authorization': self.get_user().get_authorization_key(),
             'username': self.validated_data['username'],
             'message': constants.AUTHORIZATION_GENERATED
+        }
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    password1 = serializers.CharField(required=True)
+    password2 = serializers.CharField(required=True)
+    phone_no = serializers.CharField(required=True)
+    transaction_id = serializers.CharField(required=True)
+
+    def validate_username(self, value):
+        users = User.objects.filter(username=value)
+        if not users.exists():
+            raise serializers.ValidationError(
+                constants.INVALID_USERNAME)
+        user = users.get()
+        if user.account.phone_no != self.initial_data.get('phone_no'):
+            raise serializers.ValidationError(
+                constants.INVALID_USERNAME_PHONE_COMBINATION)
+        return value
+
+    def validate_phone_no(self, value):
+        if not value.isdigit() or len(value) != 10:
+            raise serializers.ValidationError(
+                constants.INVALID_PHONE_NO)
+        return value
+
+    def validate_password1(self, value):
+        if value != self.initial_data.get('password2'):
+            raise serializers.ValidationError(
+                constants.PASSWORD_MISMATCH)
+        return value
+
+    def validate_transaction_id(self, value):
+        if not cache.get(self.initial_data.get('phone_no')) == value:
+            raise serializers.ValidationError(
+                constants.INVALID_TRANSACTION_ID)
+        return value
+
+    def get_user(self):
+        return User.objects.get(username=self.validated_data['username'])
+
+    @property
+    def response(self):
+        user = self.get_user()
+        user.set_password(self.validated_data['password1'])
+        user.save()
+        return {
+            'username': self.validated_data['username'],
+            'message': constants.PASSWORD_CHANGED
         }
