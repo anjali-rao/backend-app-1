@@ -2,7 +2,9 @@
 from __future__ import unicode_literals
 
 from utils.model import BaseModel, models
-from utils import constants, get_choices, get_upload_path, genrate_random_string
+from utils import (
+    constants, get_choices, get_upload_path, genrate_random_string
+)
 
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.contrib.auth.models import AbstractUser
