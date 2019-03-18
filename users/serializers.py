@@ -181,7 +181,8 @@ class AuthorizationSerializer(serializers.Serializer):
         return {
             'authorization': self.get_user().get_authorization_key(),
             'username': self.validated_data['username'],
-            'message': constants.AUTHORIZATION_GENERATED
+            'message': constants.AUTHORIZATION_GENERATED,
+            'details': UserSerializer(self.get_user()).data,
         }
 
 
