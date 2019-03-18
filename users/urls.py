@@ -2,7 +2,7 @@ from django.conf.urls import url
 
 from users.views import (
     RegisterUser, verify_otp, generate_otp, generate_authorization,
-    change_password
+    change_password, GetUserSettings
 )
 
 urlpatterns = [
@@ -11,5 +11,6 @@ urlpatterns = [
     url(r'user/register', RegisterUser.as_view()),
     url(r'user/authorization/generate', generate_authorization),
     url(r'user/update/password', change_password),
+    url(r'user/settings', GetUserSettings.as_view()),
 
 ]

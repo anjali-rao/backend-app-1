@@ -1,5 +1,7 @@
 GENDER = ('male', 'female', 'transgender')
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
+CITY_TIER = ((0, 'First'), (1, 'Second'), (2, 'Third'))
+
 USER_CATEGORIES = {}
 USER_FLAG = {'blacklist': False, 'training': False, 'exam_passed': None}
 DEFAULT_USER_TYPE = 'subscriber'
@@ -34,8 +36,12 @@ INVALID_USERNAME = 'Invalid username provided.'
 INVALID_PASSWORD = 'Invalid password provided.'
 INVALID_USERNAME_PHONE_COMBINATION = 'Invalid username and phone no combination.' # noqa
 PASSWORD_MISMATCH = 'Password and confirm password mismatch'
+ACCOUNT_DISABLED = 'Account is unactive. Please contact Goplannr for reactivation' # noqa
 
 USER_CREATION_FIELDS = (
     'username', 'password', 'first_name', 'last_name', 'email',
     'referral_code', 'referral_reference', 'user_type'
 )
+
+# Company upload path
+COMPANY_UPLOAD_PATH = 'media/company'

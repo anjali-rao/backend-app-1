@@ -14,6 +14,7 @@ from django.dispatch import receiver
 from django.core.cache import cache
 
 from goplannr.settings import JWT_SECRET
+from product.models import Company
 
 import uuid
 
@@ -44,12 +45,11 @@ class User(AbstractUser):
         choices=get_choices(constants.USER_TYPE), max_length=16,
         default=constants.DEFAULT_USER_TYPE)
     campaign = models.ForeignKey(Campaign, null=True, blank=True)
-    hexa_code = models.CharField(max_length=8)
-    logo = models.FileField()
     categories = JSONField(default=constants.USER_CATEGORIES)
     active = models.BooleanField(default=False)
     flag = JSONField(default=constants.USER_FLAG)
-    company = models.CharField(max_length=64, null=True, blank=True)
+    # company = models.CharField(max_length=64, null=True, blank=True)
+    company = models.ForeignKey(Company, null=True, blank=True)
     referral_code = models.CharField(max_length=8, null=True, blank=True)
     referral_reference = models.CharField(max_length=8, null=True, blank=True)
 
@@ -134,6 +134,23 @@ class User(AbstractUser):
     def verify_otp(phone_no, otp):
         return otp == cache.get(phone_no)
 
+    @property
+    def logo_url(self):
+        return self.get_company().logo.url
+
+    @property
+    def company_name(self):
+        return self.get_company().name
+
+    def get_company(self):
+        return self.company if self.company else Company.objects.get(
+            name="Goplannr")
+
+    def get_categories(self):
+        return map(lambda category: {
+            'id': category['id'], 'name': category['name']
+        }, self.get_company().categories.values())
+
 
 class UserDetails(BaseModel):
     user = models.OneToOneField(User)
@@ -196,6 +213,24 @@ class BankAccount(BaseModel):
         except BankAccount.DoesNotExist:
             self.default = True
         super(BankAccount, self).save(*args, **kwargs)
+
+
+class State(models.Model):
+    name = models.CharField(max_length=128)
+
+    def __unicode__(self):
+        return self.name
+
+
+class Pincode(models.Model):
+    pincode = models.CharField(max_length=6, unique=True)
+    city = models.CharField(max_length=64)
+    state = models.ForeignKey(State)
+    city_type = models.IntegerField(
+        choices=constants.CITY_TIER, default=2)
+
+    def __unicode__(self):
+        return '%s - %s - (%s)' % (self.pincode, self.city, self.state.name)
 
 
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))

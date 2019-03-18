@@ -146,6 +146,7 @@ class UserSerializer(serializers.ModelSerializer):
 class AuthorizationSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
+    active = serializers.BooleanField(default=True)
 
     def validate_username(self, value):
         users = User.objects.filter(username=value)
@@ -163,6 +164,13 @@ class AuthorizationSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError(
                 constants.INVALID_PASSWORD)
+        return value
+
+    def validate_active(self, value):
+        users = User.objects.filter(username=self.initial_data.get('username'))
+        if users.exists() and not users[0].active:
+            raise serializers.ValidationError(
+                constants.ACCOUNT_DISABLED)
         return value
 
     def get_user(self):
@@ -218,3 +226,14 @@ class ChangePasswordSerializer(serializers.Serializer):
             'username': self.validated_data['username'],
             'message': constants.PASSWORD_CHANGED
         }
+
+
+class UserSettings(serializers.ModelSerializer):
+    category = serializers.SerializerMethodField()
+
+    def get_category(self, obj):
+        return obj.get_categories()
+
+    class Meta:
+        model = User
+        fields = ('company_name', 'logo_url', 'category')

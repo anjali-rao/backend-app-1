@@ -43,14 +43,14 @@ class UserDetailsAdmin(admin.ModelAdmin):
     list_display = ('user', 'agent_code', 'channel', 'status')
     list_filter = ('channel', 'status')
     search_fields = ('user__username', 'user__account__phone_no')
-    raw_id_fields = ('user')
+    raw_id_fields = ('user',)
 
 
 @admin.register(Documents)
 class DocumentsAdmin(admin.ModelAdmin):
     list_display = ('user', 'doc_type', 'file')
     search_fields = ('user__username', 'user__account__phone_no')
-    raw_id_fields = ('user')
+    raw_id_fields = ('user',)
     list_filter = ('doc_type',)
 
 
@@ -73,8 +73,7 @@ class BankBranchAdmin(admin.ModelAdmin):
     list_display = ('bank', 'branch_name', 'ifsc', 'city', 'micr')
     search_fields = (
         'branch_name__user__username', 'branch_name__user__account__phone_no')
-    raw_id_fields = ('bank', 'branch_name')
-    list_filter = ('default',)
+    raw_id_fields = ('bank',)
 
 
 @admin.register(Campaign)

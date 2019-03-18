@@ -6,8 +6,11 @@ from rest_framework.decorators import api_view
 from users.serializers import (
     CreateUserSerializer, UserSerializer,
     OTPGenrationSerializer, OTPVerificationSerializer,
-    AuthorizationSerializer, ChangePasswordSerializer
+    AuthorizationSerializer, ChangePasswordSerializer,
+    UserSettings
 )
+
+from users.decorators import UserAuthentication
 
 
 @api_view(['POST'])
@@ -61,3 +64,18 @@ def change_password(request, version):
     serializer.is_valid(raise_exception=True)
     return Response(
         serializer.response, status=status.HTTP_205_RESET_CONTENT)
+
+
+class GetUserSettings(generics.ListAPIView):
+    authentication_classes = (UserAuthentication, )
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSettings
+
+    def get_queryset(self):
+        from users.models import User
+        return User.objects.get(id=self.request.user.id)
+
+    def list(self, request, version):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer_class()(queryset)
+        return Response(serializer.data)
