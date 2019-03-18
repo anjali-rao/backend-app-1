@@ -136,7 +136,7 @@ class User(AbstractUser):
 
     @property
     def logo_url(self):
-        return self.get_company().logo.url
+        return "http://192.168.19.136:8000%s" % self.get_company().logo.url
 
     @property
     def company_name(self):

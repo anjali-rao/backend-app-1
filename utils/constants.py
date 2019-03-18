@@ -8,9 +8,9 @@ DEFAULT_USER_TYPE = 'subscriber'
 
 DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = {
-    'pan': 'media/advisor/pan',
-    'license': 'media/advisor/license',
-    'photo': 'media/advisor/selfie'
+    'pan': 'advisor/pan',
+    'license': 'advisor/license',
+    'photo': 'advisor/selfie'
 }
 
 # Success messages

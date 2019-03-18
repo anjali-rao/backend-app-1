@@ -229,11 +229,11 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class UserSettings(serializers.ModelSerializer):
-    category = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
 
-    def get_category(self, obj):
+    def get_categories(self, obj):
         return obj.get_categories()
 
     class Meta:
         model = User
-        fields = ('company_name', 'logo_url', 'category')
+        fields = ('company_name', 'logo_url', 'categories')
