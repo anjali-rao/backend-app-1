@@ -53,7 +53,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'users',
-    'payments'
+    'payment',
+    'activity',
+    'content',
+    'crm',
+    'product',
+    'sales'
     # 'raven.contrib.django.raven_compat',
     # 'django_hosts',
 ]
