@@ -34,6 +34,13 @@ class Account(BaseModel):
     address = models.TextField(null=True, blank=True)
     pincode = models.CharField(max_length=6, null=True, blank=True)
 
+    def send_notification(self, **kwargs):
+        return getattr(self, 'send_%s' % kwargs['type'])(kwargs)
+
+    def send_sms(self, kwargs):
+        from users.tasks import send_sms
+        send_sms(self.phone_no, kwargs['message'])
+
 
 class Campaign(BaseModel):
     description = models.CharField(max_length=32)
@@ -82,13 +89,6 @@ class User(AbstractUser):
 
     def get_accounts(self):
         return self.bankaccount_set.filter(is_active=True)
-
-    def send_notification(self, **kwargs):
-        return getattr(self, 'send_%s' % kwargs['type'])(kwargs)
-
-    def send_sms(self, kwargs):
-        from users.tasks import send_sms
-        send_sms(self.account.phone_no, kwargs['message'])
 
     @classmethod
     def generate_username(cls):
@@ -231,17 +231,6 @@ class Pincode(models.Model):
 
     def __unicode__(self):
         return '%s - %s - (%s)' % (self.pincode, self.city, self.state.name)
-
-
-@receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))
-def user_post_save(sender, instance, created, **kwargs):
-    if created:
-        if instance.account:
-            message = {
-                'message': constants.USER_CREATION_MESSAGE,
-                'type': 'sms'
-            }
-            instance.send_notification(**message)
 
 
 @receiver(post_save, sender=Account, dispatch_uid="action%s" % str(now()))
