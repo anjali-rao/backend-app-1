@@ -38,8 +38,10 @@ class ForgotPasswordOTPSerializer(serializers.Serializer):
 
     @property
     def response(self):
+        user = User.objects.get(username=self.validated_data['username'])
         return {
-            'message': constants.OTP_GENERATED
+            'message': constants.OTP_GENERATED,
+            'phone_no': user.account.phone_no
         }
 
 
