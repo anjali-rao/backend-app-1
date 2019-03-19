@@ -7,7 +7,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from users.models import (
     Account, User, Campaign, UserDetails, Documents, Bank, BankAccount,
-    BankBranch)
+    BankBranch, Enterprise)
 
 
 @admin.register(User)
@@ -79,3 +79,8 @@ class BankBranchAdmin(admin.ModelAdmin):
 @admin.register(Campaign)
 class CampaignAdmin(admin.ModelAdmin):
     list_display = ('description',)
+
+
+@admin.register(Enterprise)
+class EnterpriseAdmin(admin.ModelAdmin):
+    list_display = ('name', 'referral_code', 'hexa_code')

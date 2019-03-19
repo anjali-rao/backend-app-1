@@ -4,7 +4,10 @@ CITY_TIER = ((0, 'First'), (1, 'Second'), (2, 'Third'))
 
 USER_CATEGORIES = {}
 USER_FLAG = {'blacklist': False, 'training': False, 'exam_passed': None}
+
+# Defaults
 DEFAULT_USER_TYPE = 'subscriber'
+DEFAULT_ENTERPRISE = 'Goplannr'
 
 DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = {
@@ -19,7 +22,8 @@ OTP_SUCCESS = 'OTP verified successfully.'
 OTP_GENERATED = 'OTP send successfully.'
 AUTHORIZATION_GENERATED = 'Authorization key generated successfully.'
 PASSWORD_CHANGED = 'Password changed successfully.'
-USER_CREATION_MESSAGE = 'Hi %s. Your account with GoPlannr has been created successfully.\nYour username is %s genrated under phone no %s.\n\nRegards\nTeam GoPlannr' # noqa
+USER_CREATION_MESSAGE = 'Hi, Your account with GoPlannr has been created successfully.\nYour username is %s generated under phone no %s.\n\nRegards\nTeam GoPlannr' # noqa
+USER_CREATED_SUCESS = 'User created successfully!'
 
 # TTL's (seconds)
 OTP_TTL = 1800
@@ -43,5 +47,6 @@ USER_CREATION_FIELDS = (
     'referral_code', 'referral_reference', 'user_type'
 )
 
-# Company upload path
-COMPANY_UPLOAD_PATH = 'media/company'
+# Upload paths
+COMPANY_UPLOAD_PATH = 'company'
+ENTERPRISE_UPLOAD_PATH = 'enterprise'
