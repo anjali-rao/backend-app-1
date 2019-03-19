@@ -14,7 +14,6 @@ from django.dispatch import receiver
 from django.core.cache import cache
 
 from goplannr.settings import JWT_SECRET
-from product.models import Company
 
 import uuid
 
@@ -44,6 +43,18 @@ class Account(BaseModel):
 
 class Campaign(BaseModel):
     description = models.CharField(max_length=32)
+    start_date = models.DateField(null=True, blank=True)
+
+
+class Enterprise(BaseModel):
+    name = models.CharField(max_length=64)
+    referral_code = models.CharField(max_length=8, null=True, blank=True)
+    hexa_code = models.CharField(max_length=8, default='#005db1')
+    logo = models.ImageField(upload_to=constants.ENTERPRISE_UPLOAD_PATH)
+
+    @property
+    def companies(self):
+        return self.company_set.all()
 
 
 class User(AbstractUser):
@@ -52,13 +63,11 @@ class User(AbstractUser):
         choices=get_choices(constants.USER_TYPE), max_length=16,
         default=constants.DEFAULT_USER_TYPE)
     campaign = models.ForeignKey(Campaign, null=True, blank=True)
-    categories = JSONField(default=constants.USER_CATEGORIES)
-    active = models.BooleanField(default=False)
-    flag = JSONField(default=constants.USER_FLAG)
-    # company = models.CharField(max_length=64, null=True, blank=True)
-    company = models.ForeignKey(Company, null=True, blank=True)
+    enterprise = models.ForeignKey(Enterprise)
     referral_code = models.CharField(max_length=8, null=True, blank=True)
     referral_reference = models.CharField(max_length=8, null=True, blank=True)
+    flag = JSONField(default=constants.USER_FLAG)
+    is_active = models.BooleanField(default=False)
 
     def __unicode__(self):
         return self.username
@@ -133,23 +142,6 @@ class User(AbstractUser):
     @staticmethod
     def verify_otp(phone_no, otp):
         return otp == cache.get(phone_no)
-
-    @property
-    def logo_url(self):
-        return "http://192.168.19.136:8000%s" % self.get_company().logo.url
-
-    @property
-    def company_name(self):
-        return self.get_company().name
-
-    def get_company(self):
-        return self.company if self.company else Company.objects.get(
-            name="Goplannr")
-
-    def get_categories(self):
-        return map(lambda category: {
-            'id': category['id'], 'name': category['name']
-        }, self.get_company().categories.values())
 
 
 class UserDetails(BaseModel):
@@ -233,11 +225,12 @@ class Pincode(models.Model):
         return '%s - %s - (%s)' % (self.pincode, self.city, self.state.name)
 
 
-@receiver(post_save, sender=Account, dispatch_uid="action%s" % str(now()))
-def account_post_save(sender, instance, created, **kwargs):
+@receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))
+def user_post_save(sender, instance, created, **kwargs):
     if created:
         message = {
-            'message': constants.USER_CREATION_MESSAGE,
+            'message': constants.USER_CREATION_MESSAGE % (
+                instance.username, instance.account.phone_no),
             'type': 'sms'
         }
-        instance.send_notification(**message)
+        instance.account.send_notification(**message)

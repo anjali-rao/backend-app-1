@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 from utils.model import BaseModel, models
 from utils.constants import COMPANY_UPLOAD_PATH
 
+from users.models import Enterprise
+
 
 class Category(BaseModel):
     name = models.CharField(max_length=100)
@@ -13,6 +15,7 @@ class Category(BaseModel):
 
 class Company(BaseModel):
     name = models.CharField(max_length=256)
+    enterprise = models.ForeignKey(Enterprise)
     logo = models.ImageField(upload_to=COMPANY_UPLOAD_PATH)
     hexa_code = models.CharField(max_length=8)
     short_name = models.CharField(max_length=128)
@@ -36,5 +39,3 @@ class CompanyDetails(BaseModel):
     claim_settlement = models.TextField(null=True, blank=True)
     additional_info = models.TextField(null=True, blank=True)
     is_offer = models.BooleanField(default=False)
-
-

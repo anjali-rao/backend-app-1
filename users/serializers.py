@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
 
-from users.models import User, Account
+from users.models import User, Account, Enterprise
 from utils import constants, genrate_random_string
 
 
@@ -121,13 +121,13 @@ class CreateUserSerializer(serializers.ModelSerializer):
         for key in validated_data.iterkeys():
             if key in constants.USER_CREATION_FIELDS:
                 data[key] = validated_data[key]
-
+        data['enterprise_id'] = self.get_enterprise_id(validated_data)
+        data['account_id'] = self.get_or_create_account(validated_data).id
         instance = User.objects.create(**data)
-        instance.account = self.get_or_create_account(validated_data)
         instance.referral_reference = validated_data.get('referral_reference')
         instance.generate_referral_code()
-        # need to followed up latter: hriks
-        instance.active = True
+        # need to followed up latter: hriks Ref: Keep
+        instance.is_active = True
         instance.save()
         return instance
 
@@ -139,8 +139,20 @@ class CreateUserSerializer(serializers.ModelSerializer):
         acc.save()
         return acc
 
+    def get_enterprise_id(self, validated_data):
+        # To Dos: Logic for assigning enterprise
+        return Enterprise.objects.get(name=constants.DEFAULT_ENTERPRISE).id
+
     def get_user(self):
         return User.objects.get(username=self.validated_data['username'])
+
+    @property
+    def response(self):
+        return {
+            'username': self.get_user().username,
+            'phone_no': self.get_user().account.phone_no,
+            'message': constants.USER_CREATED_SUCESS
+        }
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -150,24 +162,35 @@ class AccountSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class EnterpriseSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Enterprise
+        fields = ('name', 'logo', 'hexa_code',)
+
+
 class UserSerializer(serializers.ModelSerializer):
     account = serializers.SerializerMethodField()
+    enterprise = serializers.SerializerMethodField()
 
     def get_account(self, obj):
         return AccountSerializer(obj.account).data
+
+    def get_enterprise(self, obj):
+        return EnterpriseSerializer(obj.enterprise).data
 
     class Meta:
         model = User
         fields = (
             'id', 'username', 'user_type', 'email',
-            'active', 'account', 'company'
+            'is_active', 'account', 'enterprise'
         )
 
 
 class AuthorizationSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
-    active = serializers.BooleanField(default=True)
+    is_active = serializers.BooleanField(default=True)
 
     def validate_username(self, value):
         users = User.objects.filter(username=value)
@@ -187,9 +210,9 @@ class AuthorizationSerializer(serializers.Serializer):
                 constants.INVALID_PASSWORD)
         return value
 
-    def validate_active(self, value):
+    def validate_is_active(self, value):
         users = User.objects.filter(username=self.initial_data.get('username'))
-        if users.exists() and not users[0].active:
+        if users.exists() and not users[0].is_active:
             raise serializers.ValidationError(
                 constants.ACCOUNT_DISABLED)
         return value
