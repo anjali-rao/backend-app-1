@@ -24,6 +24,27 @@ class OTPGenrationSerializer(serializers.Serializer):
         }
 
 
+class ForgotPasswordOTPSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+
+    def validate_username(self, value):
+        users = User.objects.filter(username=value)
+        if not users.exists():
+            raise serializers.ValidationError(
+                constants.INVALID_USERNAME)
+        user = users.get()
+        User.send_otp(user.account.phone_no)
+        return value
+
+    @property
+    def response(self):
+        user = User.objects.get(username=self.validated_data['username'])
+        return {
+            'message': constants.OTP_GENERATED,
+            'phone_no': user.account.phone_no
+        }
+
+
 class OTPVerificationSerializer(serializers.Serializer):
     phone_no = serializers.CharField(required=True)
     otp = serializers.IntegerField(required=True)
@@ -181,7 +202,8 @@ class AuthorizationSerializer(serializers.Serializer):
         return {
             'authorization': self.get_user().get_authorization_key(),
             'username': self.validated_data['username'],
-            'message': constants.AUTHORIZATION_GENERATED
+            'message': constants.AUTHORIZATION_GENERATED,
+            'details': UserSerializer(self.get_user()).data,
         }
 
 
