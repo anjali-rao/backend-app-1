@@ -16,7 +16,7 @@ LEAD_STAGE_CHOICES = (
 # Defaults
 OCCUPATION_DEFAULT_CHOICE = 3
 DEFAULT_USER_TYPE = 'subscriber'
-DEFAULT_ENTERPRISE = 'Goplannr'
+DEFAULT_ENTERPRISE = 'GoPlannr'
 DEFAULT_BASE_PREMIUM = 0.0
 DEFAULT_GST = 0.18
 DEFAULT_COMMISSION = 0.20
@@ -34,12 +34,12 @@ OTP_SUCCESS = 'OTP verified successfully.'
 OTP_GENERATED = 'OTP send successfully.'
 AUTHORIZATION_GENERATED = 'Authorization key generated successfully.'
 PASSWORD_CHANGED = 'Password changed successfully.'
-USER_CREATION_MESSAGE = 'Hi, Your account with GoPlannr has been created successfully.\nYour username is %s generated under phone no %s.\n\nRegards\nTeam GoPlannr' # noqa
+USER_CREATION_MESSAGE = 'Hi,\nYour account with GoPlannr has been created successfully with phone no %s.\n\nRegards\nTeam GoPlannr' # noqa
 USER_CREATED_SUCESS = 'User created successfully!'
 
 # TTL's (seconds)
-OTP_TTL = 1800
-TRANSACTION_TTL = 180
+OTP_TTL = 900
+TRANSACTION_TTL = 900
 
 POST_REQUEST_ONLY = ['put', 'delete']
 
@@ -54,9 +54,9 @@ INVALID_USERNAME_PHONE_COMBINATION = 'Invalid username and phone no combination.
 PASSWORD_MISMATCH = 'Password and confirm password mismatch'
 ACCOUNT_DISABLED = 'Account is unactive. Please contact Goplannr for reactivation' # noqa
 
-USER_CREATION_FIELDS = (
-    'username', 'password', 'first_name', 'last_name', 'email',
-    'referral_code', 'referral_reference', 'user_type'
+ACCOUNT_CREATION_FIELDS = (
+    'password', 'first_name', 'last_name', 'email',
+    'pincode', 'pan_no'
 )
 
 # Upload paths

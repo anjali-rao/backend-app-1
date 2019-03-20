@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
 
-from users.models import User, Account, Enterprise
+from users.models import User, Account, Enterprise, Referral
 from utils import constants, genrate_random_string
 
 
@@ -14,14 +14,173 @@ class OTPGenrationSerializer(serializers.Serializer):
         if not value.isdigit() or len(value) != 10:
             raise serializers.ValidationError(
                 constants.INVALID_PHONE_NO)
-        User.send_otp(value)
+        Account.send_otp(value)
         return value
 
     @property
     def response(self):
         return {
-            'message': constants.OTP_GENERATED
+            'message': constants.OTP_GENERATED,
         }
+
+
+class OTPVerificationSerializer(serializers.Serializer):
+    phone_no = serializers.CharField(required=True)
+    otp = serializers.IntegerField(required=True)
+
+    def validate_phone_no(self, value):
+        if not value.isdigit() or len(value) != 10:
+            raise serializers.ValidationError(
+                constants.INVALID_PHONE_NO)
+        return value
+
+    def validate_otp(self, value):
+        if not Account.verify_otp(
+                self.initial_data.get('phone_no'), value):
+            raise serializers.ValidationError(
+                constants.OTP_VALIDATION_FAILED)
+        cache.delete(self.initial_data['phone_no'])
+        return value
+
+    def get_transaction_id(self):
+        txn_id = genrate_random_string(12)
+        cache.set(
+            self.validated_data['phone_no'], txn_id, constants.TRANSACTION_TTL)
+        return txn_id
+
+    @property
+    def response(self):
+        return {
+            'transaction_id': self.get_transaction_id(),
+            'message': constants.OTP_SUCCESS
+        }
+
+
+class CreateUserSerializer(serializers.ModelSerializer):
+    pincode = serializers.CharField(
+        required=False, allow_blank=True, max_length=6)
+    pan_no = serializers.CharField(
+        required=False, allow_blank=True, max_length=10)
+    phone_no = serializers.CharField(required=True, max_length=10)
+    transaction_id = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
+    referral_code = serializers.CharField(required=False)
+    referral_reference = serializers.CharField(required=False)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+    email = serializers.CharField(required=True)
+    pan_no = serializers.CharField(required=True)
+
+    def validate_password(self, value):
+        return make_password(value)
+
+    def validate_referral_code(self, value):
+        validate_referral = User.validate_referral_code(value)
+        if not validate_referral:
+            raise serializers.ValidationError(
+                constants.REFERRAL_CODE_EXCEPTION)
+        return value
+
+    def validate_phone_no(self, value):
+        if not value.isdigit() or len(value) != 10:
+            raise serializers.ValidationError(
+                constants.INVALID_PHONE_NO)
+        return value
+
+    def validate_transaction_id(self, value):
+        if not cache.get(self.initial_data.get('phone_no')) == value:
+            raise serializers.ValidationError(
+                constants.INVALID_TRANSACTION_ID)
+        cache.delete(self.initial_data['phone_no'])
+        return value
+
+    class Meta:
+        model = User
+        fields = (
+            'first_name', 'last_name', 'email', 'password',
+            'referral_code', 'referral_reference', 'user_type', 'pincode',
+            'pan_no', 'phone_no', 'transaction_id'
+        )
+
+    def create(self, validated_data):
+        # more efficent way exists like using classmethod
+        validated_data.update(User.get_referral_details(
+            validated_data.get('referral_code')))
+        account = self.get_account(validated_data)
+        data = {
+            'account_id': account.id,
+            'user_type': validated_data['user_type'],
+            'enterprise_id': validated_data['enterprise_id'],
+            'is_active': True
+        }
+        instance = User.objects.create(**data)
+        instance.generate_referral()
+        return instance
+
+    def get_account(self, validated_data):
+        acc = Account.get_account(validated_data['phone_no'])
+        for field_name in constants.ACCOUNT_CREATION_FIELDS:
+            setattr(acc, field_name, validated_data.get(field_name))
+        acc.save()
+        return acc
+
+    @property
+    def response(self):
+        return {
+            'phone_no': self.validated_data['phone_no'],
+            'email': self.validated_data['email'],
+            'message': constants.USER_CREATED_SUCESS
+        }
+
+
+class AccountSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Account
+        fields = (
+            'id', 'first_name', 'last_name', 'email', 'phone_no',
+            'gender', 'address'
+        )
+
+
+class EnterpriseSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Enterprise
+        fields = ('id', 'name', 'logo', 'hexa_code')
+
+
+class AvailableUserSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    def get_name(self, obj):
+        return obj.enterprise.name
+
+    class Meta:
+        model = User
+        fields = ('id', 'name')
+
+
+class UserSerializer(serializers.ModelSerializer):
+    account = serializers.SerializerMethodField()
+    enterprise = serializers.SerializerMethodField()
+    available_users = serializers.SerializerMethodField()
+
+    def get_account(self, obj):
+        return AccountSerializer(obj.account).data
+
+    def get_enterprise(self, obj):
+        return EnterpriseSerializer(obj.enterprise).data
+
+    def get_available_users(self, obj):
+        return AvailableUserSerializer(
+            User.objects.filter(account_id=obj.account_id), many=True).data
+
+    class Meta:
+        model = User
+        fields = (
+            'id', 'user_type', 'account', 'enterprise', 'available_users'
+        )
 
 
 class ForgotPasswordOTPSerializer(serializers.Serializer):
@@ -45,189 +204,48 @@ class ForgotPasswordOTPSerializer(serializers.Serializer):
         }
 
 
-class OTPVerificationSerializer(serializers.Serializer):
-    phone_no = serializers.CharField(required=True)
-    otp = serializers.IntegerField(required=True)
-
-    def validate_phone_no(self, value):
-        if not value.isdigit() or len(value) != 10:
-            raise serializers.ValidationError(
-                constants.INVALID_PHONE_NO)
-        return value
-
-    def validate_otp(self, value):
-        if not User.verify_otp(
-                self.initial_data['phone_no'], value):
-            raise serializers.ValidationError(
-                constants.OTP_VALIDATION_FAILED)
-        return value
-
-    @property
-    def response(self):
-        return {
-            'transaction_id': self.get_transaction_id(),
-            'message': constants.OTP_SUCCESS
-        }
-
-    def get_transaction_id(self):
-        txn_id = genrate_random_string(12)
-        cache.set(self.data['phone_no'], txn_id, constants.TRANSACTION_TTL)
-        return txn_id
-
-
-class CreateUserSerializer(serializers.ModelSerializer):
-    pincode = serializers.CharField(
-        required=False, allow_blank=True, max_length=6)
-    pan_no = serializers.CharField(
-        required=False, allow_blank=True, max_length=10)
-    phone_no = serializers.CharField(required=True)
-    transaction_id = serializers.CharField(required=True)
-
-    def validate_password(self, value):
-        return make_password(value)
-
-    def validate_referral_code(self, value):
-        if not User.validate_referral_code(value):
-            raise serializers.ValidationError(
-                constants.REFERRAL_CODE_EXCEPTION)
-        return value
-
-    def validate_phone_no(self, value):
-        if not value.isdigit() or len(value) != 10:
-            raise serializers.ValidationError(
-                constants.INVALID_PHONE_NO)
-        return value
-
-    def validate_transaction_id(self, value):
-        if not cache.get(self.initial_data.get('phone_no')) == value:
-            raise serializers.ValidationError(
-                constants.INVALID_TRANSACTION_ID)
-        return value
-
-    class Meta:
-        model = User
-        fields = (
-            'first_name', 'last_name', 'email', 'password',
-            'referral_code', 'referral_reference', 'user_type', 'pincode',
-            'pan_no', 'phone_no', 'transaction_id'
-        )
-        extra_kwargs = {
-            'password': {'write_only': True}
-        }
-
-    def create(self, validated_data):
-        data = dict()
-        for key in validated_data.iterkeys():
-            if key in constants.USER_CREATION_FIELDS:
-                data[key] = validated_data[key]
-        data.update({
-            'enterprise_id': self.get_enterprise_id(validated_data),
-            'account_id': self.get_or_create_account(validated_data).id,
-            'username': User.generate_username()
-        })
-        self.validated_data['username'] = data['username']
-        instance = User.objects.create(**data)
-        instance.referral_reference = validated_data.get('referral_reference')
-        instance.generate_referral_code()
-        # need to followed up latter: hriks Ref: Keep
-        instance.is_active = True
-        instance.save()
-        return instance
-
-    def get_or_create_account(self, validated_data):
-        acc, created = Account.objects.get_or_create(
-            phone_no=validated_data['phone_no'])
-        acc.pincode = validated_data.get('pincode')
-        acc.pan_no = validated_data.get('pan_no')
-        acc.save()
-        return acc
-
-    def get_enterprise_id(self, validated_data):
-        # To Dos: Logic for assigning enterprise
-        return Enterprise.objects.get(name=constants.DEFAULT_ENTERPRISE).id
-
-    def get_user(self):
-        return User.objects.get(username=self.validated_data['username'])
-
-    @property
-    def response(self):
-        return {
-            'username': self.get_user().username,
-            'phone_no': self.get_user().account.phone_no,
-            'message': constants.USER_CREATED_SUCESS
-        }
-
-
-class AccountSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Account
-        fields = '__all__'
-
-
-class EnterpriseSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Enterprise
-        fields = ('id', 'name', 'logo', 'hexa_code')
-
-
-class UserSerializer(serializers.ModelSerializer):
-    account = serializers.SerializerMethodField()
-    enterprise = serializers.SerializerMethodField()
-
-    def get_account(self, obj):
-        return AccountSerializer(obj.account).data
-
-    def get_enterprise(self, obj):
-        return EnterpriseSerializer(obj.enterprise).data
-
-    class Meta:
-        model = User
-        fields = (
-            'id', 'username', 'user_type', 'email',
-            'is_active', 'account', 'enterprise'
-        )
-
-
 class AuthorizationSerializer(serializers.Serializer):
-    username = serializers.CharField(required=True)
+    phone_no = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
     is_active = serializers.BooleanField(default=True)
 
-    def validate_username(self, value):
-        users = User.objects.filter(username=value)
-        if not users.exists():
+    def validate_phone_no(self, value):
+        accounts = Account.objects.filter(phone_no=value)
+        if not accounts.exists():
             raise serializers.ValidationError(
-                constants.INVALID_USERNAME)
+                constants.INVALID_PHONE_NO)
         return value
 
     def validate_password(self, value):
-        users = User.objects.filter(username=self.initial_data.get('username'))
-        if not users.exists():
+        accounts = Account.objects.filter(
+            phone_no=self.initial_data.get('phone_no'))
+        if not accounts.exists():
             raise serializers.ValidationError(
-                constants.INVALID_USERNAME)
-        user = users.get()
-        if not user.check_password(value):
+                constants.INVALID_PHONE_NO)
+        account = accounts.get()
+        if not account.check_password(value):
             raise serializers.ValidationError(
                 constants.INVALID_PASSWORD)
         return value
 
     def validate_is_active(self, value):
-        users = User.objects.filter(username=self.initial_data.get('username'))
-        if users.exists() and not users[0].is_active:
+        accounts = Account.objects.filter(
+            phone_no=self.initial_data.get('phone_no'))
+        if accounts.exists() and not accounts.get().get_default_user():
             raise serializers.ValidationError(
                 constants.ACCOUNT_DISABLED)
         return value
 
     def get_user(self):
-        return User.objects.get(username=self.validated_data['username'])
+        account = Account.objects.get(
+            phone_no=self.validated_data.get('phone_no'))
+        return account.get_default_user()
 
     @property
     def response(self):
         return {
             'authorization': self.get_user().get_authorization_key(),
-            'username': self.validated_data['username'],
+            'phone_no': self.validated_data['phone_no'],
             'message': constants.AUTHORIZATION_GENERATED,
             'details': UserSerializer(self.get_user()).data,
         }
@@ -243,10 +261,6 @@ class ChangePasswordSerializer(serializers.Serializer):
         if not users.exists():
             raise serializers.ValidationError(
                 constants.INVALID_USERNAME)
-#        user = users.get()
-#        if user.account.phone_no != self.initial_data.get('phone_no'):
-#            raise serializers.ValidationError(
-#                constants.INVALID_USERNAME_PHONE_COMBINATION)
         return value
 
     def validate_phone_no(self, value):

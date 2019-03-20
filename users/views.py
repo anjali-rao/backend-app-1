@@ -10,8 +10,6 @@ from users.serializers import (
     ForgotPasswordOTPSerializer
 )
 
-from users.decorators import UserAuthentication
-
 
 @api_view(['POST'])
 def generate_otp(request, version):
@@ -32,22 +30,12 @@ def verify_otp(request, version):
 class RegisterUser(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = CreateUserSerializer
-    read_serializer_class = UserSerializer
-    action = None
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        self.action = True
-        return Response(
-            self.get_serializer(serializer.get_user()).data,
-            status=status.HTTP_201_CREATED)
-
-    def get_serializer_class(self):
-        if self.action:
-            return self.read_serializer_class
-        return super(RegisterUser, self).get_serializer_class()
+        return Response(serializer.response, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
