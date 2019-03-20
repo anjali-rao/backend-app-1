@@ -30,7 +30,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEBUG = get_env_var('DEBUG')
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'users.Account'
 
 BROKER_URL = get_env_var('BROKER_URL')
 REDIS_POOL = redis.ConnectionPool.from_url(BROKER_URL)
@@ -53,12 +53,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'users',
-    'payment',
-    'activity',
-    'content',
-    'crm',
-    'product',
-    'sales'
+#    'payment',
+#    'activity',
+#    'content',
+#    'crm',
+#    'product',
+#    'sales'
     # 'raven.contrib.django.raven_compat',
     # 'django_hosts',
 ]

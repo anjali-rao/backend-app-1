@@ -10,12 +10,12 @@ from users.models import (
     BankBranch, Enterprise)
 
 
-@admin.register(User)
-class GoPlannerUserAdmin(BaseUserAdmin):
+@admin.register(Account)
+class GoPlannerAccountAdmin(BaseUserAdmin):
     list_display = (
-        'username', 'email',
+        'username', 'email', 'phone_no', 'pan_no', 'gender'
     )
-    search_fields = ('username', 'email', 'account__phone_no')
+    search_fields = ('username', 'email', 'phone_no')
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         ('Personal info', {
@@ -31,18 +31,21 @@ class GoPlannerUserAdmin(BaseUserAdmin):
     )
 
 
-@admin.register(Account)
-class AccountAdmin(admin.ModelAdmin):
-    list_display = ('phone_no', 'pan_no', 'gender')
-    list_filter = ('gender', 'pincode')
-    search_fields = ('phone_no', 'alternate_no', 'aadhar_no')
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    list_display = (
+        'account', 'user_type', 'campaign', 'enterprise', 'is_active')
+    list_filter = ('is_active', 'user_type')
+    search_fields = (
+        'account__phone_no', 'account__alternate_no', 'account__aadhar_no')
+    raw_id_fields = ('account', 'enterprise', 'campaign')
 
 
 @admin.register(UserDetails)
 class UserDetailsAdmin(admin.ModelAdmin):
     list_display = ('user', 'agent_code', 'channel', 'status')
     list_filter = ('channel', 'status')
-    search_fields = ('user__username', 'user__account__phone_no')
+    search_fields = ('user__account__username', 'user__account__phone_no')
     raw_id_fields = ('user',)
 
 
@@ -83,4 +86,4 @@ class CampaignAdmin(admin.ModelAdmin):
 
 @admin.register(Enterprise)
 class EnterpriseAdmin(admin.ModelAdmin):
-    list_display = ('name', 'referral_code', 'hexa_code')
+    list_display = ('name', 'hexa_code')
