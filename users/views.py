@@ -7,7 +7,7 @@ from users.serializers import (
     CreateUserSerializer, UserSerializer,
     OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
-    UserSettings, ForgotPasswordOTPSerializer
+    ForgotPasswordOTPSerializer
 )
 
 from users.decorators import UserAuthentication
@@ -59,11 +59,11 @@ def generate_authorization(request, version):
 
 
 @api_view(['POST'])
-def change_password(request, version):
+def update_password(request, version):
     serializer = ChangePasswordSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     return Response(
-        serializer.response, status=status.HTTP_205_RESET_CONTENT)
+        serializer.response, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -72,18 +72,3 @@ def forgot_password_otp(request, version):
     serializer.is_valid(raise_exception=True)
     return Response(
         serializer.response, status=status.HTTP_200_OK)
-
-
-class GetUserSettings(generics.ListAPIView):
-    authentication_classes = (UserAuthentication, )
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = UserSettings
-
-    def get_queryset(self):
-        from users.models import User
-        return User.objects.get(id=self.request.user.id)
-
-    def list(self, request, version):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer_class()(queryset)
-        return Response(serializer.data)

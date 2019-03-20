@@ -1,13 +1,25 @@
+# Choices
 GENDER = ('male', 'female', 'transgender')
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
 CITY_TIER = ((0, 'First'), (1, 'Second'), (2, 'Third'))
-
-USER_CATEGORIES = {}
 USER_FLAG = {'blacklist': False, 'training': False, 'exam_passed': None}
+OCCUPATION_CHOICES = (
+    (0, 'Student'), (1, 'Service'), (3, 'Self Employeed'), (4, 'Other'))
+LEAD_STATUS_CHOICES = (
+    (0, 'Fresh'), (1, 'In Progress'), (2, 'Closed'), (3, 'Dropped'))
+LEAD_STAGE_CHOICES = (
+    (0, 'New'), (1, 'Appointment Scheduled'), (2, 'Needs'), (3, 'Quote'),
+    (4, 'Cart'), (5, 'Proposal'), (6, 'Payment'), (7, 'Submitted'),
+    (8, 'Issued'))
+
 
 # Defaults
+OCCUPATION_DEFAULT_CHOICE = 3
 DEFAULT_USER_TYPE = 'subscriber'
 DEFAULT_ENTERPRISE = 'Goplannr'
+DEFAULT_BASE_PREMIUM = 0.0
+DEFAULT_GST = 0.18
+DEFAULT_COMMISSION = 0.20
 
 DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = {
@@ -50,3 +62,4 @@ USER_CREATION_FIELDS = (
 # Upload paths
 COMPANY_UPLOAD_PATH = 'company'
 ENTERPRISE_UPLOAD_PATH = 'enterprise'
+CATEGORY_UPLOAD_PATH = 'category'

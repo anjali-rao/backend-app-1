@@ -117,12 +117,15 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         data = dict()
-        self.validated_data['username'] = data['username'] = User.generate_username() # noqa
         for key in validated_data.iterkeys():
             if key in constants.USER_CREATION_FIELDS:
                 data[key] = validated_data[key]
-        data['enterprise_id'] = self.get_enterprise_id(validated_data)
-        data['account_id'] = self.get_or_create_account(validated_data).id
+        data.update({
+            'enterprise_id': self.get_enterprise_id(validated_data),
+            'account_id': self.get_or_create_account(validated_data).id,
+            'username': User.generate_username()
+        })
+        self.validated_data['username'] = data['username']
         instance = User.objects.create(**data)
         instance.referral_reference = validated_data.get('referral_reference')
         instance.generate_referral_code()
@@ -166,7 +169,7 @@ class EnterpriseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Enterprise
-        fields = ('name', 'logo', 'hexa_code',)
+        fields = ('id', 'name', 'logo', 'hexa_code')
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -232,8 +235,7 @@ class AuthorizationSerializer(serializers.Serializer):
 
 class ChangePasswordSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
-    password = serializers.CharField(required=True)
-    phone_no = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
     transaction_id = serializers.CharField(required=True)
 
     def validate_username(self, value):
@@ -241,10 +243,10 @@ class ChangePasswordSerializer(serializers.Serializer):
         if not users.exists():
             raise serializers.ValidationError(
                 constants.INVALID_USERNAME)
-        user = users.get()
-        if user.account.phone_no != self.initial_data.get('phone_no'):
-            raise serializers.ValidationError(
-                constants.INVALID_USERNAME_PHONE_COMBINATION)
+#        user = users.get()
+#        if user.account.phone_no != self.initial_data.get('phone_no'):
+#            raise serializers.ValidationError(
+#                constants.INVALID_USERNAME_PHONE_COMBINATION)
         return value
 
     def validate_phone_no(self, value):
@@ -254,7 +256,8 @@ class ChangePasswordSerializer(serializers.Serializer):
         return value
 
     def validate_transaction_id(self, value):
-        if not cache.get(self.initial_data.get('phone_no')) == value:
+        users = User.objects.filter(username=self.initial_data.get('username'))
+        if not cache.get(users.get().account.phone_no) == value:
             raise serializers.ValidationError(
                 constants.INVALID_TRANSACTION_ID)
         return value
@@ -265,20 +268,8 @@ class ChangePasswordSerializer(serializers.Serializer):
     @property
     def response(self):
         user = self.get_user()
-        user.set_password(self.validated_data['password1'])
+        user.set_password(self.validated_data['new_password'])
         user.save()
         return {
-            'username': self.validated_data['username'],
             'message': constants.PASSWORD_CHANGED
         }
-
-
-class UserSettings(serializers.ModelSerializer):
-    categories = serializers.SerializerMethodField()
-
-    def get_categories(self, obj):
-        return obj.get_categories()
-
-    class Meta:
-        model = User
-        fields = ('company_name', 'logo_url', 'categories')
