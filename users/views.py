@@ -4,10 +4,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
 from users.serializers import (
-    CreateUserSerializer, UserSerializer,
-    OTPGenrationSerializer, OTPVerificationSerializer,
+    CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
-    ForgotPasswordOTPSerializer
 )
 
 
@@ -49,14 +47,6 @@ def generate_authorization(request, version):
 @api_view(['POST'])
 def update_password(request, version):
     serializer = ChangePasswordSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    return Response(
-        serializer.response, status=status.HTTP_200_OK)
-
-
-@api_view(['POST'])
-def forgot_password_otp(request, version):
-    serializer = ForgotPasswordOTPSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     return Response(
         serializer.response, status=status.HTTP_200_OK)

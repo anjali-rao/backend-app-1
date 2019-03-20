@@ -183,27 +183,6 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
 
-class ForgotPasswordOTPSerializer(serializers.Serializer):
-    username = serializers.CharField(required=True)
-
-    def validate_username(self, value):
-        users = User.objects.filter(username=value)
-        if not users.exists():
-            raise serializers.ValidationError(
-                constants.INVALID_USERNAME)
-        user = users.get()
-        User.send_otp(user.account.phone_no)
-        return value
-
-    @property
-    def response(self):
-        user = User.objects.get(username=self.validated_data['username'])
-        return {
-            'message': constants.OTP_GENERATED,
-            'phone_no': user.account.phone_no
-        }
-
-
 class AuthorizationSerializer(serializers.Serializer):
     phone_no = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
@@ -252,38 +231,33 @@ class AuthorizationSerializer(serializers.Serializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    username = serializers.CharField(required=True)
+    phone_no = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
     transaction_id = serializers.CharField(required=True)
 
-    def validate_username(self, value):
-        users = User.objects.filter(username=value)
-        if not users.exists():
-            raise serializers.ValidationError(
-                constants.INVALID_USERNAME)
-        return value
-
     def validate_phone_no(self, value):
-        if not value.isdigit() or len(value) != 10:
+        accounts = Account.objects.filter(phone_no=value)
+        if not accounts.exists():
             raise serializers.ValidationError(
                 constants.INVALID_PHONE_NO)
         return value
 
     def validate_transaction_id(self, value):
-        users = User.objects.filter(username=self.initial_data.get('username'))
+        users = User.objects.filter(username=self.initial_data.get('phone_no'))
         if not cache.get(users.get().account.phone_no) == value:
             raise serializers.ValidationError(
                 constants.INVALID_TRANSACTION_ID)
+        cache.delete(self.initial_data.get('phone_no'))
         return value
 
-    def get_user(self):
-        return User.objects.get(username=self.validated_data['username'])
+    def get_account(self):
+        Account.objects.get(phone_no=self.validated_data['phone_no'])
 
     @property
     def response(self):
-        user = self.get_user()
-        user.set_password(self.validated_data['new_password'])
-        user.save()
+        account = self.get_account()
+        account.set_password(self.validated_data['new_password'])
+        account.save()
         return {
             'message': constants.PASSWORD_CHANGED
         }
