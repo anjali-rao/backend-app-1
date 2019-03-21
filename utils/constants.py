@@ -53,6 +53,8 @@ INVALID_PASSWORD = 'Invalid password provided.'
 INVALID_USERNAME_PHONE_COMBINATION = 'Invalid username and phone no combination.' # noqa
 PASSWORD_MISMATCH = 'Password and confirm password mismatch'
 ACCOUNT_DISABLED = 'Account is unactive. Please contact Goplannr for reactivation' # noqa
+INVALID_CATEGORY_ID = 'Category id passed is invalid or category doesnot exists.' # noqa
+INVALID_CUSTOMER_SEGMENT = 'Invalid Customer Segment id'
 
 ACCOUNT_CREATION_FIELDS = (
     'password', 'first_name', 'last_name', 'email',

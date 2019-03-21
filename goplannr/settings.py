@@ -60,7 +60,8 @@ INSTALLED_APPS = [
     'content',
     'crm',
     'product',
-    'sales'
+    'sales',
+    'questionnaire'
     # 'raven.contrib.django.raven_compat',
     # 'django_hosts',
 ]

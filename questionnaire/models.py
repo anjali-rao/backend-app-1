@@ -8,17 +8,14 @@ class Question(BaseModel):
     category = models.ForeignKey('product.Category')
     question = models.TextField()
 
-    [{"answer": "hello", "score": "10"}, {"answer": "no", "score": "9"}]
-
 
 class Answer(BaseModel):
-    question = models.ForeignKey('product.Question')
-    answer = models.TextField()
+    question = models.ForeignKey('questionnaire.Question')
+    answer = models.CharField(max_length=128)
     score = models.IntegerField(default=0)
 
 
 class Response(BaseModel):
-    question = models.ForeignKey('product.Question')
+    question = models.ForeignKey('questionnaire.Question')
     lead = models.ForeignKey('crm.Lead')
-    answer = models.CharField(max_length=64)
-    score = models.IntegerField(default=0)
+    answer = models.ForeignKey('questionnaire.Answer')
