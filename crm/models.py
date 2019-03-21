@@ -34,7 +34,8 @@ class Contact(BaseModel):
 
 
 class Lead(BaseModel):
-    contact = models.ForeignKey(Contact)
+    user = models.ForeignKey('users.user')
+    contact = models.ForeignKey('crm.Contact')
     category = models.ForeignKey('product.Category')
     amount = models.FloatField(default=0.0)
     final_score = models.FloatField(default=0.0)
@@ -45,6 +46,10 @@ class Lead(BaseModel):
     product_id = models.IntegerField(null=True, blank=True)
     # notes = models.ManyToManyField(Note)
     campaign = models.ForeignKey('users.Campaign')
+    max_age = models.IntegerField(default=0)
+    min_age = models.IntegerField(default=0)
+    customer_segment = models.ForeignKey(
+        'product.CustomerSegment', null=True, blank=True)
 
     def __unicode__(self):
         return "%s - %s" % (
@@ -60,7 +65,4 @@ class Lead(BaseModel):
         self.save()
 
     def next_activity_date_time(self):
-        # if Activity.objects.filter(lead__id = self.id):
-        #     activity = Activity.objects.filter(lead__id = self.id,due_date__gte=datetime.today().date()).order_by('due_date','due_time')[0]
-        #     return activity.due_time.strftime("%H:%M %p")+", "+activity.due_date.strftime("%d %b")
         return "No Activity Found"

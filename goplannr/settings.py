@@ -29,6 +29,8 @@ def get_env_var(setting, configs=configs):
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEBUG = get_env_var('DEBUG')
+BASE_HOST = get_env_var(
+    'DEFAULT_HOST') if not DEBUG else get_env_var('PRODUCTTION_HOST')
 
 AUTH_USER_MODEL = 'users.Account'
 
@@ -53,12 +55,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'users',
-#    'payment',
-#    'activity',
-#    'content',
-#    'crm',
-#    'product',
-#    'sales'
+    'payment',
+    'activity',
+    'content',
+    'crm',
+    'product',
+    'sales',
+    'questionnaire'
     # 'raven.contrib.django.raven_compat',
     # 'django_hosts',
 ]
