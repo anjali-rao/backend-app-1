@@ -4,7 +4,8 @@ from __future__ import unicode_literals
 from rest_framework import generics
 
 from users.decorators import UserAuthentication
-from sales.serializers import QuoteSerializers, Quote
+from sales.serializers import (
+    QuoteSerializers, Quote, CreateApplicationSerializer)
 
 
 class GetQuotes(generics.ListAPIView):
@@ -14,3 +15,8 @@ class GetQuotes(generics.ListAPIView):
     def get_queryset(self):
         return Quote.objects.filter(
             lead_id=self.request.query_params.get('lead'))
+
+
+class CreateApplication(generics.CreateAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = CreateApplicationSerializer

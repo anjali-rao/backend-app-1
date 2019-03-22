@@ -55,10 +55,6 @@ class ResponseSerializer(serializers.Serializer):
                 constants.INVALID_GENDER_PROVIDED)
         return value
 
-    def response(self):
-        # TODOs get Quotes
-        return {"no 1": 1212}
-
 
 class QuestionnaireResponseSerializer(serializers.ModelSerializer):
     answer_id = serializers.CharField(required=True)

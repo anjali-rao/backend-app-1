@@ -2,15 +2,16 @@
 from __future__ import unicode_literals
 
 from utils.model import BaseModel, models
-from utils import constants
+from utils import (
+    constants, get_choices, get_kyc_upload_path, genrate_random_string)
 
-# from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.fields import JSONField
 
 
 class Quote(BaseModel):
     lead = models.ForeignKey('crm.Lead')
     status = models.CharField(
-        max_length=16, choices=constants.QUOTE_STAUTS_CHOICES,
+        max_length=16, choices=constants.STATUS_CHOICES,
         default='pending')
     premium = models.ForeignKey('product.Premium', null=True, blank=True)
 
@@ -28,9 +29,68 @@ class QuoteFeature(BaseModel):
     score = models.FloatField(default=0.0)
 
 
+class KYCDocuments(BaseModel):
+    client = models.ForeignKey('sales.Client')
+    number = models.CharField(max_length=64)
+    doc_type = models.CharField(
+        choices=get_choices(constants.KYC_DOC_TYPES), max_length=16)
+    file = models.FileField(upload_to=get_kyc_upload_path)
+
+
+class Client(BaseModel):
+    document_number = models.CharField(max_length=32)
+    first_name = models.CharField(max_length=32)
+    middle_name = models.CharField(max_length=32)
+    last_name = models.CharField(max_length=32)
+    dob = models.DateField()
+    email = models.EmailField()
+    contact_no = models.CharField(max_length=10)
+    alternate_no = models.CharField(max_length=10)
+
+    def update_details(self, data):
+        self.first_name = data['first_name']
+        self.last_name = data['last_name']
+        self.middle_name = data['middle_name']
+        self.dob = data['dob']
+        self.email = data['email']
+        self.contact_no = data['contact_no']
+        self.alternate_no = data['alternate_no']
+        self.save()
+
+
+class Application(BaseModel):
+    reference_no = models.CharField(max_length=15, unique=True)
+    quote = models.OneToOneField('sales.Quote')
+    address = models.ForeignKey('users.Address')
+    status = models.CharField(
+        max_length=32, choices=constants.STATUS_CHOICES, default='pending')
+    people_listed = models.IntegerField(default=0)
+
+    def save(self, *args, **kwargs):
+        try:
+            self.__class__.objects.get(pk=self.id)
+        except Application.DoesNotExist:
+            self.generate_reference_no()
+        super(Application, self).save(*args, **kwargs)
+
+    def generate_reference_no(self):
+        self.reference_no = 'GoPlannr%s' % genrate_random_string(10)
+        if self.__class__.objects.filter(
+                reference_no=self.reference_no).exists():
+            while self.__class__.objects.filter(
+                    reference_no=self.reference_no).exists():
+                self.reference_no = 'GoPlannr%s' % genrate_random_string(10)
+
+
+class Policy(BaseModel):
+    application = models.OneToOneField('sales.Application')
+    contact = models.ForeignKey('crm.Contact')
+    client = models.ForeignKey(Client)
+    policy_data = JSONField()
+
+
 # class InsuranceApplication(BaseModel):
 #     quote = models.OneToOneField(Quote)
-#     status = models.CharField(max_length=127,choices=(('pending','Pending'),('accepted','Accepted'),('rejected','Rejected')),default='pending')
 #     first_name = models.CharField(max_length=127, default="")
 #     middle_name = models.CharField(max_length=127,null=True,blank=True)
 #     last_name = models.CharField(max_length=127, default="")
@@ -45,22 +105,7 @@ class QuoteFeature(BaseModel):
 #     zip_code = models.CharField(max_length=127,null=True,blank=True)
 #     country = models.CharField(max_length=127,null=True,blank=True)
 #     no_of_people_listed = models.IntegerField(null=True,blank=True)
-# 
-# 
+
+
 # class HealthApplication(BaseModel):
 #     quote = models.OneToOneField(Quote)
-# 
-# class Client(BaseModel):
-#     pan = models.CharField(max_length=127)
-#     first_name = models.CharField(max_length=127, default="")
-#     middle_name = models.CharField(max_length=127,null=True,blank=True)
-#     last_name = models.CharField(max_length=127, default="")
-#     date_of_birth = models.CharField(max_length=127, default="")
-#     email = models.CharField(max_length=127, default="")
-#     contact_no = models.CharField(max_length=127, default="")
-# 
-# class Policy(BaseModel):
-#     insurance_application = models.OneToOneField(InsuranceApplication)
-#     contact = models.ForeignKey('crm.Contact')
-#     client = models.ForeignKey(Client)
-#     policy_data_json = JSONField()

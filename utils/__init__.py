@@ -9,6 +9,10 @@ def get_upload_path(instance, filename):
     return 'documents/{0}/{1}'.format(instance.doc_type, filename)
 
 
+def get_kyc_upload_path(instance, filename):
+    return 'kyc/{0}/{1}'.format(instance.doc_type, filename)
+
+
 def genrate_random_string(length):
     return get_random_string(
         length,
