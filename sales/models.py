@@ -14,6 +14,10 @@ class Quote(BaseModel):
         default='pending')
     premium = models.ForeignKey('product.Premium', null=True, blank=True)
 
+    def feature_score(self):
+        return QuoteFeature.objects.filter(quote_id=self.id).aggregate(
+            s=models.Sum('score'))['s']
+
     class Meta:
         unique_together = ('lead', 'premium',)
 

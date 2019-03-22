@@ -5,6 +5,8 @@ from django.contrib.postgres.fields import JSONField
 from utils.model import BaseModel, models
 from utils import constants
 
+from sales.models import Quote, QuoteFeature
+
 
 class Contact(BaseModel):
     user = models.ForeignKey('users.User')
@@ -83,8 +85,7 @@ class Lead(BaseModel):
 
     def refresh_quote_data(self):
         from product.models import Premium, FeatureCustomerSegmentScore
-        from sales.models import Quote, QuoteFeature
-        quotes = self.quote_set.all()
+        quotes = self.get_quotes()
         if quotes.exists():
             quotes.delete()
         premiums = Premium.objects.select_related('product_variant').filter(
@@ -93,10 +94,10 @@ class Lead(BaseModel):
             sum_assured=self.final_score, product_variant__adult=self.adult,
             product_variant__city=self.city,
             product_variant__children=self.children)
-        for premium in premiums:
+        for premium in Premium.objects.all():
             quote = Quote.objects.create(
                 lead_id=self.id, premium_id=premium.id)
-            features = premium.product_variance.feature_set.all()
+            features = premium.product_variant.feature_set.all()
             for feature in features:
                 feature_score = FeatureCustomerSegmentScore.objects.filter(
                     feature_id=feature.id,
@@ -105,6 +106,9 @@ class Lead(BaseModel):
                     quote_id=quote.id, feature_id=feature.id,
                     score=feature_score.score
                 )
+
+    def get_quotes(self):
+        return self.quote_set.all()
 
     @property
     def city(self):
