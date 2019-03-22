@@ -30,7 +30,7 @@ class Account(AbstractUser):
     gender = models.CharField(
         choices=get_choices(constants.GENDER), max_length=8,
         null=True, blank=True)
-    address = models.TextField(null=True, blank=True)
+    address = models.ForeignKey('users.Address', null=True, blank=True)
     pincode = models.CharField(max_length=6, null=True, blank=True)
 
     def send_notification(self, **kwargs):
@@ -288,6 +288,23 @@ class Pincode(models.Model):
 
     def __unicode__(self):
         return '%s - %s - (%s)' % (self.pincode, self.city, self.state.name)
+
+    @classmethod
+    def get_pincode(cls, pincode):
+        pincodes = cls.objects.filter(pincode=pincode)
+        if pincodes.exists():
+            return pincodes.get()
+        return None
+
+
+class Address(BaseModel):
+    street = models.CharField(max_length=128)
+    pincode = models.ForeignKey('users.Pincode')
+
+    @property
+    def full_address(self):
+        return '%s, %s, %s - %s' % (
+            self.street, self.pincode.city, self.state, self.pincode)
 
 
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))
