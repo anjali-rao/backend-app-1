@@ -77,10 +77,10 @@ class Lead(BaseModel):
         self.children = len(ages) - self.adult
 
     def calculate_final_score(self):
-        from django.db.models import Sum
         from questionnaire.models import Response
         self.final_score = Response.objects.select_related('answer').filter(
-            lead_id=self.id).aggregate(s=Sum('answer__score'))['s'] * 100000
+            lead_id=self.id).aggregate(
+                s=models.Sum('answer__score'))['s'] * 100000
         self.save()
 
     def refresh_quote_data(self):
@@ -94,7 +94,7 @@ class Lead(BaseModel):
             sum_assured=self.final_score, product_variant__adult=self.adult,
             product_variant__city=self.city,
             product_variant__children=self.children)
-        for premium in Premium.objects.all():
+        for premium in premiums:
             quote = Quote.objects.create(
                 lead_id=self.id, premium_id=premium.id)
             features = premium.product_variant.feature_set.all()
