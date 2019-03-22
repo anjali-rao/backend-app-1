@@ -13,11 +13,12 @@ from django.utils.timezone import now
 from django.dispatch import receiver
 from django.core.cache import cache
 
-from goplannr.settings import JWT_SECRET
+from goplannr.settings import JWT_SECRET, BASE_HOST
 
 import uuid
 
 import jwt
+from django.utils.translation import ugettext_lazy as _
 
 
 class Account(AbstractUser):
@@ -29,7 +30,7 @@ class Account(AbstractUser):
     gender = models.CharField(
         choices=get_choices(constants.GENDER), max_length=8,
         null=True, blank=True)
-    address = models.TextField(null=True, blank=True)
+    address = models.ForeignKey('users.Address', null=True, blank=True)
     pincode = models.CharField(max_length=6, null=True, blank=True)
 
     def send_notification(self, **kwargs):
@@ -87,6 +88,9 @@ class Account(AbstractUser):
                 username = genrate_random_string(10)
         return username
 
+    class Meta:
+        verbose_name = _('Account')
+
 
 class User(BaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -103,7 +107,6 @@ class User(BaseModel):
         return self.account.username
 
     def get_authorization_key(self):
-        # TO DOs:  Change to basic auth
         return jwt.encode(
             {'user_id': str(self.id)},
             JWT_SECRET, algorithm='HS256')
@@ -112,7 +115,7 @@ class User(BaseModel):
     def get_authenticated_user(cls, token):
         try:
             payload = jwt.decode(token, JWT_SECRET)
-            return cls.objects.get(account__id=payload.get('user_id'))
+            return cls.objects.get(id=payload.get('user_id'))
         except cls.DoesNotExist:
             return None
         except jwt.InvalidTokenError:
@@ -165,6 +168,20 @@ class User(BaseModel):
     def bank_name(self):
         return self.bankaccount_set.get(default=True).branch.bank.name
 
+    def get_categories(self):
+        categories = list()
+        for category in self.enterprise.categories.values('id', 'name'):
+            companies = self.enterprise.companies.values(
+                'name', 'hexa_code', 'logo').filter(
+                    categories__id=category['id'])
+            for company in companies:
+                categories.append({
+                    'name': category['name'], 'logo': BASE_HOST + company['logo'], # noqa
+                    'company': company['name'], 'id': category['id'],
+                    'hexa_code': company['hexa_code']
+                })
+        return categories
+
 
 class Campaign(BaseModel):
     description = models.CharField(max_length=32)
@@ -173,15 +190,13 @@ class Campaign(BaseModel):
 
 class Enterprise(BaseModel):
     name = models.CharField(max_length=64)
+    companies = models.ManyToManyField('product.Company')
+    categories = models.ManyToManyField('product.Category')
     hexa_code = models.CharField(max_length=8, default='#005db1')
     logo = models.ImageField(upload_to=constants.ENTERPRISE_UPLOAD_PATH)
 
     def __unicode__(self):
         return self.name
-
-    @property
-    def companies(self):
-        return self.company_set.all()
 
     def generate_referral_code(self):
         pass
@@ -274,6 +289,23 @@ class Pincode(models.Model):
     def __unicode__(self):
         return '%s - %s - (%s)' % (self.pincode, self.city, self.state.name)
 
+    @classmethod
+    def get_pincode(cls, pincode):
+        pincodes = cls.objects.filter(pincode=pincode)
+        if pincodes.exists():
+            return pincodes.get()
+        return None
+
+
+class Address(BaseModel):
+    street = models.CharField(max_length=128)
+    pincode = models.ForeignKey('users.Pincode')
+
+    @property
+    def full_address(self):
+        return '%s, %s, %s - %s' % (
+            self.street, self.pincode.city, self.state, self.pincode)
+
 
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))
 def user_post_save(sender, instance, created, **kwargs):
@@ -294,7 +326,6 @@ def user_post_save(sender, instance, created, **kwargs):
 def account_post_save(sender, instance, created, **kwargs):
     message = {
         'message': constants.USER_CREATION_MESSAGE % (
-            instance.phone_no),
-        'type': 'sms'
+            instance.phone_no), 'type': 'sms'
     }
     instance.send_notification(**message)

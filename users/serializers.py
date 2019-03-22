@@ -3,7 +3,8 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
 
-from users.models import User, Account, Enterprise, Referral
+from users.models import User, Account, Enterprise
+
 from utils import constants, genrate_random_string
 
 

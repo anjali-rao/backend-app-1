@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from django.contrib.postgres.fields import JSONField
 
 from utils.model import BaseModel, models
 from utils import constants
@@ -8,8 +7,6 @@ from utils import constants
 
 class Category(BaseModel):
     name = models.CharField(max_length=128)
-    short_name = models.CharField(max_length=40)
-    logo = models.ImageField(upload_to=constants.CATEGORY_UPLOAD_PATH)
     description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
@@ -17,9 +14,9 @@ class Category(BaseModel):
 
 
 class Company(BaseModel):
-    name = models.CharField(max_length=256)
-    enterprise = models.ForeignKey('users.Enterprise')
-    categories = models.ManyToManyField(Category)
+    name = models.CharField(max_length=128)
+    short_name = models.CharField(max_length=64)
+    categories = models.ManyToManyField('product.Category')
     logo = models.ImageField(upload_to=constants.COMPANY_UPLOAD_PATH)
     hexa_code = models.CharField(max_length=8)
     short_name = models.CharField(max_length=128)
@@ -34,7 +31,7 @@ class Company(BaseModel):
 
 
 class CompanyDetails(BaseModel):
-    company = models.OneToOneField(Company)
+    company = models.OneToOneField('product.Company')
     fact_file = models.TextField(null=True, blank=True)
     joint_venture = models.TextField(null=True, blank=True)
     formation_year = models.CharField(max_length=4, null=True, blank=True)
@@ -43,8 +40,8 @@ class CompanyDetails(BaseModel):
 
 
 class CompanyCategory(BaseModel):
-    category = models.ForeignKey(Category)
-    company = models.ForeignKey(Company)
+    category = models.ForeignKey('product.Category')
+    company = models.ForeignKey('product.Company')
     claim_settlement = models.TextField(null=True, blank=True)
     offer_flag = models.BooleanField(default=False)
     # network = models.ManyToManyField(NetworkHospital)
@@ -54,10 +51,21 @@ class CompanyCategory(BaseModel):
 
 
 class ProductVariant(BaseModel):
-    company_category = models.ForeignKey(CompanyCategory)
-    name = models.CharField(max_length=127, default="")
+    company_category = models.ForeignKey('product.CompanyCategory')
+    name = models.CharField(max_length=128, default="")
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, blank=True)
+    adult = models.IntegerField(default=0)
+    children = models.IntegerField(default=0)
+    city = models.CharField(max_length=64)
+    chronic = models.BooleanField(default=True)
+
+    def get_product_details(self):
+        return {
+            'name': self.name,
+            'company': self.company_category.company.name,
+            'category': self.company_category.category.name
+        }
 
     class Meta:
         unique_together = ('company_category', 'name')
@@ -74,7 +82,7 @@ class CustomerSegment(BaseModel):
 
 
 class FeatureMaster(BaseModel):
-    category = models.ForeignKey(Category)
+    category = models.ForeignKey('product.Category')
     name = models.CharField(max_length=127, default="")
     description = models.TextField(default="")
 
@@ -84,8 +92,8 @@ class FeatureMaster(BaseModel):
 
 
 class Feature(BaseModel):
-    feature_master = models.ForeignKey(FeatureMaster)
-    product_variant = models.ForeignKey(ProductVariant)
+    feature_master = models.ForeignKey('product.FeatureMaster')
+    product_variant = models.ForeignKey('product.ProductVariant')
 
     def __unicode__(self):
         return "%s - %s" % (
@@ -95,7 +103,7 @@ class Feature(BaseModel):
 class FeatureCustomerSegmentScore(BaseModel):
     feature = models.ForeignKey(Feature)
     customer_segment = models.ForeignKey(CustomerSegment)
-    score = models.FloatField(null=True, blank=True, default=None)
+    score = models.FloatField(default=0.0)
 
 
 class SumInsuredMaster(models.Model):
@@ -115,24 +123,19 @@ class DeductibleMaster(models.Model):
 
 
 class Premium(BaseModel):
-    product_variant = models.ForeignKey(ProductVariant)
-    sum_insured = models.ForeignKey(SumInsuredMaster)
+    product_variant = models.ForeignKey('product.ProductVariant')
+    sum_assured = models.ForeignKey('product.SumInsuredMaster')
+    amount = models.IntegerField(default=0, blank=False, null=False)
     min_age = models.IntegerField(default=0)
     max_age = models.IntegerField(default=0)
-    deductible = models.ForeignKey(DeductibleMaster)
+    deductible = models.ForeignKey('product.DeductibleMaster')
     base_premium = models.FloatField(default=constants.DEFAULT_BASE_PREMIUM)
     gst = models.FloatField(default=constants.DEFAULT_GST)
     commission = models.FloatField(default=constants.DEFAULT_COMMISSION)
 
-
-class Questionnaire(BaseModel):
-    category = models.ForeignKey(Category)
-    question = models.TextField()
-    answer_score = JSONField()
-
-
-class QuestionAnswer(BaseModel):
-    question = models.ForeignKey(Questionnaire)
-    # lead = models.ForeignKey(Lead)
-    answer = models.TextField()
-    score = models.FloatField()
+    def get_details(self):
+        return {
+            'sum_assured': self.sum_assured.number,
+            'amount': self.amount,
+            'commision': self.commission
+        }

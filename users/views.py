@@ -5,7 +5,7 @@ from rest_framework.decorators import api_view
 
 from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
-    AuthorizationSerializer, ChangePasswordSerializer,
+    AuthorizationSerializer, ChangePasswordSerializer
 )
 
 

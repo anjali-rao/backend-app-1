@@ -11,7 +11,15 @@ LEAD_STAGE_CHOICES = (
     (0, 'New'), (1, 'Appointment Scheduled'), (2, 'Needs'), (3, 'Quote'),
     (4, 'Cart'), (5, 'Proposal'), (6, 'Payment'), (7, 'Submitted'),
     (8, 'Issued'))
+STATUS_CHOICES = (('pending','Pending'),('accepted','Accepted'),('rejected','Rejected')) # noqa
+KYC_DOC_TYPES = ('pan', 'passport', 'voter_card')
 
+DOC_TYPES = ('pan', 'license', 'photo')
+DOCS_UPLOAD_TYPES = {
+    'pan': 'advisor/pan',
+    'license': 'advisor/license',
+    'photo': 'advisor/selfie'
+}
 
 # Defaults
 OCCUPATION_DEFAULT_CHOICE = 3
@@ -20,13 +28,7 @@ DEFAULT_ENTERPRISE = 'GoPlannr'
 DEFAULT_BASE_PREMIUM = 0.0
 DEFAULT_GST = 0.18
 DEFAULT_COMMISSION = 0.20
-
-DOC_TYPES = ('pan', 'license', 'photo')
-DOCS_UPLOAD_TYPES = {
-    'pan': 'advisor/pan',
-    'license': 'advisor/license',
-    'photo': 'advisor/selfie'
-}
+ADULT_AGE_LIMIT = 18
 
 # Success messages
 OTP_MESSAGE = 'Your One Time Password for GoPlannr is : %s'
@@ -53,11 +55,19 @@ INVALID_PASSWORD = 'Invalid password provided.'
 INVALID_USERNAME_PHONE_COMBINATION = 'Invalid username and phone no combination.' # noqa
 PASSWORD_MISMATCH = 'Password and confirm password mismatch'
 ACCOUNT_DISABLED = 'Account is unactive. Please contact Goplannr for reactivation' # noqa
+INVALID_CATEGORY_ID = 'Category id passed is invalid or category doesnot exists.' # noqa
+INVALID_CUSTOMER_SEGMENT = 'Invalid Customer Segment id'
+INVALID_ANSWER_ID = 'Invalid Answer id provided.'
+INVALID_QUESTION_ID = 'Invalid Answer id provided.'
+INVALID_GENDER_PROVIDED = 'Invalid gender input provided.'
+INVALID_PINCODE = 'Invalid pincode provided.'
 
+# Creation Fields
 ACCOUNT_CREATION_FIELDS = (
     'password', 'first_name', 'last_name', 'email',
     'pincode', 'pan_no'
 )
+
 
 # Upload paths
 COMPANY_UPLOAD_PATH = 'company'
