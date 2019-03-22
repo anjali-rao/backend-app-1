@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from django.contrib.postgres.fields import JSONField
 
 from utils.model import BaseModel, models
 from utils import constants
@@ -42,7 +41,7 @@ class CompanyDetails(BaseModel):
 
 class CompanyCategory(BaseModel):
     category = models.ForeignKey('product.Category')
-    company = models.ForeignKey(Company)
+    company = models.ForeignKey('product.Company')
     claim_settlement = models.TextField(null=True, blank=True)
     offer_flag = models.BooleanField(default=False)
     # network = models.ManyToManyField(NetworkHospital)
@@ -56,6 +55,10 @@ class ProductVariant(BaseModel):
     name = models.CharField(max_length=128, default="")
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, blank=True)
+    adult = models.IntegerField(default=0)
+    children = models.IntegerField(default=0)
+    city = models.CharField(max_length=64)
+    chronic = models.BooleanField(default=True)
 
     class Meta:
         unique_together = ('company_category', 'name')
@@ -93,7 +96,7 @@ class Feature(BaseModel):
 class FeatureCustomerSegmentScore(BaseModel):
     feature = models.ForeignKey(Feature)
     customer_segment = models.ForeignKey(CustomerSegment)
-    score = models.FloatField(null=True, blank=True, default=None)
+    score = models.FloatField(default=0.0)
 
 
 class SumInsuredMaster(models.Model):
@@ -114,10 +117,10 @@ class DeductibleMaster(models.Model):
 
 class Premium(BaseModel):
     product_variant = models.ForeignKey('product.ProductVariant')
-    sum_insured = models.ForeignKey('product.SumInsuredMaster')
+    sum_assured = models.ForeignKey('product.SumInsuredMaster')
     min_age = models.IntegerField(default=0)
     max_age = models.IntegerField(default=0)
-    deductible = models.ForeignKey(DeductibleMaster)
+    deductible = models.ForeignKey('product.DeductibleMaster')
     base_premium = models.FloatField(default=constants.DEFAULT_BASE_PREMIUM)
     gst = models.FloatField(default=constants.DEFAULT_GST)
     commission = models.FloatField(default=constants.DEFAULT_COMMISSION)

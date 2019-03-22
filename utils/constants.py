@@ -11,6 +11,7 @@ LEAD_STAGE_CHOICES = (
     (0, 'New'), (1, 'Appointment Scheduled'), (2, 'Needs'), (3, 'Quote'),
     (4, 'Cart'), (5, 'Proposal'), (6, 'Payment'), (7, 'Submitted'),
     (8, 'Issued'))
+QUOTE_STAUTS_CHOICES = (('pending','Pending'),('accepted','Accepted'),('rejected','Rejected')) # noqa
 
 
 # Defaults
@@ -20,6 +21,7 @@ DEFAULT_ENTERPRISE = 'GoPlannr'
 DEFAULT_BASE_PREMIUM = 0.0
 DEFAULT_GST = 0.18
 DEFAULT_COMMISSION = 0.20
+ADULT_AGE_LIMIT = 18
 
 DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = {
@@ -55,6 +57,9 @@ PASSWORD_MISMATCH = 'Password and confirm password mismatch'
 ACCOUNT_DISABLED = 'Account is unactive. Please contact Goplannr for reactivation' # noqa
 INVALID_CATEGORY_ID = 'Category id passed is invalid or category doesnot exists.' # noqa
 INVALID_CUSTOMER_SEGMENT = 'Invalid Customer Segment id'
+INVALID_ANSWER_ID = 'Invalid Answer id provided.'
+INVALID_QUESTION_ID = 'Invalid Answer id provided.'
+INVALID_GENDER_PROVIDED = 'Invalid gender input provided.'
 
 ACCOUNT_CREATION_FIELDS = (
     'password', 'first_name', 'last_name', 'email',
