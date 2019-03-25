@@ -104,7 +104,6 @@ class CreateUserSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        # more efficent way exists like using classmethod
         validated_data.update(User.get_referral_details(
             validated_data.get('referral_code')))
         account = self.get_account(validated_data)
@@ -129,7 +128,6 @@ class CreateUserSerializer(serializers.ModelSerializer):
     def response(self):
         return {
             'phone_no': self.validated_data['phone_no'],
-            'email': self.validated_data['email'],
             'message': constants.USER_CREATED_SUCESS
         }
 
@@ -225,7 +223,6 @@ class AuthorizationSerializer(serializers.Serializer):
     def response(self):
         return {
             'authorization': self.get_user().get_authorization_key(),
-            'phone_no': self.validated_data['phone_no'],
             'message': constants.AUTHORIZATION_GENERATED,
             'details': UserSerializer(self.get_user()).data,
         }
