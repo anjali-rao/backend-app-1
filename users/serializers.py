@@ -242,20 +242,24 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate_transaction_id(self, value):
         accounts = Account.objects.filter(phone_no=self.initial_data.get('phone_no'))
-        if not accounts.exists() or not cache.get('TXN:%s' % accounts.get().account.phone_no) == value:
+        if not accounts.exists() or not cache.get('TXN:%s' % accounts.get().phone_no) == value:
             raise serializers.ValidationError(
                 constants.INVALID_TRANSACTION_ID)
         cache.delete('TXN:%s' % self.initial_data.get('phone_no'))
         return value
 
     def get_account(self):
-        Account.objects.get(phone_no=self.validated_data['phone_no'])
+        return Account.objects.get(phone_no=self.validated_data['phone_no'])
 
     @property
     def response(self):
         account = self.get_account()
         account.set_password(self.validated_data['new_password'])
         account.save()
+        message = {
+            'message': constants.USER_PASSWORD_CHANGE, 'type': 'sms'
+        }
+        account.send_notification(**message)
         return {
             'message': constants.PASSWORD_CHANGED
         }

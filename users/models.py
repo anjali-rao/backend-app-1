@@ -329,8 +329,9 @@ def user_post_save(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Account, dispatch_uid="action%s" % str(now()))
 def account_post_save(sender, instance, created, **kwargs):
-    message = {
-        'message': constants.USER_CREATION_MESSAGE % (
-            instance.phone_no), 'type': 'sms'
-    }
-    instance.send_notification(**message)
+    if created:
+        message = {
+            'message': constants.USER_CREATION_MESSAGE % (
+                instance.phone_no), 'type': 'sms'
+        }
+        instance.send_notification(**message)

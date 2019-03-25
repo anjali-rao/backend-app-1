@@ -70,7 +70,7 @@ class SearchAccount(generics.ListAPIView):
         queryset = Account.objects.filter(user__user_type__in=['subscriber', 'pos'])
         params = self.request.query_params
         if 'pincode' in params:
-            queryset = queryset.filter(pincode_id=params['pincode'])
+            queryset = queryset.filter(pincode=params['pincode'])
         if 'company' in params:
             queryset = queryset.filter(user__enterprise__company_id=params['company'])
         if 'category' in params:

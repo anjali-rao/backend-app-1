@@ -38,6 +38,7 @@ AUTHORIZATION_GENERATED = 'Authorization key generated successfully.'
 PASSWORD_CHANGED = 'Password changed successfully.'
 USER_CREATION_MESSAGE = 'Hi,\nYour account with GoPlannr has been created successfully with phone no %s.\n\nRegards\nTeam GoPlannr' # noqa
 USER_CREATED_SUCESS = 'User created successfully!'
+USER_PASSWORD_CHANGE = 'Hi,\nYour GoPlannr account password has been changed successfully.\n\nRegards\nTeam GoPlannr' # noqa
 
 # TTL's (seconds)
 OTP_TTL = 900
