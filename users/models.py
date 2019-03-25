@@ -60,15 +60,15 @@ class Account(AbstractUser):
     @staticmethod
     def generate_otp(phone_no):
         import random
-        otp = cache.get(phone_no)
+        otp = cache.get('OTP:%s' % phone_no)
         if not otp:
             otp = random.randint(1000, 9999)
-            cache.set(phone_no, otp, constants.OTP_TTL)
+            cache.set('OTP:%s' % phone_no, otp, constants.OTP_TTL)
         return otp
 
     @staticmethod
     def verify_otp(phone_no, otp):
-        return otp == cache.get(phone_no)
+        return otp == cache.get('OTP:%s' % phone_no)
 
     @classmethod
     def get_account(cls, phone_no):
@@ -87,6 +87,11 @@ class Account(AbstractUser):
             while cls.objects.filter(username=username).exists():
                 username = genrate_random_string(10)
         return username
+
+    @property
+    def age(self):
+        days = (now().date() - self.dob).days
+        return '%s years and %s months' % ((days % 365) / 30, days / 365)
 
     class Meta:
         verbose_name = _('Account')
@@ -202,8 +207,8 @@ class Enterprise(BaseModel):
         pass
 
 
-class UserDetails(BaseModel):
-    user = models.OneToOneField(User)
+class AccountDetails(BaseModel):
+    account = models.OneToOneField(Account)
     agent_code = models.CharField(max_length=16)
     branch_code = models.CharField(max_length=16)
     designation = models.CharField(max_length=16)
