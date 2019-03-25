@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
 
-from users.models import User, Account, Enterprise
+from users.models import User, Account, Enterprise, AccountDetails
 
 from utils import constants, genrate_random_string
 
@@ -46,7 +46,7 @@ class OTPVerificationSerializer(serializers.Serializer):
     def get_transaction_id(self):
         txn_id = genrate_random_string(12)
         cache.set(
-            self.validated_data['phone_no'], txn_id, constants.TRANSACTION_TTL)
+            'TXN:%s' % self.validated_data['phone_no'], txn_id, constants.TRANSACTION_TTL)
         return txn_id
 
     @property
@@ -89,10 +89,10 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return value
 
     def validate_transaction_id(self, value):
-        if not cache.get(self.initial_data.get('phone_no')) == value:
+        if not cache.get('TXN:%s' % self.initial_data.get('phone_no')) == value:
             raise serializers.ValidationError(
                 constants.INVALID_TRANSACTION_ID)
-        cache.delete(self.initial_data['phone_no'])
+        cache.delete('TXN:%s' % self.initial_data['phone_no'])
         return value
 
     class Meta:
@@ -245,10 +245,10 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate_transaction_id(self, value):
         users = User.objects.filter(username=self.initial_data.get('phone_no'))
-        if not cache.get(users.get().account.phone_no) == value:
+        if not cache.get('TXN:%s' % users.get().account.phone_no) == value:
             raise serializers.ValidationError(
                 constants.INVALID_TRANSACTION_ID)
-        cache.delete(self.initial_data.get('phone_no'))
+        cache.delete('TXN:%s' % self.initial_data.get('phone_no'))
         return value
 
     def get_account(self):
@@ -262,3 +262,32 @@ class ChangePasswordSerializer(serializers.Serializer):
         return {
             'message': constants.PASSWORD_CHANGED
         }
+
+
+class AccountDetailsSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = AccountDetails
+        fields = '__all__'
+
+
+class AccountSearchSerializers(serializers.ModelSerializer):
+
+    details = serializers.SerializerMethodField()
+
+    def get_details(self, obj):
+        return AccountDetailsSerializers(obj.advisordetails).data
+
+    class Meta:
+        model = Account
+        fields = (
+            'phone', 'pincode', 'pan_no', 'gender', 'address', 'age',
+            'details'
+        )
+
+
+
+
+
+
+

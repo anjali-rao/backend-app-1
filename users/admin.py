@@ -6,7 +6,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from users.models import (
-    Account, User, Campaign, UserDetails, Documents, Bank, BankAccount,
+    Account, User, Campaign, AccountDetails, Documents, Bank, BankAccount,
     BankBranch, Enterprise)
 
 
@@ -41,12 +41,12 @@ class UserAdmin(admin.ModelAdmin):
     raw_id_fields = ('account', 'enterprise', 'campaign')
 
 
-@admin.register(UserDetails)
-class UserDetailsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'agent_code', 'channel', 'status')
+@admin.register(AccountDetails)
+class AccountDetailsAdmin(admin.ModelAdmin):
+    list_display = ('account', 'agent_code', 'channel', 'status')
     list_filter = ('channel', 'status')
-    search_fields = ('user__account__username', 'user__account__phone_no')
-    raw_id_fields = ('user',)
+    search_fields = ('account__username', 'user__account__phone_no')
+    raw_id_fields = ('account',)
 
 
 @admin.register(Documents)
