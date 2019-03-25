@@ -5,7 +5,8 @@ from rest_framework.decorators import api_view
 
 from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
-    AuthorizationSerializer, ChangePasswordSerializer
+    AuthorizationSerializer, ChangePasswordSerializer, AccountSearchSerializers, 
+    Account
 )
 
 
@@ -50,3 +51,30 @@ def update_password(request, version):
     serializer.is_valid(raise_exception=True)
     return Response(
         serializer.response, status=status.HTTP_200_OK)
+
+
+# class GetUserDetails(generics.RetrieveAPIView):
+#     permission_classes = [permissions.AllowAny]
+#     serializer_class = AdvisorSerializers
+#     queryset = Advisor.objects.all()
+#     lookup_field = 'phone'
+# 
+#     def get_queryset(self):
+#         queryset = Account.objects.filter(user__user_type__in=['subscriber', 'pos'], phone_no=self.request.query_params['phone_no'])
+
+class SearchAccount(generics.ListAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = AccountSearchSerializers
+
+    def get_queryset(self):
+        queryset = Account.objects.filter(user__user_type__in=['subscriber', 'pos'])
+        params = self.request.query_params
+        if 'pincode' in params:
+            queryset = queryset.filter(pincode_id=params['pincode'])
+        if 'company' in params:
+            queryset = queryset.filter(user__enterprise__company_id=params['company'])
+        if 'category' in params:
+                queryset = queryset.filters(
+                    user__enterprise__categories=params['category'])
+        return queryset
+
