@@ -241,8 +241,8 @@ class ChangePasswordSerializer(serializers.Serializer):
         return value
 
     def validate_transaction_id(self, value):
-        users = User.objects.filter(username=self.initial_data.get('phone_no'))
-        if not cache.get('TXN:%s' % users.get().account.phone_no) == value:
+        accounts = Account.objects.filter(phone_no=self.initial_data.get('phone_no'))
+        if not accounts.exists() or not cache.get('TXN:%s' % accounts.get().account.phone_no) == value:
             raise serializers.ValidationError(
                 constants.INVALID_TRANSACTION_ID)
         cache.delete('TXN:%s' % self.initial_data.get('phone_no'))
