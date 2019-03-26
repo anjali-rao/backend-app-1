@@ -13,6 +13,7 @@ LEAD_STAGE_CHOICES = (
     (8, 'Issued'))
 STATUS_CHOICES = (('pending','Pending'),('accepted','Accepted'),('rejected','Rejected')) # noqa
 KYC_DOC_TYPES = ('pan', 'passport', 'voter_card')
+QUESTION_COICES = ('mcq', 'single')
 
 DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = {
