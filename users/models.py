@@ -104,12 +104,22 @@ class User(BaseModel):
         choices=get_choices(constants.USER_TYPE), max_length=16,
         default=constants.DEFAULT_USER_TYPE)
     campaign = models.ForeignKey('users.Campaign', null=True, blank=True)
-    enterprise = models.ForeignKey('users.Enterprise')
+    enterprise_id = models.PositiveIntegerField(null=True, blank=True)
     flag = JSONField(default=constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
 
     def __unicode__(self):
         return self.account.username
+
+    @property
+    def enterprise(self):
+        if self.user_type == 'subscriber':
+            modelClass = SubcriberEnterprise
+        else:
+            modelClass = Enterprise
+        enterprises = modelClass.objects.filter(id=self.enterprise_id)
+        if enterprises.exists():
+            return enterprises.get()
 
     def get_authorization_key(self):
         return jwt.encode(
@@ -139,12 +149,12 @@ class User(BaseModel):
         if not referrals.exists():
             return {
                 'user_type': constants.DEFAULT_USER_TYPE,
-                'enterprise_id': Enterprise.objects.get(
+                'enterprise_id': SubcriberEnterprise.objects.get(
                     name=constants.DEFAULT_ENTERPRISE).id
             }
         referral = referrals.get()
         return {
-            'enterprise_id': referral.enterprise or Enterprise.objects.get(
+            'enterprise_id': referral.enterprise or SubcriberEnterprise.objects.get( # noqa
                 name=constants.DEFAULT_ENTERPRISE).id,
             'user_type': 'enterprise' if referral.enterprise else constants.DEFAULT_USER_TYPE # noqa
         }
@@ -175,8 +185,14 @@ class User(BaseModel):
 
     def get_categories(self):
         categories = list()
-        for category in self.enterprise.categories.values('id', 'name'):
-            companies = self.enterprise.companies.values(
+        categories_queryset = self.enterprise.categories
+        companies_queryset = self.enterprise.companies
+        if self.user_type == 'subscriber' or not categories_queryset:
+            from product.models import Category, Company
+            categories_queryset = Category.objects
+            companies_queryset = Company.objects
+        for category in categories_queryset.values('id', 'name'):
+            companies = companies_queryset.values(
                 'name', 'hexa_code', 'logo').filter(
                     categories__id=category['id'])
             for company in companies:
@@ -195,12 +211,31 @@ class Campaign(BaseModel):
 
 class Enterprise(BaseModel):
     name = models.CharField(max_length=64)
-    companies = models.ManyToManyField('product.Company')
-    categories = models.ManyToManyField('product.Category')
+    companies = models.ManyToManyField('product.Company', blank=True)
+    categories = models.ManyToManyField('product.Category', blank=True)
     hexa_code = models.CharField(max_length=8, default='#005db1')
-    logo = models.ImageField(upload_to=constants.ENTERPRISE_UPLOAD_PATH)
+    logo = models.ImageField(
+        upload_to=constants.ENTERPRISE_UPLOAD_PATH,
+        default=constants.DEFAULT_LOGO)
 
-    def __unicode__(self):
+    def __str__(self):
+        return self.name
+
+    def generate_referral_code(self):
+        pass
+
+
+class SubcriberEnterprise(BaseModel):
+    name = models.CharField(
+        max_length=64, default=constants.DEFAULT_ENTERPRISE)
+    companies = models.ManyToManyField('product.Company', blank=True)
+    categories = models.ManyToManyField('product.Category', blank=True)
+    hexa_code = models.CharField(max_length=8, default='#005db1')
+    logo = models.ImageField(
+        upload_to=constants.ENTERPRISE_UPLOAD_PATH,
+        default=constants.DEFAULT_LOGO)
+
+    def __str__(self):
         return self.name
 
     def generate_referral_code(self):
@@ -315,16 +350,18 @@ class Address(BaseModel):
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))
 def user_post_save(sender, instance, created, **kwargs):
     if created:
-        if not instance.__class__.objects.filter(
-                user_type=constants.DEFAULT_USER_TYPE).exists():
-            new_user = instance.__class__.objects.create(
-                account_id=instance.account.id,
-                user_type=constants.DEFAULT_USER_TYPE,
-                enterprise_id=Enterprise.objects.get(
-                    name=constants.DEFAULT_ENTERPRISE).id,
-                is_active=True
-            )
-            new_user.generate_referral()
+        pass
+# Currently Not required have to implement once product is lauched via cron
+#        if not instance.__class__.objects.filter(
+#                user_type=constants.DEFAULT_USER_TYPE).exists():
+#            new_user = instance.__class__.objects.create(
+#                account_id=instance.account.id,
+#                user_type=constants.DEFAULT_USER_TYPE,
+#                enterprise_id=Enterprise.objects.get(
+#                    name=constants.DEFAULT_ENTERPRISE).id,
+#                is_active=True
+#            )
+#            new_user.generate_referral()
 
 
 @receiver(post_save, sender=Account, dispatch_uid="action%s" % str(now()))
