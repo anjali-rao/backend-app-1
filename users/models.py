@@ -350,16 +350,18 @@ class Address(BaseModel):
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))
 def user_post_save(sender, instance, created, **kwargs):
     if created:
-        if not instance.__class__.objects.filter(
-                user_type=constants.DEFAULT_USER_TYPE).exists():
-            new_user = instance.__class__.objects.create(
-                account_id=instance.account.id,
-                user_type=constants.DEFAULT_USER_TYPE,
-                enterprise_id=Enterprise.objects.get(
-                    name=constants.DEFAULT_ENTERPRISE).id,
-                is_active=True
-            )
-            new_user.generate_referral()
+        pass
+# Currently Not required have to implement once product is lauched via cron
+#        if not instance.__class__.objects.filter(
+#                user_type=constants.DEFAULT_USER_TYPE).exists():
+#            new_user = instance.__class__.objects.create(
+#                account_id=instance.account.id,
+#                user_type=constants.DEFAULT_USER_TYPE,
+#                enterprise_id=Enterprise.objects.get(
+#                    name=constants.DEFAULT_ENTERPRISE).id,
+#                is_active=True
+#            )
+#            new_user.generate_referral()
 
 
 @receiver(post_save, sender=Account, dispatch_uid="action%s" % str(now()))
