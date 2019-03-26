@@ -5,21 +5,29 @@ from utils import constants
 
 
 class QuestionnSerializers(serializers.ModelSerializer):
+    question_id = serializers.SerializerMethodField()
     answers = serializers.SerializerMethodField()
+
+    def get_question_id(self, obj):
+        return obj.id
 
     def get_answers(self, obj):
         return AnswerSerializer(obj.answer_set.all(), many=True).data
 
     class Meta:
         model = Question
-        fields = ('category', 'question', 'answers')
+        fields = ('question_id', 'question', 'answers')
 
 
 class AnswerSerializer(serializers.ModelSerializer):
+    answer_id = serializers.SerializerMethodField()
+
+    def get_answer_id(self, obj):
+        return obj.id
 
     class Meta:
         model = Answer
-        fields = ('id', 'question', 'answer')
+        fields = ('answer_id', 'answer')
 
 
 class ResponseSerializer(serializers.Serializer):

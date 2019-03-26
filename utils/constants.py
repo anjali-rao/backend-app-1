@@ -22,6 +22,8 @@ DOCS_UPLOAD_TYPES = {
 }
 
 # Defaults
+DEFAULT_LOGO = 'enterprise/goplannr.png'
+DEFAULT_HEXA_CODE = '#005db1'
 OCCUPATION_DEFAULT_CHOICE = 3
 DEFAULT_USER_TYPE = 'subscriber'
 DEFAULT_ENTERPRISE = 'GoPlannr'

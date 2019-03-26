@@ -7,7 +7,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from users.models import (
     Account, User, Campaign, AccountDetails, Documents, Bank, BankAccount,
-    BankBranch, Enterprise)
+    BankBranch, Enterprise, SubcriberEnterprise)
 
 
 @admin.register(Account)
@@ -34,11 +34,11 @@ class GoPlannerAccountAdmin(BaseUserAdmin):
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = (
-        'account', 'user_type', 'campaign', 'enterprise', 'is_active')
+        'account', 'user_type', 'campaign', 'is_active')
     list_filter = ('is_active', 'user_type')
     search_fields = (
         'account__phone_no', 'account__alternate_no', 'account__aadhar_no')
-    raw_id_fields = ('account', 'enterprise', 'campaign')
+    raw_id_fields = ('account', 'campaign')
 
 
 @admin.register(AccountDetails)
@@ -86,4 +86,9 @@ class CampaignAdmin(admin.ModelAdmin):
 
 @admin.register(Enterprise)
 class EnterpriseAdmin(admin.ModelAdmin):
+    list_display = ('name', 'hexa_code')
+
+
+@admin.register(SubcriberEnterprise)
+class SubcriberEnterpriseAdmin(admin.ModelAdmin):
     list_display = ('name', 'hexa_code')
