@@ -70,6 +70,6 @@ class DeductibleMasterAdmin(admin.ModelAdmin):
 
 @admin.register(Premium)
 class PremiumAdmin(admin.ModelAdmin):
-    list_display = ('product_variant', 'sum_assured', 'min_age', 'max_age')
+    list_display = ('product_variant', 'sum_insured', 'min_age', 'max_age')
     search_fields = ('product_variant__id',)
-    raw_id_fields = ('product_variant', 'sum_assured', 'deductible')
+    raw_id_fields = ('product_variant', 'sum_insured', 'deductible')

@@ -124,7 +124,7 @@ class DeductibleMaster(models.Model):
 
 class Premium(BaseModel):
     product_variant = models.ForeignKey('product.ProductVariant')
-    sum_assured = models.ForeignKey('product.SumInsuredMaster')
+    sum_insured = models.ForeignKey('product.SumInsuredMaster')
     amount = models.IntegerField(default=0, blank=False, null=False)
     min_age = models.IntegerField(default=0)
     max_age = models.IntegerField(default=0)
@@ -135,7 +135,7 @@ class Premium(BaseModel):
 
     def get_details(self):
         return {
-            'sum_assured': self.sum_assured.number,
+            'sum_insured': self.sum_insured.number,
             'amount': self.amount,
             'commision': self.commission
         }

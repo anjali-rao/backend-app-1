@@ -8,13 +8,13 @@ from questionnaire.models import Question, Answer, Response
 
 class QuestionnaireAnswerInLine(admin.TabularInline):
     model = Answer
-    max_num = 5
+    max_num = 10
 
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ('question', 'category')
-    search_fields = ('category__name', 'category__id', 'id')
+    list_display = ('title', 'question', 'category')
+    search_fields = ('category__name', 'category__id', 'id', 'title')
     raw_id_fields = ('category', )
     inlines = (QuestionnaireAnswerInLine, )
 

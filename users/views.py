@@ -74,7 +74,7 @@ class SearchAccount(generics.ListAPIView):
         if 'company' in params:
             queryset = queryset.filter(user__enterprise__company_id=params['company'])
         if 'category' in params:
-                queryset = queryset.filters(
+                queryset = queryset.filter(
                     user__enterprise__categories=params['category'])
         return queryset
 
