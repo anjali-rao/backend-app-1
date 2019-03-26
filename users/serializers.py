@@ -40,17 +40,18 @@ class OTPVerificationSerializer(serializers.Serializer):
                 self.initial_data.get('phone_no'), value):
             raise serializers.ValidationError(
                 constants.OTP_VALIDATION_FAILED)
-        cache.delete(self.initial_data['phone_no'])
         return value
 
     def get_transaction_id(self):
         txn_id = genrate_random_string(12)
         cache.set(
-            'TXN:%s' % self.validated_data['phone_no'], txn_id, constants.TRANSACTION_TTL)
+            'TXN:%s' % self.validated_data['phone_no'], txn_id,
+            constants.TRANSACTION_TTL)
         return txn_id
 
     @property
     def response(self):
+        cache.delete(self.validated_data['phone_no'])
         return {
             'transaction_id': self.get_transaction_id(),
             'message': constants.OTP_SUCCESS
@@ -89,10 +90,10 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return value
 
     def validate_transaction_id(self, value):
-        if not cache.get('TXN:%s' % self.initial_data.get('phone_no')) == value:
+        if not cache.get(
+                'TXN:%s' % self.initial_data.get('phone_no')) == value:
             raise serializers.ValidationError(
                 constants.INVALID_TRANSACTION_ID)
-        cache.delete('TXN:%s' % self.initial_data['phone_no'])
         return value
 
     class Meta:
@@ -110,8 +111,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         data = {
             'account_id': account.id,
             'user_type': validated_data['user_type'],
-            'enterprise_id': validated_data['enterprise_id'],
-            'is_active': True
+            'enterprise_id': validated_data['enterprise_id']
         }
         instance = User.objects.create(**data)
         instance.generate_referral()
@@ -126,6 +126,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
     @property
     def response(self):
+        cache.delete('TXN:%s' % self.validated_data['phone_no'])
         return {
             'phone_no': self.validated_data['phone_no'],
             'message': constants.USER_CREATED_SUCESS
@@ -143,6 +144,11 @@ class AccountSerializer(serializers.ModelSerializer):
 
 
 class EnterpriseSerializer(serializers.ModelSerializer):
+    logo = serializers.SerializerMethodField()
+
+    def get_logo(self, obj):
+        from goplannr.settings import BASE_HOST
+        return BASE_HOST + obj.logo.url
 
     class Meta:
         model = Enterprise
@@ -241,11 +247,12 @@ class ChangePasswordSerializer(serializers.Serializer):
         return value
 
     def validate_transaction_id(self, value):
-        accounts = Account.objects.filter(phone_no=self.initial_data.get('phone_no'))
-        if not accounts.exists() or not cache.get('TXN:%s' % accounts.get().phone_no) == value:
+        accounts = Account.objects.filter(
+            phone_no=self.initial_data.get('phone_no'))
+        if not accounts.exists() or not cache.get(
+                'TXN:%s' % accounts.get().phone_no) == value:
             raise serializers.ValidationError(
                 constants.INVALID_TRANSACTION_ID)
-        cache.delete('TXN:%s' % self.initial_data.get('phone_no'))
         return value
 
     def get_account(self):
@@ -260,6 +267,7 @@ class ChangePasswordSerializer(serializers.Serializer):
             'message': constants.USER_PASSWORD_CHANGE, 'type': 'sms'
         }
         account.send_notification(**message)
+        cache.delete('TXN:%s' % self.validated_data.get('phone_no'))
         return {
             'message': constants.PASSWORD_CHANGED
         }
@@ -285,10 +293,3 @@ class AccountSearchSerializers(serializers.ModelSerializer):
             'phone', 'pincode', 'pan_no', 'gender', 'address', 'age',
             'details'
         )
-
-
-
-
-
-
-

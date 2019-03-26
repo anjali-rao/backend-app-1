@@ -30,7 +30,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEBUG = get_env_var('DEBUG')
 BASE_HOST = get_env_var(
-    'DEFAULT_HOST') if not DEBUG else get_env_var('PRODUCTTION_HOST')
+    'DEFAULT_HOST') if DEBUG else get_env_var('PRODUCTTION_HOST')
 
 AUTH_USER_MODEL = 'users.Account'
 
