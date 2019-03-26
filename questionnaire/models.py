@@ -2,10 +2,15 @@
 from __future__ import unicode_literals
 
 from utils.model import BaseModel, models
+from utils import constants, get_choices
 
 
 class Question(BaseModel):
     category = models.ForeignKey('product.Category')
+    title = models.CharField(max_length=32)
+    question_type = models.CharField(
+        max_length=10, choices=get_choices(constants.QUESTION_COICES),
+        default="single")
     question = models.TextField()
 
 
