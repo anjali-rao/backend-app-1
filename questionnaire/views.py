@@ -31,11 +31,12 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
         lead = self.create_lead(
             serializer.data['category_id'], serializer.data['family'],
             serializer.data['pincode'], serializer.data['customer_segment_id'])
-        for response in serializer.data['answers']:
-            ans_serializer = QuestionnaireResponseSerializer(
-                data=response)
-            ans_serializer.is_valid(raise_exception=True)
-            ans_serializer.save(lead_id=lead.id)
+        for key in serializer.data['answers'].keys():
+            for answer_id in serializer.data['answers'][key]:
+                ans_serializer = QuestionnaireResponseSerializer(
+                    data={'question_id': key, 'answer_id': answer_id})
+                ans_serializer.is_valid(raise_exception=True)
+                ans_serializer.save(lead_id=lead.id)
         lead.calculate_final_score()
         return Response(QuoteSerializers(
             lead.get_quotes(), many=True).data, status=status.HTTP_201_CREATED)
