@@ -59,7 +59,7 @@ class ResponseSerializer(serializers.Serializer):
         return value
 
     def validate_gender(self, value):
-        if value not in constants.GENDER:
+        if value.lower() not in constants.GENDER:
             raise serializers.ValidationError(
                 constants.INVALID_GENDER_PROVIDED)
         return value
