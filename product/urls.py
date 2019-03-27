@@ -5,6 +5,6 @@ from product.views import (
 )
 
 urlpatterns = [
-	url(r'user/search/paramaters$', GetSearchParamater.as_view()),
+    url(r'user/search/paramaters$', GetSearchParamater.as_view()),
     url(r'user/product/categories$', get_user_categories)
 ]

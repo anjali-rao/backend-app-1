@@ -197,7 +197,7 @@ class User(BaseModel):
                     categories__id=category['id'])
             for company in companies:
                 categories.append({
-                    'name': category['name'], 'logo': BASE_HOST + company['logo'], # noqa
+                    'name': category['name'], 'logo': BASE_HOST + '/media/' +  company['logo'], # noqa
                     'company': company['name'], 'id': category['id'],
                     'hexa_code': company['hexa_code']
                 })
