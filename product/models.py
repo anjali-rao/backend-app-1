@@ -15,11 +15,12 @@ class Category(BaseModel):
 
 class Company(BaseModel):
     name = models.CharField(max_length=128)
-    short_name = models.CharField(max_length=64)
-    categories = models.ManyToManyField('product.Category')
-    logo = models.ImageField(upload_to=constants.COMPANY_UPLOAD_PATH)
-    hexa_code = models.CharField(max_length=8)
     short_name = models.CharField(max_length=128)
+    categories = models.ManyToManyField('product.Category')
+    logo = models.ImageField(
+        upload_to=constants.COMPANY_UPLOAD_PATH, default=DEFAULT_LOGO)
+    hexa_code = models.CharField(
+        max_length=8, default=constants.DEFAULT_HEXA_CODE)
     website = models.URLField(null=True, blank=True)
     spoc = models.TextField(null=True, blank=True)
     toll_free_number = models.CharField(max_length=50, null=True, blank=True)
@@ -142,3 +143,6 @@ class Premium(BaseModel):
             'amount': self.amount,
             'commision': self.commission
         }
+
+    def get_commission_amount(self):
+
