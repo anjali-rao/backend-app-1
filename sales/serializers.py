@@ -5,7 +5,7 @@ from users.models import Pincode, Address
 from utils import constants
 
 
-class RecommendationSerializers(serializers.ModelSerializer):
+class QuoteSerializer(serializers.ModelSerializer):
     quote_id = serializers.SerializerMethodField()
     sum_insured = serializers.SerializerMethodField()
     premium = serializers.SerializerMethodField()
@@ -14,6 +14,7 @@ class RecommendationSerializers(serializers.ModelSerializer):
     health_checkups = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
     features = serializers.SerializerMethodField()
+    recommendation_score = serializers.SerializerMethodField()
 
     def get_quote_id(self, obj):
         return obj.id
@@ -39,38 +40,15 @@ class RecommendationSerializers(serializers.ModelSerializer):
     def get_health_checkups(self, obj):
         return obj.lead.health_checkups
 
+    def get_recommendation_score(seld, obj):
+        return obj.feature_score()
+
     class Meta:
         model = Quote
         fields = (
             'quote_id', 'lead_id', 'sum_insured', 'premium',
             'tax_saving', 'wellness_rewards', 'health_checkups',
-            'product', 'features'
-        )
-
-
-class QuoteSerializers(serializers.ModelSerializer):
-    premium = serializers.SerializerMethodField()
-    product = serializers.SerializerMethodField()
-    customer_segment_feature_score = serializers.SerializerMethodField()
-    features = serializers.SerializerMethodField()
-
-    def get_premium(self, obj):
-        return obj.premium.get_details()
-
-    def get_product(self, obj):
-        return obj.premium.product_variant.get_product_details()
-
-    def get_customer_segment_feature_score(self, obj):
-        return obj.feature_score()
-
-    def get_features(self, obj):
-        return QuoteFeature(obj.quotefeature_set.all(), many=True).data
-
-    class Meta:
-        model = Quote
-        fields = (
-            'id', 'status', 'lead_id', 'premium', 'product',
-            'customer_segment_feature_score', 'features'
+            'product', 'features', 'recommendation_score'
         )
 
 
@@ -80,7 +58,7 @@ class QuoteFeature(serializers.ModelSerializer):
     feature_master_id = serializers.SerializerMethodField()
 
     def get_name(self, obj):
-        return obj.feature.feature_master.id
+        return obj.feature.feature_master.name
 
     def get_description(self, obj):
         return obj.feature.feature_master.description
@@ -91,6 +69,25 @@ class QuoteFeature(serializers.ModelSerializer):
     class Meta:
         model = QuoteFeature
         fields = ('id', 'name', 'score', 'description', 'feature_master_id')
+
+
+class QuotesDetailsSerializer(serializers.ModelSerializer):
+    benifits = serializers.SerializerMethodField()
+    coverage = serializers.SerializerMethodField()
+    faq = serializers.SerializerMethodField()
+
+    def get_benifits(self, obj):
+        return
+
+    def get_coverage(self, obj):
+        return
+
+    def get_faq(self, obj):
+        return
+
+    class Meta:
+        model = Quote
+        fields = ('id', 'coverage', 'benifits', 'faq')
 
 
 class CreateApplicationSerializer(serializers.ModelSerializer):

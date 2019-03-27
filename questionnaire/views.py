@@ -9,7 +9,7 @@ from questionnaire.serializers import (
     QuestionnSerializers, Question, ResponseSerializer,
     QuestionnaireResponseSerializer
 )
-from sales.serializers import QuoteSerializers, RecommendationSerializers
+from sales.serializers import QuoteSerializer
 
 
 class GetQuestionnaire(generics.ListAPIView):
@@ -38,7 +38,7 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
             ans_serializer.save(lead_id=lead.id)
         lead.calculate_final_score()
         return Response(
-            RecommendationSerializers(
+            QuoteSerializer(
                 lead.get_recommendated_quote()).data,
             status=status.HTTP_201_CREATED)
 
