@@ -107,6 +107,26 @@ class Lead(BaseModel):
                     score=feature_score.score
                 )
 
+    def get_customer_segment(self):
+        from product.models import CustomerSegment
+        segment_name = 'young adult'
+        if 'self' in self.family:
+            age = self.family['self']
+            if age < 35:
+                segment_name = 'young adult'
+            if any(x in self.family for x in ['mother', 'father']) and age < 35: # noqa
+                segment_name = 'young adult with dependent parents'
+            if 'spouse' in self.family:
+                if age < 35:
+                    segment_name = 'young couple'
+                if age > 50:
+                    segment_name = 'senior citizens'
+                if self.family.get('kid') >= 1 and age < 40:
+                    segment_name = 'young family'
+                if self.family.get('kid') >= 1 and age < 60:
+                    segment_name = 'middle aged family'
+        return CustomerSegment.objects.get(name=segment_name)
+
     def get_quotes(self):
         return self.quote_set.all()
 
