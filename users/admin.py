@@ -7,7 +7,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from users.models import (
     Account, User, Campaign, AccountDetails, Documents, Bank, BankAccount,
-    BankBranch, Enterprise, SubcriberEnterprise)
+    BankBranch, Enterprise, SubcriberEnterprise, State, Pincode)
 
 
 @admin.register(Account)
@@ -92,3 +92,17 @@ class EnterpriseAdmin(admin.ModelAdmin):
 @admin.register(SubcriberEnterprise)
 class SubcriberEnterpriseAdmin(admin.ModelAdmin):
     list_display = ('name', 'hexa_code')
+
+
+@admin.register(State)
+class StateAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
+
+
+@admin.register(Pincode)
+class PincodeAdmin(admin.ModelAdmin):
+    list_display = ('pincode', 'city', 'state', 'city_type')
+    search_fields = ('pincode', 'state__name', 'city')
+    list_filter = ('state__name', 'city')
+    raw_id_fields = ('state',)

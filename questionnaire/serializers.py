@@ -34,7 +34,6 @@ class AnswerSerializer(serializers.ModelSerializer):
 
 class ResponseSerializer(serializers.Serializer):
     category_id = serializers.IntegerField(required=True)
-    customer_segment_id = serializers.IntegerField(required=True)
     gender = serializers.CharField(required=True)
     pincode = serializers.CharField(required=True, max_length=6)
     family = serializers.JSONField(required=True)

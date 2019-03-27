@@ -12,6 +12,7 @@ class Question(BaseModel):
         max_length=10, choices=get_choices(constants.QUESTION_COICES),
         default="single")
     question = models.TextField()
+    order = models.IntegerField(default=0)
 
 
 class Answer(BaseModel):
