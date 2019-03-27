@@ -6,6 +6,10 @@ from utils.model import BaseModel, models
 from utils import constants
 
 from sales.models import Quote, QuoteFeature
+from product.models import (
+    Premium, FeatureCustomerSegmentScore
+)
+import math
 
 
 class Contact(BaseModel):
@@ -29,7 +33,7 @@ class Contact(BaseModel):
     medical_history = models.BooleanField(default=False)
     is_default = models.BooleanField(default=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     class Meta:
@@ -57,6 +61,9 @@ class Lead(BaseModel):
     pincode = models.CharField(max_length=6)
     children = models.IntegerField(default=0)
     family = JSONField(default={})
+    tax_saving = models.FloatField(default=0.30)
+    wellness_rewards = models.FloatField(default=0.10)
+    health_checkups = models.FloatField(default=0.0)
     __original_final_score = None
 
     def save(self, *args, **kwargs):
@@ -66,6 +73,7 @@ class Lead(BaseModel):
                 self.refresh_quote_data()
         except Lead.DoesNotExist:
             self.parse_family()
+            self.customer_segment_id = self.get_customer_segment().id
         super(Lead, self).save(*args, **kwargs)
         self.__original_final_score = self.final_score
 
@@ -78,21 +86,23 @@ class Lead(BaseModel):
 
     def calculate_final_score(self):
         from questionnaire.models import Response
-        self.final_score = Response.objects.select_related('answer').filter(
-            lead_id=self.id).aggregate(
-                s=models.Sum('answer__score'))['s'] * 100000
+        self.final_score = math.ceil(
+            Response.objects.select_related('answer').filter(
+                lead_id=self.id).aggregate(
+                s=models.Sum('answer__score'))['s']) * 100000
         self.save()
 
     def refresh_quote_data(self):
-        from product.models import Premium, FeatureCustomerSegmentScore
         quotes = self.get_quotes()
         if quotes.exists():
             quotes.delete()
-        premiums = Premium.objects.select_related('product_variant').filter(
+        premiums = Premium.objects.select_related(
+            'product_variant', 'sum_insured').filter(
             product_variant__company_category__category_id=self.category_id,
-            min_age__lte=self.min_age, max_age__gte=self.max_age,
-            sum_insured=self.final_score, product_variant__adult=self.adult,
+            min_age__gte=self.min_age, max_age__lte=self.max_age,
+            sum_insured__number=self.final_score,
             product_variant__city=self.city,
+            product_variant__adult=self.adult,
             product_variant__children=self.children)
         for premium in premiums:
             quote = Quote.objects.create(
@@ -107,17 +117,38 @@ class Lead(BaseModel):
                     score=feature_score.score
                 )
 
+    def get_customer_segment(self):
+        from product.models import CustomerSegment
+        segment_name = 'young adult'
+        if 'self' in self.family:
+            age = self.family['self']
+            if age < 35:
+                segment_name = 'young adult'
+            if any(x in self.family for x in ['mother', 'father']) and age < 35: # noqa
+                segment_name = 'young adult with dependent parents'
+            if 'spouse' in self.family:
+                if age < 35:
+                    segment_name = 'young couple'
+                if age > 50:
+                    segment_name = 'senior citizens'
+                if self.family.get('kid') >= 1 and age < 40:
+                    segment_name = 'young family'
+                if self.family.get('kid') >= 1 and age < 60:
+                    segment_name = 'middle aged family'
+        return CustomerSegment.objects.get(name=segment_name)
+
+    def get_recommendation_quote(self):
+        return self.quote_set.all()
+
     def get_quotes(self):
         return self.quote_set.all()
 
     @property
     def city(self):
-        """ Return City by looking into db
-        """
-        return
-
-    def next_activity_date_time(self):
-        return "No Activity Found"
+        from users.models import Pincode
+        pincodes = Pincode.objects.filter(pincode=self.pincode)
+        if pincodes.exists():
+            return pincodes.get().city
 
     def __str__(self):
         return "%s - %s" % (
