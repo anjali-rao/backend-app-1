@@ -69,6 +69,7 @@ class Lead(BaseModel):
                 self.refresh_quote_data()
         except Lead.DoesNotExist:
             self.parse_family()
+            self.customer_segment_id = self.get_customer_segment().id
         super(Lead, self).save(*args, **kwargs)
         self.__original_final_score = self.final_score
 
@@ -86,7 +87,7 @@ class Lead(BaseModel):
                 s=models.Sum('answer__score'))['s'] * 100000
         self.save()
 
-    def get_quote_data(self):
+    def refresh_quote_data(self):
         from product.models import Premium, FeatureCustomerSegmentScore
         quotes = self.get_quotes()
         if quotes.exists():
