@@ -30,7 +30,7 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         lead = self.create_lead(
             serializer.data['category_id'], serializer.data['family'],
-            serializer.data['pincode'], serializer.data['customer_segment_id'])
+            serializer.data['pincode'])
         for response in serializer.data['answers']:
             ans_serializer = QuestionnaireResponseSerializer(
                 data=response)
@@ -44,4 +44,4 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
         from crm.models import Lead
         return Lead.objects.create(
             user_id=self.request.user.id, family=family, pincode=pincode,
-            category_id=category_id, customer_segment_id=customer_segment_id)
+            category_id=category_id)

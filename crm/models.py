@@ -57,6 +57,9 @@ class Lead(BaseModel):
     pincode = models.CharField(max_length=6)
     children = models.IntegerField(default=0)
     family = JSONField(default={})
+    tax_saving = models.FloatField(default=0.30)
+    wellness_rewards = models.FloatField(default=0.10)
+    health_checkups = models.FloatField(default=0.0)
     __original_final_score = None
 
     def save(self, *args, **kwargs):
@@ -83,7 +86,7 @@ class Lead(BaseModel):
                 s=models.Sum('answer__score'))['s'] * 100000
         self.save()
 
-    def refresh_quote_data(self):
+    def get_quote_data(self):
         from product.models import Premium, FeatureCustomerSegmentScore
         quotes = self.get_quotes()
         if quotes.exists():

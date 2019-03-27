@@ -94,6 +94,9 @@ class FeatureMaster(BaseModel):
 class Feature(BaseModel):
     feature_master = models.ForeignKey('product.FeatureMaster')
     product_variant = models.ForeignKey('product.ProductVariant')
+    short_description = models.CharField(max_length=256)
+    rating = models.IntegerField(default=0.0)
+    long_description = models.CharField(max_length=256)
 
     def __unicode__(self):
         return "%s - %s" % (
