@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.shortcuts import render
-
-from rest_framework import permissions, status, generics, views
+from rest_framework import permissions, status, views
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes
 
 from users.decorators import UserAuthentication
 
 from product.serializers import (
-	CompanyNameSerializers, CategoryNameSerializers,
-	Company, Category
+    CompanyNameSerializers, CategoryNameSerializers,
+    Company, Category
 )
 
 
