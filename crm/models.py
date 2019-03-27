@@ -57,6 +57,9 @@ class Lead(BaseModel):
     pincode = models.CharField(max_length=6)
     children = models.IntegerField(default=0)
     family = JSONField(default={})
+    tax_saving = models.FloatField(default=0.30)
+    wellness_rewards = models.FloatField(default=0.10)
+    health_checkups = models.FloatField(default=0.0)
     __original_final_score = None
 
     def save(self, *args, **kwargs):
@@ -66,6 +69,7 @@ class Lead(BaseModel):
                 self.refresh_quote_data()
         except Lead.DoesNotExist:
             self.parse_family()
+            self.customer_segment_id = self.get_customer_segment().id
         super(Lead, self).save(*args, **kwargs)
         self.__original_final_score = self.final_score
 
@@ -106,6 +110,26 @@ class Lead(BaseModel):
                     quote_id=quote.id, feature_id=feature.id,
                     score=feature_score.score
                 )
+
+    def get_customer_segment(self):
+        from product.models import CustomerSegment
+        segment_name = 'young adult'
+        if 'self' in self.family:
+            age = self.family['self']
+            if age < 35:
+                segment_name = 'young adult'
+            if any(x in self.family for x in ['mother', 'father']) and age < 35: # noqa
+                segment_name = 'young adult with dependent parents'
+            if 'spouse' in self.family:
+                if age < 35:
+                    segment_name = 'young couple'
+                if age > 50:
+                    segment_name = 'senior citizens'
+                if self.family.get('kid') >= 1 and age < 40:
+                    segment_name = 'young family'
+                if self.family.get('kid') >= 1 and age < 60:
+                    segment_name = 'middle aged family'
+        return CustomerSegment.objects.get(name=segment_name)
 
     def get_quotes(self):
         return self.quote_set.all()

@@ -15,11 +15,13 @@ class Category(BaseModel):
 
 class Company(BaseModel):
     name = models.CharField(max_length=128)
-    short_name = models.CharField(max_length=64)
-    categories = models.ManyToManyField('product.Category')
-    logo = models.ImageField(upload_to=constants.COMPANY_UPLOAD_PATH)
-    hexa_code = models.CharField(max_length=8)
     short_name = models.CharField(max_length=128)
+    categories = models.ManyToManyField('product.Category')
+    logo = models.ImageField(
+        upload_to=constants.COMPANY_UPLOAD_PATH,
+        default=constants.DEFAULT_LOGO)
+    hexa_code = models.CharField(
+        max_length=8, default=constants.DEFAULT_HEXA_CODE)
     website = models.URLField(null=True, blank=True)
     spoc = models.TextField(null=True, blank=True)
     toll_free_number = models.CharField(max_length=50, null=True, blank=True)
@@ -94,6 +96,9 @@ class FeatureMaster(BaseModel):
 class Feature(BaseModel):
     feature_master = models.ForeignKey('product.FeatureMaster')
     product_variant = models.ForeignKey('product.ProductVariant')
+    short_description = models.CharField(max_length=256)
+    rating = models.IntegerField(default=0.0)
+    long_description = models.CharField(max_length=256)
 
     def __unicode__(self):
         return "%s - %s" % (
@@ -137,5 +142,8 @@ class Premium(BaseModel):
         return {
             'sum_insured': self.sum_insured.number,
             'amount': self.amount,
-            'commision': self.commission
+            'commision': self.get_commission_amount()
         }
+
+    def get_commission_amount(self):
+        return self.amount * self.commission
