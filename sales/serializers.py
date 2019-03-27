@@ -5,6 +5,49 @@ from users.models import Pincode, Address
 from utils import constants
 
 
+class RecommendationSerializers(serializers.ModelSerializer):
+    quote_id = serializers.SerializerMethodField()
+    sum_insured = serializers.SerializerMethodField()
+    premium = serializers.SerializerMethodField()
+    tax_saving = serializers.SerializerMethodField()
+    wellness_rewards = serializers.SerializerMethodField()
+    health_checkups = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    features = serializers.SerializerMethodField()
+
+    def get_quote_id(self, obj):
+        return obj.id
+
+    def get_sum_insured(self, obj):
+        return obj.premium.sum_insured.number
+
+    def get_premium(self, obj):
+        return obj.premium.amount
+
+    def get_features(self, obj):
+        return QuoteFeature(obj.quotefeature_set.all(), many=True).data
+
+    def get_product(self, obj):
+        return obj.premium.product_variant.get_product_details()
+
+    def get_tax_saving(self, obj):
+        return obj.lead.tax_saving
+
+    def get_wellness_rewards(self, obj):
+        return obj.lead.wellness_rewards
+
+    def get_health_checkups(self, obj):
+        return obj.lead.health_checkups
+
+    class Meta:
+        model = Quote
+        fields = (
+            'quote_id', 'lead_id', 'sum_insured', 'premium',
+            'tax_saving', 'wellness_rewards', 'health_checkups',
+            'product', 'features'
+        )
+
+
 class QuoteSerializers(serializers.ModelSerializer):
     premium = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
