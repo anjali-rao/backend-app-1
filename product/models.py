@@ -73,6 +73,23 @@ class ProductVariant(BaseModel):
             'logo': BASE_HOST + self.company_category.company.logo.url
         }
 
+    def get_basic_details(self):
+        return {
+            'toll_free_number': self.company_category.company.toll_free_number,
+            'brochure': self.get_help_file('SALES BROCHURES'),
+            'claim_form': self.get_help_file('CLAIM FORMS')
+        }
+
+    def get_help_file(self, file_type):
+        from content.models import HelpFile
+        helpfile = HelpFile.objects.filter(
+            category=self.company_category.category.name,
+            file_type=file_type).last()
+        if not helpfile:
+            helpfile = HelpFile.objects.filter(
+                category='ALL', file_type=file_type).last()
+        return helpfile.file.url if helpfile else ''
+
     class Meta:
         unique_together = ('company_category', 'name')
 
@@ -90,6 +107,7 @@ class CustomerSegment(BaseModel):
 class FeatureMaster(BaseModel):
     category = models.ForeignKey('product.Category')
     name = models.CharField(max_length=127, default="")
+
     description = models.TextField(default="")
 
     def __str__(self):

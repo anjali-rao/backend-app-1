@@ -26,6 +26,7 @@ DOCS_UPLOAD_TYPES = {
 
 # Defaults
 DEFAULT_LOGO = 'enterprise/goplannr.png'
+HELP_FILES_PATH = 'contents'
 DEFAULT_HEXA_CODE = '#005db1'
 OCCUPATION_DEFAULT_CHOICE = 3
 DEFAULT_USER_TYPE = 'subscriber'
@@ -79,3 +80,4 @@ ACCOUNT_CREATION_FIELDS = (
 COMPANY_UPLOAD_PATH = 'company'
 ENTERPRISE_UPLOAD_PATH = 'enterprise'
 CATEGORY_UPLOAD_PATH = 'category'
+

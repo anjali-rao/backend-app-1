@@ -4,6 +4,8 @@ from sales.models import Quote, QuoteFeature, Application, Client
 from users.models import Pincode, Address
 from utils import constants
 
+from content.serializers import FaqSerializer, Faq
+
 
 class QuoteSerializer(serializers.ModelSerializer):
     quote_id = serializers.SerializerMethodField()
@@ -75,19 +77,25 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
     benifits = serializers.SerializerMethodField()
     coverage = serializers.SerializerMethodField()
     faq = serializers.SerializerMethodField()
+    company_details = serializers.SerializerMethodField()
 
     def get_benifits(self, obj):
-        return
+        return QuoteFeature(obj.quotefeature_set.all(), many=True).data
 
     def get_coverage(self, obj):
         return
 
     def get_faq(self, obj):
-        return
+        return FaqSerializer(Faq.objects.all(), many=True).data
+
+    def get_company_details(self, obj):
+        details = obj.premium.product_variant.get_product_details()
+        details.update(obj.premium.product_variant.get_basic_details())
+        return details
 
     class Meta:
         model = Quote
-        fields = ('id', 'coverage', 'benifits', 'faq')
+        fields = ('id', 'coverage', 'benifits', 'faq', 'company_details')
 
 
 class CreateApplicationSerializer(serializers.ModelSerializer):
