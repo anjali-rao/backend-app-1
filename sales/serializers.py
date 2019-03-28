@@ -27,8 +27,8 @@ class RecommendationSerializer(serializers.ModelSerializer):
         return round(obj.premium.amount, 2)
 
     def get_features(self, obj):
-        return list(obj.quotefeature_set.values_list(
-                    'feature__feature_master__name'), flat=True)
+        return obj.quotefeature_set.values_list(
+            'feature__feature_master__name', flat=True)
 
     def get_product(self, obj):
         return obj.premium.product_variant.get_product_details()
@@ -71,7 +71,7 @@ class QuoteSerializer(serializers.ModelSerializer):
         return obj.premium.product_variant.get_product_details()
 
     def get_recommendation_score(seld, obj):
-        return obj.feature_score()
+        return obj.recommendation_score
 
     class Meta:
         model = Quote

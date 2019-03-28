@@ -37,10 +37,16 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
             ans_serializer.is_valid(raise_exception=True)
             ans_serializer.save(lead_id=lead.id)
         lead.calculate_final_score()
-        return Response(
-            RecommendationSerializer(
-                lead.get_recommendated_quote()).data,
-            status=status.HTTP_201_CREATED)
+        try:
+            return Response(
+                RecommendationSerializer(
+                    lead.get_recommendated_quote()).data,
+                status=status.HTTP_201_CREATED)
+        except Exception:
+            return Response({
+                'lead_id': lead.id,
+                'message': "No recommendated quotes found"
+            }, status=404)
 
     def create_lead(self, category_id, family, pincode):
         from crm.models import Lead
