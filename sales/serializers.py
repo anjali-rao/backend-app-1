@@ -84,7 +84,6 @@ class QuoteSerializer(serializers.ModelSerializer):
 class QuoteFeatureSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
-    feature_master_id = serializers.SerializerMethodField()
 
     def get_name(self, obj):
         return obj.feature.feature_master.name
@@ -92,12 +91,9 @@ class QuoteFeatureSerializer(serializers.ModelSerializer):
     def get_description(self, obj):
         return obj.feature.feature_master.description
 
-    def get_feature_master_id(self, obj):
-        return obj.feature.feature_master.id
-
     class Meta:
         model = QuoteFeature
-        fields = ('id', 'name', 'score', 'description', 'feature_master_id')
+        fields = ('id', 'name', 'score', 'description')
 
 
 class QuotesDetailsSerializer(serializers.ModelSerializer):
@@ -111,12 +107,16 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
             obj.quotefeature_set.all(), many=True).data
 
     def get_coverage(self, obj):
-        coverage = dict.fromkeys(constants.FEATURE_TYPES, set())
+        coverage = dict.fromkeys(constants.FEATURE_TYPES)
         features = obj.quotefeature_set.values(
             'feature__feature_master__feature_type',
             'feature__feature_master__name')
         for feature in features:
-            coverage[feature['feature__feature_master__feature_type']].add(feature['feature__feature_master__name'])
+            if not coverage[feature['feature__feature_master__feature_type']]:
+                coverage[feature[
+                    'feature__feature_master__feature_type']] = set()
+            coverage[feature['feature__feature_master__feature_type']].add(
+                feature['feature__feature_master__name'])
         return coverage
 
     def get_faq(self, obj):
@@ -130,6 +130,48 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quote
         fields = ('id', 'coverage', 'benifits', 'faq', 'company_details')
+
+
+class CompareSerializer(serializers.ModelSerializer):
+    quote_id = serializers.SerializerMethodField()
+    sum_insured = serializers.SerializerMethodField()
+    premium = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    features = serializers.SerializerMethodField()
+    coverage = serializers.SerializerMethodField()
+
+    def get_quote_id(self, obj):
+        return obj.id
+
+    def get_sum_insured(self, obj):
+        return obj.premium.sum_insured.number
+
+    def get_premium(self, obj):
+        return obj.premium.amount
+
+    def get_product(self, obj):
+        return obj.premium.product_variant.get_product_details()
+
+    def get_features(self, obj):
+        return QuoteFeatureSerializer(
+            obj.quotefeature_set.all(), many=True).data
+
+    def network_coverage(self, obj):
+        pass
+
+    class Meta:
+        model = Quote
+        fields = (
+            'quote_id', 'sum_insured', 'premium', 'product',
+            'features', 'coverage'
+        )
+
+
+class CompareFeaturesSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = QuoteFeature
+        fields = ('')
 
 
 class CreateApplicationSerializer(serializers.ModelSerializer):
