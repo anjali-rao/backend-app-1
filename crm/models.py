@@ -158,7 +158,7 @@ class Lead(BaseModel):
     def get_recommendated_quote(self):
         quotes_scores = dict()
         for quote in self.quote_set.all():
-            quotes_scores[quote.feature_score()] = quote
+            quotes_scores[quote.recommendation_score] = quote
         return quotes_scores[max(quotes_scores.keys())]
 
     def get_quotes(self):
