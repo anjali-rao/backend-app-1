@@ -4,8 +4,10 @@ from sales.models import Quote, QuoteFeature, Application, Client
 from users.models import Pincode, Address
 from utils import constants
 
+from content.serializers import FaqSerializer, Faq
 
-class QuoteSerializer(serializers.ModelSerializer):
+
+class RecommendationSerializer(serializers.ModelSerializer):
     quote_id = serializers.SerializerMethodField()
     sum_insured = serializers.SerializerMethodField()
     premium = serializers.SerializerMethodField()
@@ -14,7 +16,6 @@ class QuoteSerializer(serializers.ModelSerializer):
     health_checkups = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
     features = serializers.SerializerMethodField()
-    recommendation_score = serializers.SerializerMethodField()
 
     def get_quote_id(self, obj):
         return obj.id
@@ -23,10 +24,11 @@ class QuoteSerializer(serializers.ModelSerializer):
         return obj.premium.sum_insured.number
 
     def get_premium(self, obj):
-        return obj.premium.amount
+        return round(obj.premium.amount, 2)
 
     def get_features(self, obj):
-        return QuoteFeature(obj.quotefeature_set.all(), many=True).data
+        return list(obj.quotefeature_set.values_list(
+                    'feature__feature_master__name'))
 
     def get_product(self, obj):
         return obj.premium.product_variant.get_product_details()
@@ -40,6 +42,34 @@ class QuoteSerializer(serializers.ModelSerializer):
     def get_health_checkups(self, obj):
         return obj.lead.health_checkups
 
+    class Meta:
+        model = Quote
+        fields = (
+            'quote_id', 'lead_id', 'sum_insured', 'premium',
+            'tax_saving', 'wellness_rewards', 'health_checkups',
+            'product', 'features'
+        )
+
+
+class QuoteSerializer(serializers.ModelSerializer):
+    quote_id = serializers.SerializerMethodField()
+    sum_insured = serializers.SerializerMethodField()
+    premium = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    recommendation_score = serializers.SerializerMethodField()
+
+    def get_quote_id(self, obj):
+        return obj.id
+
+    def get_sum_insured(self, obj):
+        return obj.premium.sum_insured.number
+
+    def get_premium(self, obj):
+        return obj.premium.amount
+
+    def get_product(self, obj):
+        return obj.premium.product_variant.get_product_details()
+
     def get_recommendation_score(seld, obj):
         return obj.feature_score()
 
@@ -47,12 +77,11 @@ class QuoteSerializer(serializers.ModelSerializer):
         model = Quote
         fields = (
             'quote_id', 'lead_id', 'sum_insured', 'premium',
-            'tax_saving', 'wellness_rewards', 'health_checkups',
-            'product', 'features', 'recommendation_score'
+            'product', 'recommendation_score'
         )
 
 
-class QuoteFeature(serializers.ModelSerializer):
+class QuoteFeatureSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
     feature_master_id = serializers.SerializerMethodField()
@@ -75,19 +104,32 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
     benifits = serializers.SerializerMethodField()
     coverage = serializers.SerializerMethodField()
     faq = serializers.SerializerMethodField()
+    company_details = serializers.SerializerMethodField()
 
     def get_benifits(self, obj):
-        return
+        return QuoteFeatureSerializer(
+            obj.quotefeature_set.all(), many=True).data
 
     def get_coverage(self, obj):
-        return
+        coverage = dict.fromkeys(constants.FEATURE_TYPES, set())
+        features = obj.quotefeature_set.values(
+            'feature__feature_master__feature_type',
+            'feature__feature_master__name')
+        for feature in features:
+            coverage[feature['feature__feature_master__feature_type']].add(feature['feature__feature_master__name'])
+        return coverage
 
     def get_faq(self, obj):
-        return
+        return FaqSerializer(Faq.objects.all(), many=True).data
+
+    def get_company_details(self, obj):
+        details = obj.premium.product_variant.get_product_details()
+        details.update(obj.premium.product_variant.get_basic_details())
+        return details
 
     class Meta:
         model = Quote
-        fields = ('id', 'coverage', 'benifits', 'faq')
+        fields = ('id', 'coverage', 'benifits', 'faq', 'company_details')
 
 
 class CreateApplicationSerializer(serializers.ModelSerializer):
