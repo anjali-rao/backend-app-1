@@ -13,11 +13,11 @@ class Faq(BaseModel):
 
 
 class HelpFile(BaseModel):
-    title = models.CharField(blank=True, max_length=100)
-    file = models.FileField(upload_to="help_content/datas")
+    title = models.CharField(blank=True, max_length=512)
+    file = models.FileField(upload_to=constants.HELP_FILES_PATH)
     file_type = models.CharField(
         choices=get_choices(constants.HELP_FILES_TYPE),
-        default="ALL", max_length=64
+        default="ALL", max_length=128
     )
     category = models.CharField(
         choices=get_choices(

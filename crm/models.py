@@ -95,6 +95,18 @@ class Lead(BaseModel):
             Response.objects.select_related('answer').filter(
                 lead_id=self.id).aggregate(
                 s=models.Sum('answer__score'))['s']) * 100000
+        if self.final_score < 3:
+            self.final_score = 3
+        elif self.final_score < 5:
+            self.final_score = 5
+        elif self.final_score < 7:
+            self.final_score = 7
+        elif self.final_score < 10:
+            self.final_score = 10
+        elif self.final_score < 20:
+            self.final_score = 20
+        else:
+            self.final_score = 50
         self.save()
 
     def refresh_quote_data(self):

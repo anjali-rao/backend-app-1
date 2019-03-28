@@ -16,6 +16,9 @@ KYC_DOC_TYPES = ('pan', 'passport', 'voter_card')
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
+FEATURE_TYPES = (
+    'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
+    'Exclusion')
 
 DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = {
@@ -26,6 +29,7 @@ DOCS_UPLOAD_TYPES = {
 
 # Defaults
 DEFAULT_LOGO = 'enterprise/goplannr.png'
+HELP_FILES_PATH = 'contents'
 DEFAULT_HEXA_CODE = '#005db1'
 OCCUPATION_DEFAULT_CHOICE = 3
 DEFAULT_USER_TYPE = 'subscriber'
@@ -79,3 +83,4 @@ ACCOUNT_CREATION_FIELDS = (
 COMPANY_UPLOAD_PATH = 'company'
 ENTERPRISE_UPLOAD_PATH = 'enterprise'
 CATEGORY_UPLOAD_PATH = 'category'
+
