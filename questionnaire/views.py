@@ -9,7 +9,7 @@ from questionnaire.serializers import (
     QuestionnSerializers, Question, ResponseSerializer,
     QuestionnaireResponseSerializer
 )
-from sales.serializers import QuoteSerializers, RecommendationSerializers
+from sales.serializers import QuoteSerializer
 
 
 class GetQuestionnaire(generics.ListAPIView):
@@ -37,10 +37,10 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
             ans_serializer.is_valid(raise_exception=True)
             ans_serializer.save(lead_id=lead.id)
         lead.calculate_final_score()
-        quotes = lead.get_recommendation_quote()
-        if quotes.exists():
-            return Response(RecommendationSerializers(quotes[0]).data, status=status.HTTP_201_CREATED)
-        return Response({}, status=status.HTTP_201_CREATED)
+        return Response(
+            QuoteSerializer(
+                lead.get_recommendated_quote()).data,
+            status=status.HTTP_201_CREATED)
 
     def create_lead(self, category_id, family, pincode):
         from crm.models import Lead

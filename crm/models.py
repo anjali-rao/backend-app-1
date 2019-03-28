@@ -78,11 +78,16 @@ class Lead(BaseModel):
         self.__original_final_score = self.final_score
 
     def parse_family(self):
+        if 'daughter_total' in self.family:
+            self.children += self.family['daughter_total']
+            self.family.pop('daughter_total')
+        if 'son_total' in self.family:
+            self.children += self.family['son_total']
+            self.family.pop('son_total')
         ages = self.family.values()
-        self.min_age = min(ages)
-        self.max_age = max(ages)
-        self.adult = len([i for i in ages if i > constants.ADULT_AGE_LIMIT])
-        self.children = len(ages) - self.adult
+        self.min_age = int(min(ages))
+        self.max_age = int(max(ages))
+        self.adult = len(ages)
 
     def calculate_final_score(self):
         from questionnaire.models import Response
@@ -99,7 +104,7 @@ class Lead(BaseModel):
         premiums = Premium.objects.select_related(
             'product_variant', 'sum_insured').filter(
             product_variant__company_category__category_id=self.category_id,
-            min_age__gte=self.min_age, max_age__lte=self.max_age,
+            min_age__lte=self.max_age, max_age__gte=self.min_age,
             sum_insured__number=self.final_score,
             product_variant__city=self.city,
             product_variant__adult=self.adult,
@@ -120,13 +125,13 @@ class Lead(BaseModel):
     def get_customer_segment(self):
         from product.models import CustomerSegment
         segment_name = 'young adult'
-        if 'self' in self.family:
-            age = self.family['self']
-            if age < 35:
+        if 'self_age' in self.family:
+            age = int(self.family['self_age'])
+            if age <= 35:
                 segment_name = 'young adult'
-            if any(x in self.family for x in ['mother', 'father']) and age < 35: # noqa
+            if any(x in self.family for x in ['mother_age', 'father_age']) and age < 35: # noqa
                 segment_name = 'young adult with dependent parents'
-            if 'spouse' in self.family:
+            if 'spouse_age' in self.family:
                 if age < 35:
                     segment_name = 'young couple'
                 if age > 50:
@@ -137,8 +142,11 @@ class Lead(BaseModel):
                     segment_name = 'middle aged family'
         return CustomerSegment.objects.get(name=segment_name)
 
-    def get_recommendation_quote(self):
-        return self.quote_set.all()
+    def get_recommendated_quote(self):
+        quotes_scores = dict()
+        for quote in self.quote_set.all():
+            quotes_scores[quote.feature_score()] = quote
+        return quotes_scores[max(quotes_scores.keys())]
 
     def get_quotes(self):
         return self.quote_set.all()
