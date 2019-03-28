@@ -28,7 +28,7 @@ class RecommendationSerializer(serializers.ModelSerializer):
 
     def get_features(self, obj):
         return list(obj.quotefeature_set.values_list(
-                    'feature__feature_master__name'))
+                    'feature__feature_master__name'), flat=True)
 
     def get_product(self, obj):
         return obj.premium.product_variant.get_product_details()

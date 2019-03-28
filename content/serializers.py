@@ -7,4 +7,4 @@ class FaqSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Faq
-        fields = '__all__'
+        fields = ('question', 'answer')
