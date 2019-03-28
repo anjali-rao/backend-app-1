@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from utils.model import BaseModel, models
-from utils import constants
+from utils import constants, get_choices
 
 
 class Category(BaseModel):
@@ -107,7 +107,9 @@ class CustomerSegment(BaseModel):
 class FeatureMaster(BaseModel):
     category = models.ForeignKey('product.Category')
     name = models.CharField(max_length=127, default="")
-
+    feature_type = models.CharField(
+        max_length=32, default='Others',
+        choices=get_choices(constants.FEATURE_TYPES))
     description = models.TextField(default="")
 
     def __str__(self):

@@ -16,6 +16,9 @@ KYC_DOC_TYPES = ('pan', 'passport', 'voter_card')
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
+FEATURE_TYPES = (
+    'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
+    'Exclusion')
 
 DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = {
