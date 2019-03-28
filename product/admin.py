@@ -5,7 +5,7 @@ from django.contrib import admin
 from product.models import (
     Company, Category, CompanyDetails, CompanyCategory, ProductVariant,
     CustomerSegment, FeatureMaster, Feature, SumInsuredMaster,
-    DeductibleMaster, Premium
+    DeductibleMaster, Premium, FeatureCustomerSegmentScore
 )
 
 
@@ -73,3 +73,9 @@ class PremiumAdmin(admin.ModelAdmin):
     list_display = ('product_variant', 'sum_insured', 'min_age', 'max_age')
     search_fields = ('product_variant__id',)
     raw_id_fields = ('product_variant', 'sum_insured', 'deductible')
+
+
+@admin.register(FeatureCustomerSegmentScore)
+class FeatureCustomerSegmentScoreAdmin(admin.ModelAdmin):
+    list_display = ('feature', 'customer_segment', 'score')
+    raw_id_fields = ('feature',)

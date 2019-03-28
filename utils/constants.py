@@ -14,6 +14,8 @@ LEAD_STAGE_CHOICES = (
 STATUS_CHOICES = (('pending','Pending'),('accepted','Accepted'),('rejected','Rejected')) # noqa
 KYC_DOC_TYPES = ('pan', 'passport', 'voter_card')
 QUESTION_COICES = ('mcq', 'single')
+HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
+CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
 
 DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = {
