@@ -136,7 +136,7 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
 
 class CompareSerializer(serializers.ModelSerializer):
     quote_id = serializers.SerializerMethodField()
-    sum_insured = serializers.SerializerMethodField()
+    suminsured = serializers.SerializerMethodField()
     premium = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
     features = serializers.SerializerMethodField()
@@ -145,7 +145,7 @@ class CompareSerializer(serializers.ModelSerializer):
     def get_quote_id(self, obj):
         return obj.id
 
-    def get_sum_insured(self, obj):
+    def get_suminsured(self, obj):
         return obj.premium.sum_insured.number
 
     def get_premium(self, obj):
@@ -158,8 +158,10 @@ class CompareSerializer(serializers.ModelSerializer):
         return obj.get_feature_details()
 
     def get_network_coverage(self, obj):
-        return NetworkHospital.objects.filter(
-            city=obj.lead.city).count()
+        return {
+            'hospitals': NetworkHospital.objects.filter(
+                city=obj.lead.city).count()
+        }
 
     class Meta:
         model = Quote
