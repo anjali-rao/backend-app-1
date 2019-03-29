@@ -127,7 +127,6 @@ class Lead(BaseModel):
                 lead_id=self.id, premium_id=premium.id)
             features = premium.product_variant.feature_set.all()
             for feature in features:
-                print feature.id
                 feature_score = FeatureCustomerSegmentScore.objects.filter(
                     feature_id=feature.id,
                     customer_segment_id=self.customer_segment.id).last()

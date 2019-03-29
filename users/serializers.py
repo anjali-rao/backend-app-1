@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
 
-from users.models import User, Account, Enterprise, AccountDetails
+from users.models import User, Account, Enterprise, AccountDetails, Pincode
 
 from utils import constants, genrate_random_string
 
@@ -293,3 +293,14 @@ class AccountSearchSerializers(serializers.ModelSerializer):
             'phone', 'pincode', 'pan_no', 'gender', 'address', 'age',
             'details'
         )
+
+
+class PincodeSerializer(serializers.ModelSerializer):
+    state = serializers.SerializerMethodField()
+
+    def get_state(self, obj):
+        return obj.state.name
+
+    class Meta:
+        model = Pincode
+        fields = ('pincode', 'city', 'state')

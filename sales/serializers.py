@@ -91,7 +91,7 @@ class QuoteFeatureSerializer(serializers.ModelSerializer):
         return obj.feature.feature_master.name
 
     def get_description(self, obj):
-        return obj.feature.feature_master.description
+        return obj.feature.short_description
 
     class Meta:
         model = QuoteFeature
@@ -171,15 +171,18 @@ class CompareSerializer(serializers.ModelSerializer):
         return obj.get_feature_details()
 
     def get_network_coverage(self, obj):
-        return {
-            'hospitals': NetworkHospital.objects.filter(
-                city=obj.lead.city).count()
-        }
+        return [
+            {
+                'name': 'hospitals',
+                'value': NetworkHospital.objects.filter(
+                    city=obj.lead.city).count()
+            }
+        ]
 
     class Meta:
         model = Quote
         fields = (
-            'quote_id', 'sum_insured', 'premium', 'product',
+            'quote_id', 'suminsured', 'premium', 'product',
             'features', 'network_coverage'
         )
 
