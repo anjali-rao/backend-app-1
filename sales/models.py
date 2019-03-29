@@ -34,15 +34,18 @@ class Quote(BaseModel):
         return set(features)
 
     def get_feature_details(self):
-        features = dict()
+        features = []
         for feature in self.quotefeature_set.annotate(
-                name=models.F('feature__feature_master__name'),
-                description=models.F('feature__feature_master__description')
-        ).values('name', 'score', 'description'):
-            features[feature['name']] = {
-                'score': feature['score'],
-                'description': feature['description']
-            }
+            name=models.F('feature__feature_master__name'),
+            description=models.F('feature__feature_master__description'),
+            short_text=models.F('feature__short_description')
+        ).values('name', 'score', 'description', 'short_text'):
+            features.append({
+                'name': feature['name'],
+                'description': feature['description'],
+                'short_text': feature['short_text'],
+                'score': feature['score']
+            })
         return features
 
 

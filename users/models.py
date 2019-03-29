@@ -322,7 +322,7 @@ class State(models.Model):
 class Pincode(models.Model):
     pincode = models.CharField(max_length=6, unique=True)
     city = models.CharField(max_length=64)
-    state = models.ForeignKey(State)
+    state = models.ForeignKey('users.State', null=True, blank=True)
     city_type = models.IntegerField(
         choices=constants.CITY_TIER, default=2)
 

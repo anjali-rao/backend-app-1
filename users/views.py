@@ -3,11 +3,15 @@ from rest_framework import permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
+from django_filters.rest_framework import DjangoFilterBackend
+
 from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
-    AccountSearchSerializers, Account
+    AccountSearchSerializers, Account, PincodeSerializer, Pincode
 )
+
+from rest_framework import filters
 
 
 @api_view(['POST'])
@@ -70,3 +74,10 @@ class SearchAccount(generics.ListAPIView):
                 queryset = queryset.filter(
                     user__enterprise__categories=params['category'])
         return queryset
+
+
+class PincodeSearch(generics.ListAPIView):
+    queryset = Pincode.objects.all()
+    serializer_class = PincodeSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('state__name', 'pincode')
