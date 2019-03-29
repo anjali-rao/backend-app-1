@@ -27,6 +27,9 @@ DOCS_UPLOAD_TYPES = {
     'license': 'advisor/license',
     'photo': 'advisor/selfie'
 }
+TIER_1_CITIES = ('Bengaluru', 'Delhi', 'Mumbai', 'Kolkota')
+TIER_2_CITIES = ('Lucknow', 'Allahabad')
+
 API_CACHE_TIME = 3600
 
 # Defaults
