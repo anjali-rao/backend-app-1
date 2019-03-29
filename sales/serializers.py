@@ -108,18 +108,30 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
         return QuoteFeatureSerializer(
             obj.quotefeature_set.all(), many=True).data
 
+#    def get_coverage(self, obj):
+#        coverage = dict.fromkeys(constants.FEATURE_TYPES)
+#        features = obj.quotefeature_set.values(
+#            'feature__feature_master__feature_type',
+#            'feature__feature_master__name')
+#        for feature in features:
+#            if not coverage[feature['feature__feature_master__feature_type']]:
+#                coverage[feature[
+#                    'feature__feature_master__feature_type']] = set()
+#            coverage[feature['feature__feature_master__feature_type']].add(
+#                feature['feature__feature_master__name'])
+#        return coverage
+
     def get_coverage(self, obj):
-        coverage = dict.fromkeys(constants.FEATURE_TYPES)
         features = obj.quotefeature_set.values(
             'feature__feature_master__feature_type',
             'feature__feature_master__name')
+        coverages = []
         for feature in features:
-            if not coverage[feature['feature__feature_master__feature_type']]:
-                coverage[feature[
-                    'feature__feature_master__feature_type']] = set()
-            coverage[feature['feature__feature_master__feature_type']].add(
-                feature['feature__feature_master__name'])
-        return coverage
+            coverages.append({
+                'name': feature['feature__feature_master__feature_type'],
+                'value': feature['feature__feature_master__name']
+            })
+        return coverages
 
     def get_faq(self, obj):
         return FaqSerializer(Faq.objects.all(), many=True).data

@@ -88,6 +88,8 @@ class Client(BaseModel):
 
 class Application(BaseModel):
     reference_no = models.CharField(max_length=15, unique=True)
+    application_type = models.CharField(
+        max_length=32, choices=get_choices(constants.APPLICATION_TYPES))
     quote = models.OneToOneField('sales.Quote')
     address = models.ForeignKey('users.Address')
     status = models.CharField(
@@ -100,6 +102,11 @@ class Application(BaseModel):
         except Application.DoesNotExist:
             self.generate_reference_no()
         super(Application, self).save(*args, **kwargs)
+
+    def assignInsurance(self):
+        # to DOs
+        if self.application_type == 'health_insurance':
+            HealthInsurance.objects.create()
 
     def generate_reference_no(self):
         self.reference_no = 'GoPlannr%s' % genrate_random_string(10)
@@ -117,23 +124,5 @@ class Policy(BaseModel):
     policy_data = JSONField()
 
 
-# class InsuranceApplication(BaseModel):
-#     quote = models.OneToOneField(Quote)
-#     first_name = models.CharField(max_length=127, default="")
-#     middle_name = models.CharField(max_length=127,null=True,blank=True)
-#     last_name = models.CharField(max_length=127, default="")
-#     date_of_birth = models.CharField(max_length=127, default="")
-#     email = models.CharField(max_length=127, default="")
-#     pan_number = models.CharField(max_length=127, default="")
-#     contact_no = models.CharField(max_length=127, default="")
-#     contact_no2 = models.CharField(max_length=127,null=True,blank=True)
-#     address = models.TextField(null=True,blank=True)
-#     appartment_no = models.CharField(max_length=127,null=True,blank=True)
-#     city = models.CharField(max_length=127,null=True,blank=True)
-#     zip_code = models.CharField(max_length=127,null=True,blank=True)
-#     country = models.CharField(max_length=127,null=True,blank=True)
-#     no_of_people_listed = models.IntegerField(null=True,blank=True)
-
-
-# class HealthApplication(BaseModel):
-#     quote = models.OneToOneField(Quote)
+class HealthInsurance(BaseModel):
+    application = models.OneToOneField('sales.Application')

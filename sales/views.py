@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from rest_framework import generics, exceptions
+from rest_framework import generics, exceptions, status
+from rest_framework.response import Response
 
 from users.decorators import UserAuthentication
 from sales.serializers import (
     QuoteSerializer, Quote, CreateApplicationSerializer,
-    QuotesDetailsSerializer, CompareSerializer
+    QuotesDetailsSerializer, CompareSerializer, RecommendationSerializer
 )
 
 from crm.models import Lead
+from django.db import transaction, IntegrityError
 
 
 class GetQuotes(generics.ListAPIView):
@@ -53,6 +55,35 @@ class CompareRecommendation(generics.ListAPIView):
         if not self.request.query_params.get('quotes') or len(
                 self.request.query_params['quotes'].split(',')) < 2:
             raise exceptions.NotAcceptable(
-                'Atlest two quotes are required for comparision')
+                'Atleast two quotes are required for comparision')
         return lead.get_quotes().filter(
             id__in=self.request.query_params['quotes'].split(','))
+
+
+class GetRecommendatedQuote(generics.ListAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = RecommendationSerializer
+
+    def get_queryset(self):
+        try:
+            with transaction.atomic():
+                lead = Lead.objects.get(
+                    id=self.request.query_params.get('lead'))
+                if self.request.query_params.get('suminsured'):
+                    lead.final_score = self.request.query_params['suminsured']
+                    lead.save()
+                else:
+                    lead.calculate_final_score()
+                lead.get_recommendated_quote()
+                return Response(
+                    RecommendationSerializer(
+                        lead.get_recommendated_quote()).data,
+                    status=status.HTTP_201_CREATED)
+        except Lead.DoesNotExist:
+            raise exceptions.NotFound('Lead doesnot exists')
+        except IntegrityError:
+            raise exceptions.APIException(
+                'No recommendated Quote found for given suminsured')
+        except Exception:
+            raise exceptions.APIException(
+                'Curently we are unable to suggest any quote. please try again.') # noqa
