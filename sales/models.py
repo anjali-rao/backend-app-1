@@ -23,6 +23,28 @@ class Quote(BaseModel):
     class Meta:
         unique_together = ('lead', 'premium',)
 
+    @classmethod
+    def get_compareable_features(cls, *quotes_ids):
+        features = list()
+        for quote_id in quotes_ids:
+            features.extend(
+                cls.objects.get(id=quote_id).quotefeature_set.annotate(
+                    name=models.F('feature__feature_master__name')
+                ).values_list('name', flat=True))
+        return set(features)
+
+    def get_feature_details(self):
+        features = dict()
+        for feature in self.quotefeature_set.annotate(
+                name=models.F('feature__feature_master__name'),
+                description=models.F('feature__feature_master__description')
+        ).values('name', 'score', 'description'):
+            features[feature['name']] = {
+                'score': feature['score'],
+                'description': feature['description']
+            }
+        return features
+
 
 class QuoteFeature(BaseModel):
     quote = models.ForeignKey('sales.Quote', on_delete=models.CASCADE)

@@ -46,7 +46,6 @@ class CompanyCategory(BaseModel):
     company = models.ForeignKey('product.Company')
     claim_settlement = models.TextField(null=True, blank=True)
     offer_flag = models.BooleanField(default=False)
-    # network = models.ManyToManyField(NetworkHospital)
 
     class Meta:
         unique_together = ('category', 'company')
