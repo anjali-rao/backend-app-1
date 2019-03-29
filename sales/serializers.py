@@ -6,6 +6,8 @@ from utils import constants
 
 from content.serializers import FaqSerializer, Faq
 
+from content.models import NetworkHospital
+
 
 class RecommendationSerializer(serializers.ModelSerializer):
     quote_id = serializers.SerializerMethodField()
@@ -138,7 +140,7 @@ class CompareSerializer(serializers.ModelSerializer):
     premium = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
     features = serializers.SerializerMethodField()
-    coverage = serializers.SerializerMethodField()
+    network_coverage = serializers.SerializerMethodField()
 
     def get_quote_id(self, obj):
         return obj.id
@@ -153,25 +155,18 @@ class CompareSerializer(serializers.ModelSerializer):
         return obj.premium.product_variant.get_product_details()
 
     def get_features(self, obj):
-        return QuoteFeatureSerializer(
-            obj.quotefeature_set.all(), many=True).data
+        return obj.get_feature_details()
 
-    def network_coverage(self, obj):
-        pass
+    def get_network_coverage(self, obj):
+        return NetworkHospital.objects.filter(
+            city=obj.lead.city).count()
 
     class Meta:
         model = Quote
         fields = (
             'quote_id', 'sum_insured', 'premium', 'product',
-            'features', 'coverage'
+            'features', 'network_coverage'
         )
-
-
-class CompareFeaturesSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = QuoteFeature
-        fields = ('')
 
 
 class CreateApplicationSerializer(serializers.ModelSerializer):
