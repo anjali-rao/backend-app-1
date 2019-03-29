@@ -19,6 +19,7 @@ CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
 FEATURE_TYPES = (
     'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
     'Exclusion')
+APPLICATION_TYPES = ('health_insurance')
 
 DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = {
@@ -26,6 +27,7 @@ DOCS_UPLOAD_TYPES = {
     'license': 'advisor/license',
     'photo': 'advisor/selfie'
 }
+API_CACHE_TIME = 3600
 
 # Defaults
 DEFAULT_LOGO = 'enterprise/goplannr.png'

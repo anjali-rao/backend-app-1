@@ -12,16 +12,24 @@ from product.serializers import (
     Company, Category
 )
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+
+from utils.constants import API_CACHE_TIME
+
 
 @api_view(['GET'])
 @authentication_classes([UserAuthentication])
+@method_decorator(cache_page(API_CACHE_TIME))
 def get_user_categories(request, version):
+
     return Response(request.user.get_categories(), status=status.HTTP_200_OK)
 
 
 class GetSearchParamater(views.APIView):
     permission_classes = [permissions.AllowAny]
 
+    @method_decorator(cache_page(API_CACHE_TIME))
     def get(self, request, version):
         return Response([
             {
