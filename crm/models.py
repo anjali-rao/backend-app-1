@@ -119,7 +119,7 @@ class Lead(BaseModel):
             product_variant__company_category__category_id=self.category_id,
             min_age__lte=self.max_age, max_age__gte=self.min_age,
             sum_insured__number=self.final_score,
-            product_variant__city=self.city,
+            product_variant__citytier=self.citytier,
             product_variant__adult=self.adult,
             product_variant__children=self.children)
         for premium in premiums:
@@ -127,6 +127,7 @@ class Lead(BaseModel):
                 lead_id=self.id, premium_id=premium.id)
             features = premium.product_variant.feature_set.all()
             for feature in features:
+                print feature.id
                 feature_score = FeatureCustomerSegmentScore.objects.filter(
                     feature_id=feature.id,
                     customer_segment_id=self.customer_segment.id).last()
@@ -170,6 +171,14 @@ class Lead(BaseModel):
         pincodes = Pincode.objects.filter(pincode=self.pincode)
         if pincodes.exists():
             return pincodes.get().city
+
+    @property
+    def citytier(self):
+        if self.city in constants.TIER_1_CITIES:
+            return 1
+        elif self.city in constants.TIER_2_CITIES:
+            return 2
+        return 3
 
     def __str__(self):
         return "%s - %s" % (

@@ -20,9 +20,7 @@ from utils.constants import API_CACHE_TIME
 
 @api_view(['GET'])
 @authentication_classes([UserAuthentication])
-@method_decorator(cache_page(API_CACHE_TIME))
 def get_user_categories(request, version):
-
     return Response(request.user.get_categories(), status=status.HTTP_200_OK)
 
 

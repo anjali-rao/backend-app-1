@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from rest_framework import generics, exceptions, status
-from rest_framework.response import Response
+from rest_framework import generics, exceptions
 
 from users.decorators import UserAuthentication
 from sales.serializers import (
@@ -74,11 +73,7 @@ class GetRecommendatedQuote(generics.ListAPIView):
                     lead.save()
                 else:
                     lead.calculate_final_score()
-                lead.get_recommendated_quote()
-                return Response(
-                    RecommendationSerializer(
-                        lead.get_recommendated_quote()).data,
-                    status=status.HTTP_201_CREATED)
+                return [lead.get_recommendated_quote()]
         except Lead.DoesNotExist:
             raise exceptions.NotFound('Lead doesnot exists')
         except IntegrityError:
