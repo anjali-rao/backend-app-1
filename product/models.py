@@ -61,7 +61,7 @@ class ProductVariant(BaseModel):
         'self', on_delete=models.CASCADE, null=True, blank=True)
     adult = models.IntegerField(default=0)
     children = models.IntegerField(default=0)
-    citytier = models.IntegerField(default=1)
+    city = models.CharField(max_length=64, null=True, blank=True)
     chronic = models.BooleanField(default=True)
 
     def get_product_details(self):
