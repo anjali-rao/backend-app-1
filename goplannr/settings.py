@@ -3,7 +3,6 @@ from django.core.exceptions import ImproperlyConfigured
 import json
 import os
 import redis
-import raven
 
 CONFIGURATION_FILE = os.environ.get('GOPLANNR_CONFIG')
 
@@ -74,8 +73,23 @@ if DEBUG:
     STATICFILES_DIRS = [
         os.path.join(BASE_DIR, "static"),
     ]
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR + '/media'
 else:
     STATIC_ROOT = "static"
+
+    # For S3 Document Stroage
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_S3_REGION_NAME = 'ap-south-1'
+    AWS_S3_HOST = 's3.amazonaws.com'
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+    AWS_STORAGE_BUCKET_NAME = 'availserver'
+    AWS_AUTO_CREATE_BUCKET = True
+    AWS_LOCATION = 'payday/media/'
+    MEDIA_URL = 'https://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
+    MEDIA_ROOT = 'https://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
 
 
 MIDDLEWARE = [
@@ -109,10 +123,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'goplannr.wsgi.application'
-
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR + '/media'
 
 DATABASES = {
     'default': {
