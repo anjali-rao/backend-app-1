@@ -79,6 +79,6 @@ class GetRecommendatedQuote(generics.ListAPIView):
         except IntegrityError:
             raise exceptions.APIException(
                 'No recommendated Quote found for given suminsured')
-        except Exception:
+        except ValueError:
             raise exceptions.APIException(
                 'Curently we are unable to suggest any quote. please try again.') # noqa

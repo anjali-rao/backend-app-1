@@ -47,7 +47,7 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
         except IntegrityError:
             raise exceptions.APIException(
                 'Unable to process request currently. Please try again')
-        except Exception:
+        except ValueError:
             return Response({
                 'lead_id': lead.id,
                 'message': "No recommendated quotes found"
