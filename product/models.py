@@ -61,9 +61,9 @@ class CompanyCategory(BaseModel):
 
 class ProductVariant(BaseModel):
     company_category = models.ForeignKey('product.CompanyCategory')
-    name = models.CharField(max_length=128, default="")
-    parent_product = models.CharField(max_length=64, default='GoPlannr')
-    feature_variant = models.CharField(max_length=128, default='base')
+    name = models.CharField(max_length=256, default="")
+    parent_product = models.CharField(max_length=128, default='GoPlannr')
+    feature_variant = models.CharField(max_length=256, default='base')
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, blank=True)
     adult = models.IntegerField(default=0)
