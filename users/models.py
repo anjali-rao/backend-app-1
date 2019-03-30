@@ -190,24 +190,6 @@ class User(BaseModel):
             category['logo'] = BASE_HOST + '/media/' + category['logo']
             category['name'] = category['name'].split(' ')[0].title()
         return categories
-        categories = list()
-        categories_queryset = self.enterprise.categories
-        companies_queryset = self.enterprise.companies
-        if self.user_type == 'subscriber' or not categories_queryset:
-            from product.models import Category, Company
-            categories_queryset = Category.objects
-            companies_queryset = Company.objects
-        for category in categories_queryset.values('id', 'name'):
-            companies = companies_queryset.values(
-                'name', 'hexa_code', 'logo').filter(
-                    categories__id=category['id'])
-            for company in companies:
-                categories.append({
-                    'name': category['name'], 'logo': BASE_HOST + '/media/' +  company['logo'], # noqa
-                    'company': company['name'], 'id': category['id'],
-                    'hexa_code': company['hexa_code']
-                })
-        return categories
 
 
 class Campaign(BaseModel):
