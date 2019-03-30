@@ -77,20 +77,14 @@ if DEBUG:
     MEDIA_ROOT = BASE_DIR + '/media'
 else:
     STATIC_ROOT = "static"
-
     # For S3 Document Stroage
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
-    AWS_S3_SIGNATURE_VERSION = 's3v4'
-    AWS_S3_REGION_NAME = 'ap-south-1'
-    AWS_S3_HOST = 's3.amazonaws.com'
-    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
-    AWS_STORAGE_BUCKET_NAME = 'availserver'
-    AWS_AUTO_CREATE_BUCKET = True
-    AWS_LOCATION = 'payday/media/'
+    AWS_ACCESS_KEY_ID = get_env_var('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = get_env_var('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = 'develop-goplannr'
     MEDIA_URL = 'https://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
     MEDIA_ROOT = 'https://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
-
+    AWS_AUTO_CREATE_BUCKET = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
