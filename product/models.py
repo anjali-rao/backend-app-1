@@ -57,6 +57,7 @@ class CompanyCategory(BaseModel):
 class ProductVariant(BaseModel):
     company_category = models.ForeignKey('product.CompanyCategory')
     name = models.CharField(max_length=128, default="")
+    parent_product = models.CharField(max_length=64, default='GoPlannr')
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, blank=True)
     adult = models.IntegerField(default=0)
@@ -67,7 +68,7 @@ class ProductVariant(BaseModel):
     def get_product_details(self):
         from goplannr.settings import BASE_HOST
         return {
-            'name': self.name,
+            'name': self.parent_product,
             'company': self.company_category.company.name,
             'logo': BASE_HOST + self.company_category.company.logo.url
         }
