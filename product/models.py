@@ -96,9 +96,6 @@ class ProductVariant(BaseModel):
                 category='ALL', file_type=file_type).last()
         return helpfile.file.url if helpfile else ''
 
-    class Meta:
-        unique_together = ('company_category', 'name')
-
     def __str__(self):
         return self.name
 
