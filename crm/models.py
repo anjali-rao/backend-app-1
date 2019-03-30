@@ -118,7 +118,7 @@ class Lead(BaseModel):
         premiums = Premium.objects.select_related(
             'product_variant', 'sum_insured').filter(
             product_variant__company_category__category_id=self.category_id,
-            min_age__lte=self.max_age, max_age__gte=self.min_age,
+            min_age__gte=self.min_age, max_age__lte=self.max_age,
             sum_insured__number=self.final_score,
             product_variant__adult=self.adult,
             product_variant__children=self.children)
