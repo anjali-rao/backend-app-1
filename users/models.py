@@ -13,7 +13,7 @@ from django.utils.timezone import now
 from django.dispatch import receiver
 from django.core.cache import cache
 
-from goplannr.settings import JWT_SECRET, BASE_HOST
+from goplannr.settings import JWT_SECRET, BASE_HOST, DEBUG
 
 import uuid
 
@@ -184,11 +184,14 @@ class User(BaseModel):
         return self.bankaccount_set.get(default=True).branch.bank.name
 
     def get_categories(self):
-        categories = list(self.enterprise.categories.values(
-            'name', 'id', 'hexa_code', 'logo'))
-        for category in categories:
-            category['logo'] = BASE_HOST + '/media/' + category['logo']
-            category['name'] = category['name'].split(' ')[0].title()
+        categories = list()
+        for category in self.enterprise.categories.only(
+                'name', 'id', 'hexa_code', 'logo'):
+            categories.append({
+                'id': category.id, 'hexa_code': category.hexa_code,
+                'logo': (BASE_HOST if DEBUG else '') + category.logo.url,
+                'name': category.name.split(' ')[0]
+            })
         return categories
 
 
