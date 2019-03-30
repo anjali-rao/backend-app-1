@@ -8,6 +8,11 @@ from utils import constants, get_choices
 class Category(BaseModel):
     name = models.CharField(max_length=128)
     description = models.TextField(null=True, blank=True)
+    logo = models.ImageField(
+        upload_to=constants.CATEGORY_UPLOAD_PATH,
+        default=constants.DEFAULT_LOGO)
+    hexa_code = models.CharField(
+        max_length=8, default=constants.DEFAULT_HEXA_CODE)
 
     def __str__(self):
         return self.name

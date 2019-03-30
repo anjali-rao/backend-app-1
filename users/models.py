@@ -184,6 +184,12 @@ class User(BaseModel):
         return self.bankaccount_set.get(default=True).branch.bank.name
 
     def get_categories(self):
+        categories = list(self.enterprise.categories.values(
+            'name', 'id', 'hexa_code', 'logo'))
+        for category in categories:
+            category['logo'] = BASE_HOST + '/media/' + category['logo']
+            category['name'] = category['name'].split(' ')[0].title()
+        return categories
         categories = list()
         categories_queryset = self.enterprise.categories
         companies_queryset = self.enterprise.companies

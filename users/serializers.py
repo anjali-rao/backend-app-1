@@ -96,14 +96,6 @@ class CreateUserSerializer(serializers.ModelSerializer):
                 constants.INVALID_TRANSACTION_ID)
         return value
 
-    class Meta:
-        model = User
-        fields = (
-            'first_name', 'last_name', 'email', 'password',
-            'referral_code', 'referral_reference', 'user_type', 'pincode',
-            'pan_no', 'phone_no', 'transaction_id'
-        )
-
     def create(self, validated_data):
         validated_data.update(User.get_referral_details(
             validated_data.get('referral_code')))
@@ -131,6 +123,14 @@ class CreateUserSerializer(serializers.ModelSerializer):
             'phone_no': self.validated_data['phone_no'],
             'message': constants.USER_CREATED_SUCESS
         }
+
+    class Meta:
+        model = User
+        fields = (
+            'first_name', 'last_name', 'email', 'password',
+            'referral_code', 'referral_reference', 'user_type', 'pincode',
+            'pan_no', 'phone_no', 'transaction_id'
+        )
 
 
 class AccountSerializer(serializers.ModelSerializer):
