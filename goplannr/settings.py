@@ -3,6 +3,7 @@ from django.core.exceptions import ImproperlyConfigured
 import json
 import os
 import redis
+import raven
 
 CONFIGURATION_FILE = os.environ.get('GOPLANNR_CONFIG')
 
@@ -46,6 +47,8 @@ ROOT_URLCONF = 'goplannr.urls'
 
 ALLOWED_HOSTS = get_env_var('ALLOWED_HOSTS').split(',')
 
+RAVEN_CONFIG = get_env_var('RAVEN_CONFIG')
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -62,12 +65,10 @@ INSTALLED_APPS = [
     'crm',
     'product',
     'sales',
-    'questionnaire'
-    # 'raven.contrib.django.raven_compat',
+    'questionnaire',
+    'raven.contrib.django.raven_compat',
     # 'django_hosts',
 ]
-
-# RAVEN_CONFIG = get_env_var('RAVEN_CONFIG')
 
 if DEBUG:
     STATICFILES_DIRS = [
