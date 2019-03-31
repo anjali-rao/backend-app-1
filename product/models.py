@@ -72,11 +72,12 @@ class ProductVariant(BaseModel):
     chronic = models.BooleanField(default=True)
 
     def get_product_details(self):
-        from goplannr.settings import BASE_HOST
+        from goplannr.settings import BASE_HOST, DEBUG
+        logo = self.company_category.company.logo.url
         return {
             'name': self.parent_product,
             'company': self.company_category.company.name,
-            'logo': BASE_HOST + self.company_category.company.logo.url
+            'logo': logo if not DEBUG else (BASE_HOST + logo)
         }
 
     def get_basic_details(self):
