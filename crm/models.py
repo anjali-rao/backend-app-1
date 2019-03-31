@@ -133,7 +133,7 @@ class Lead(BaseModel):
                         customer_segment_id=self.customer_segment.id).last()
                 QuoteFeature.objects.create(
                     quote_id=quote.id, feature_id=feature.id,
-                    score=feature_score.score
+                    score=feature_score.score or 9
                 )
 
     def get_customer_segment(self):

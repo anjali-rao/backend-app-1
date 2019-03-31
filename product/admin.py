@@ -46,7 +46,7 @@ class CustomerSegmentAdmin(admin.ModelAdmin):
 
 @admin.register(FeatureMaster)
 class FeatureMasterAdmin(admin.ModelAdmin):
-    list_display = ('category', 'name', 'description')
+    list_display = ('category', 'name', 'short_description')
     search_fields = ('category__id',)
     raw_id_fields = ('category',)
 
@@ -72,7 +72,7 @@ class DeductibleMasterAdmin(admin.ModelAdmin):
 class PremiumAdmin(admin.ModelAdmin):
     list_display = ('product_variant', 'sum_insured', 'min_age', 'max_age')
     search_fields = ('product_variant__id',)
-    raw_id_fields = ('product_variant', 'sum_insured', 'deductible')
+    raw_id_fields = ('product_variant', 'deductible')
 
 
 @admin.register(FeatureCustomerSegmentScore)
