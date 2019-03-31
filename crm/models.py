@@ -115,21 +115,22 @@ class Lead(BaseModel):
         if quotes.exists():
             quotes.delete()
         # product_variant__citytier=self.citytier,
-        premiums = Premium.objects.select_related(
+        # min_age__gte=self.min_age, max_age__lte=self.max_age,
+        premiums = Premium.objects.only('id').select_related(
             'product_variant', 'sum_insured').filter(
             product_variant__company_category__category_id=self.category_id,
-            min_age__gte=self.min_age, max_age__lte=self.max_age,
-            sum_insured__number=self.final_score,
+            min_age__gte=self.min_age, sum_insured__number=self.final_score,
             product_variant__adult=self.adult,
             product_variant__children=self.children)
         for premium in premiums:
             quote = Quote.objects.create(
                 lead_id=self.id, premium_id=premium.id)
-            features = premium.product_variant.feature_set.all()
+            features = premium.product_variant.feature_set.only('id').all()
             for feature in features:
-                feature_score = FeatureCustomerSegmentScore.objects.filter(
-                    feature_id=feature.id,
-                    customer_segment_id=self.customer_segment.id).last()
+                feature_score = FeatureCustomerSegmentScore.objects.only(
+                    'score').filter(
+                        feature_id=feature.id,
+                        customer_segment_id=self.customer_segment.id).last()
                 QuoteFeature.objects.create(
                     quote_id=quote.id, feature_id=feature.id,
                     score=feature_score.score
