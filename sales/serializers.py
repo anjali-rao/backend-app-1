@@ -136,10 +136,10 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
         return details
 
     def get_suminsured(self, obj):
-        return obj.premium.sum_insured.number
+        return obj.premium.sum_insured
 
     def get_premium(self, obj):
-        return round(obj.premium.amount, 2)
+        return obj.premium.amount
 
     class Meta:
         model = Quote
