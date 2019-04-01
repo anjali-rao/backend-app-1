@@ -3,10 +3,12 @@ from rest_framework import permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
+from url_filter.integrations.drf import DjangoFilterBackend
+
 from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
-    AuthorizationSerializer, ChangePasswordSerializer, AccountSearchSerializers, 
-    Account
+    AuthorizationSerializer, ChangePasswordSerializer,
+    AccountSearchSerializers, Account, PincodeSerializer, Pincode
 )
 
 
@@ -53,28 +55,27 @@ def update_password(request, version):
         serializer.response, status=status.HTTP_200_OK)
 
 
-# class GetUserDetails(generics.RetrieveAPIView):
-#     permission_classes = [permissions.AllowAny]
-#     serializer_class = AdvisorSerializers
-#     queryset = Advisor.objects.all()
-#     lookup_field = 'phone'
-# 
-#     def get_queryset(self):
-#         queryset = Account.objects.filter(user__user_type__in=['subscriber', 'pos'], phone_no=self.request.query_params['phone_no'])
-
 class SearchAccount(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = AccountSearchSerializers
 
     def get_queryset(self):
-        queryset = Account.objects.filter(user__user_type__in=['subscriber', 'pos'])
+        queryset = Account.objects.filter(
+            user__user_type__in=['subscriber', 'pos'])
         params = self.request.query_params
         if 'pincode' in params:
             queryset = queryset.filter(pincode=params['pincode'])
         if 'company' in params:
-            queryset = queryset.filter(user__enterprise__company_id=params['company'])
+            queryset = queryset.filter(
+                user__enterprise__company_id=params['company'])
         if 'category' in params:
                 queryset = queryset.filter(
                     user__enterprise__categories=params['category'])
         return queryset
 
+
+class PincodeSearch(generics.ListAPIView):
+    queryset = Pincode.objects.all()
+    serializer_class = PincodeSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('pincode', 'state', 'city')

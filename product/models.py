@@ -8,6 +8,11 @@ from utils import constants, get_choices
 class Category(BaseModel):
     name = models.CharField(max_length=128)
     description = models.TextField(null=True, blank=True)
+    logo = models.ImageField(
+        upload_to=constants.CATEGORY_UPLOAD_PATH,
+        default=constants.DEFAULT_LOGO)
+    hexa_code = models.CharField(
+        max_length=8, default=constants.DEFAULT_HEXA_CODE)
 
     def __str__(self):
         return self.name
@@ -46,7 +51,6 @@ class CompanyCategory(BaseModel):
     company = models.ForeignKey('product.Company')
     claim_settlement = models.TextField(null=True, blank=True)
     offer_flag = models.BooleanField(default=False)
-    # network = models.ManyToManyField(NetworkHospital)
 
     class Meta:
         unique_together = ('category', 'company')
@@ -57,7 +61,9 @@ class CompanyCategory(BaseModel):
 
 class ProductVariant(BaseModel):
     company_category = models.ForeignKey('product.CompanyCategory')
-    name = models.CharField(max_length=128, default="")
+    name = models.CharField(max_length=256, default="")
+    parent_product = models.CharField(max_length=128, default='GoPlannr')
+    feature_variant = models.CharField(max_length=256, default='base')
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, blank=True)
     adult = models.IntegerField(default=0)
@@ -66,11 +72,12 @@ class ProductVariant(BaseModel):
     chronic = models.BooleanField(default=True)
 
     def get_product_details(self):
-        from goplannr.settings import BASE_HOST
+        from goplannr.settings import BASE_HOST, DEBUG
+        logo = self.company_category.company.logo.url
         return {
-            'name': self.name,
+            'name': self.parent_product,
             'company': self.company_category.company.name,
-            'logo': BASE_HOST + self.company_category.company.logo.url
+            'logo': logo if not DEBUG else (BASE_HOST + logo)
         }
 
     def get_basic_details(self):
@@ -89,9 +96,6 @@ class ProductVariant(BaseModel):
             helpfile = HelpFile.objects.filter(
                 category='ALL', file_type=file_type).last()
         return helpfile.file.url if helpfile else ''
-
-    class Meta:
-        unique_together = ('company_category', 'name')
 
     def __str__(self):
         return self.name

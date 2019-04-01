@@ -13,7 +13,7 @@ from django.utils.timezone import now
 from django.dispatch import receiver
 from django.core.cache import cache
 
-from goplannr.settings import JWT_SECRET, BASE_HOST
+from goplannr.settings import JWT_SECRET, BASE_HOST, DEBUG
 
 import uuid
 
@@ -185,22 +185,13 @@ class User(BaseModel):
 
     def get_categories(self):
         categories = list()
-        categories_queryset = self.enterprise.categories
-        companies_queryset = self.enterprise.companies
-        if self.user_type == 'subscriber' or not categories_queryset:
-            from product.models import Category, Company
-            categories_queryset = Category.objects
-            companies_queryset = Company.objects
-        for category in categories_queryset.values('id', 'name'):
-            companies = companies_queryset.values(
-                'name', 'hexa_code', 'logo').filter(
-                    categories__id=category['id'])
-            for company in companies:
-                categories.append({
-                    'name': category['name'], 'logo': BASE_HOST + '/media/' +  company['logo'], # noqa
-                    'company': company['name'], 'id': category['id'],
-                    'hexa_code': company['hexa_code']
-                })
+        for category in self.enterprise.categories.only(
+                'name', 'id', 'hexa_code', 'logo'):
+            categories.append({
+                'id': category.id, 'hexa_code': category.hexa_code,
+                'logo': (BASE_HOST if DEBUG else '') + category.logo.url,
+                'name': category.name.split(' ')[0]
+            })
         return categories
 
 
@@ -322,7 +313,7 @@ class State(models.Model):
 class Pincode(models.Model):
     pincode = models.CharField(max_length=6, unique=True)
     city = models.CharField(max_length=64)
-    state = models.ForeignKey(State)
+    state = models.ForeignKey('users.State', null=True, blank=True)
     city_type = models.IntegerField(
         choices=constants.CITY_TIER, default=2)
 

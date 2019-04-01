@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
 
-from users.models import User, Account, Enterprise, AccountDetails
+from users.models import User, Account, Enterprise, AccountDetails, Pincode
 
 from utils import constants, genrate_random_string
 
@@ -70,7 +70,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     referral_reference = serializers.CharField(required=False)
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
-    email = serializers.CharField(required=True)
+    email = serializers.CharField(required=False)
     pan_no = serializers.CharField(required=True)
 
     def validate_password(self, value):
@@ -95,14 +95,6 @@ class CreateUserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 constants.INVALID_TRANSACTION_ID)
         return value
-
-    class Meta:
-        model = User
-        fields = (
-            'first_name', 'last_name', 'email', 'password',
-            'referral_code', 'referral_reference', 'user_type', 'pincode',
-            'pan_no', 'phone_no', 'transaction_id'
-        )
 
     def create(self, validated_data):
         validated_data.update(User.get_referral_details(
@@ -131,6 +123,14 @@ class CreateUserSerializer(serializers.ModelSerializer):
             'phone_no': self.validated_data['phone_no'],
             'message': constants.USER_CREATED_SUCESS
         }
+
+    class Meta:
+        model = User
+        fields = (
+            'first_name', 'last_name', 'email', 'password',
+            'referral_code', 'referral_reference', 'user_type', 'pincode',
+            'pan_no', 'phone_no', 'transaction_id'
+        )
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -293,3 +293,14 @@ class AccountSearchSerializers(serializers.ModelSerializer):
             'phone', 'pincode', 'pan_no', 'gender', 'address', 'age',
             'details'
         )
+
+
+class PincodeSerializer(serializers.ModelSerializer):
+    state = serializers.SerializerMethodField()
+
+    def get_state(self, obj):
+        return obj.state.name
+
+    class Meta:
+        model = Pincode
+        fields = ('pincode', 'city', 'state')
