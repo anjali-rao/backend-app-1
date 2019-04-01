@@ -99,7 +99,7 @@ class Account(AbstractUser):
 
 class User(BaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    account = models.ForeignKey(Account)
+    account = models.ForeignKey('users.Account')
     user_type = models.CharField(
         choices=get_choices(constants.USER_TYPE), max_length=16,
         default=constants.DEFAULT_USER_TYPE)
@@ -304,15 +304,15 @@ class BankAccount(BaseModel):
 
 
 class State(models.Model):
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, db_index=True)
 
     def __unicode__(self):
         return self.name
 
 
 class Pincode(models.Model):
-    pincode = models.CharField(max_length=6, unique=True)
-    city = models.CharField(max_length=64)
+    pincode = models.CharField(max_length=6, db_index=True)
+    city = models.CharField(max_length=64, db_index=True)
     state = models.ForeignKey('users.State', null=True, blank=True)
     city_type = models.IntegerField(
         choices=constants.CITY_TIER, default=2)

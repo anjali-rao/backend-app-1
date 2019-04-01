@@ -70,8 +70,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     referral_reference = serializers.CharField(required=False)
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
-    email = serializers.CharField(required=False)
-    pan_no = serializers.CharField(required=True)
+    email = serializers.CharField(required=True)
 
     def validate_password(self, value):
         return make_password(value)
@@ -103,7 +102,8 @@ class CreateUserSerializer(serializers.ModelSerializer):
         data = {
             'account_id': account.id,
             'user_type': validated_data['user_type'],
-            'enterprise_id': validated_data['enterprise_id']
+            'enterprise_id': validated_data['enterprise_id'],
+            'is_active': True
         }
         instance = User.objects.create(**data)
         instance.generate_referral()

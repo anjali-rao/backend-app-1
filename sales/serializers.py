@@ -23,10 +23,10 @@ class RecommendationSerializer(serializers.ModelSerializer):
         return obj.id
 
     def get_sum_insured(self, obj):
-        return obj.premium.sum_insured.number
+        return obj.premium.sum_insured
 
     def get_premium(self, obj):
-        return round(obj.premium.amount, 2)
+        return obj.premium.amount
 
     def get_features(self, obj):
         features = obj.quotefeature_set.values_list(
@@ -65,10 +65,10 @@ class QuoteSerializer(serializers.ModelSerializer):
         return obj.id
 
     def get_sum_insured(self, obj):
-        return obj.premium.sum_insured.number
+        return obj.premium.sum_insured
 
     def get_premium(self, obj):
-        return round(obj.premium.amount, 2)
+        return obj.premium.amount
 
     def get_product(self, obj):
         return obj.premium.product_variant.get_product_details()
@@ -118,11 +118,18 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
         coverages_added = set()
         coverages = []
         for feature in features:
+            try:
+                find_coverage = next(
+                    coverage for coverage in coverages if coverage['name'] == feature[ # noqa
+                        'feature__feature_master__feature_type'])
+                find_coverage['value'].append(
+                    feature['feature__feature_master__name'])
+            except StopIteration:
+                coverages.append({
+                    'name': feature['feature__feature_master__feature_type'],
+                    'value': [feature['feature__feature_master__name']]
+                })
             coverages_added.add(feature['feature__feature_master__name'])
-            coverages.append({
-                'name': feature['feature__feature_master__feature_type'],
-                'value': [feature['feature__feature_master__name']]
-            })
         for pending in set(constants.FEATURE_TYPES) - set(coverages_added):
             coverages.append({'name': pending, 'value': None})
         return coverages
@@ -136,10 +143,10 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
         return details
 
     def get_suminsured(self, obj):
-        return obj.premium.sum_insured.number
+        return obj.premium.sum_insured
 
     def get_premium(self, obj):
-        return round(obj.premium.amount, 2)
+        return obj.premium.amount
 
     class Meta:
         model = Quote
@@ -160,10 +167,10 @@ class CompareSerializer(serializers.ModelSerializer):
         return obj.id
 
     def get_suminsured(self, obj):
-        return obj.premium.sum_insured.number
+        return obj.premium.sum_insured
 
     def get_premium(self, obj):
-        return round(obj.premium.amount, 2)
+        return obj.premium.amount
 
     def get_product(self, obj):
         return obj.premium.product_variant.get_product_details()
