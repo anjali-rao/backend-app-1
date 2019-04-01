@@ -45,7 +45,7 @@ class Lead(BaseModel):
     contact = models.ForeignKey('crm.Contact', null=True, blank=True)
     category = models.ForeignKey('product.Category')
     amount = models.FloatField(default=0.0)
-    final_score = models.FloatField(default=0.0)
+    final_score = models.FloatField(default=0.0, db_index=True)
     status = models.IntegerField(
         choices=constants.LEAD_STATUS_CHOICES, default=0)
     stage = models.IntegerField(

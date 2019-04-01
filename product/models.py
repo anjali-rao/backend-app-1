@@ -6,7 +6,7 @@ from utils import constants, get_choices
 
 
 class Category(BaseModel):
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, db_index=True)
     description = models.TextField(null=True, blank=True)
     logo = models.ImageField(
         upload_to=constants.CATEGORY_UPLOAD_PATH,
@@ -19,7 +19,7 @@ class Category(BaseModel):
 
 
 class Company(BaseModel):
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, db_index=True)
     short_name = models.CharField(max_length=128)
     categories = models.ManyToManyField('product.Category')
     logo = models.ImageField(
@@ -67,8 +67,8 @@ class ProductVariant(BaseModel):
     feature_variant = models.CharField(max_length=256, default='base')
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, blank=True)
-    adult = models.IntegerField(null=True, blank=True)
-    children = models.IntegerField(null=True, blank=True)
+    adult = models.IntegerField(null=True, blank=True, db_index=True)
+    children = models.IntegerField(null=True, blank=True, db_index=True)
     citytier = models.CharField(max_length=256, null=True, blank=True)
     chronic = models.BooleanField(default=True)
 
@@ -103,7 +103,7 @@ class ProductVariant(BaseModel):
 
 
 class CustomerSegment(BaseModel):
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, db_index=True)
 
     def __str__(self):
         return self.name
@@ -167,9 +167,9 @@ class DeductibleMaster(models.Model):
 class Premium(BaseModel):
     product_variant = models.ForeignKey(
         'product.ProductVariant', null=True, blank=True)
-    sum_insured = models.IntegerField(default=0.0)
-    min_age = models.IntegerField(default=0)
-    max_age = models.IntegerField(default=0)
+    sum_insured = models.IntegerField(default=0.0, db_index=True)
+    min_age = models.IntegerField(default=0, db_index=True)
+    max_age = models.IntegerField(default=0, db_index=True)
     deductible = models.ForeignKey(
         'product.DeductibleMaster', null=True, blank=True)
     base_premium = models.IntegerField(default=constants.DEFAULT_BASE_PREMIUM)
