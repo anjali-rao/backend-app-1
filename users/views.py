@@ -2,6 +2,9 @@ from __future__ import unicode_literals
 from rest_framework import permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework import status
+from rest_framework.views import APIView
+from django.db.models import Q
 
 from url_filter.integrations.drf import DjangoFilterBackend
 
@@ -74,8 +77,81 @@ class SearchAccount(generics.ListAPIView):
         return queryset
 
 
-class PincodeSearch(generics.ListAPIView):
-    queryset = Pincode.objects.all()
-    serializer_class = PincodeSerializer
-    filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('pincode', 'state', 'city')
+class PincodeSearch(APIView):
+
+    def get(self, request, version, format=None):
+
+        data = []
+        EMPTY_RESPONSE = {'message': 'Please pass a text parameter.'}
+        status_code = status.HTTP_400_BAD_REQUEST
+        text = request.query_params.get('text')
+
+        try:
+
+            if text:
+
+                text = str(text).title()
+                res = Pincode.objects.filter(
+                    Q(pincode__contains=text) | Q(city__contains=text) |
+                    Q(state__name__contains=text))[:10]
+
+                if res:
+                    data = PincodeSerializer(res, many=True).data
+                    data = self.format_location_data(data, text)
+
+                return Response(data, status=status.HTTP_200_OK)
+
+            else:
+                return Response(EMPTY_RESPONSE, status=status_code)
+
+        except Exception as e:
+            ERROR_RESPONSE = {'message': e}
+            return Response(ERROR_RESPONSE, status=status_code)
+
+    def format_location_data(self, data, text):
+
+        result, response, location_list = [], {}, set()
+        sample_location = data[0] if data else {}
+
+        if text in sample_location.get('state', ''):
+            response['selection'] = sample_location.get('state')
+            response['location_type'] = 'state'
+
+        elif text in sample_location.get('city', ''):
+            response['selection'] = sample_location.get('city')
+            response['location_type'] = 'city'
+
+        elif text in sample_location.get('pincode', ''):
+            response['selection'] = sample_location.get('pincode')
+            response['location_type'] = 'pincode'
+
+        else:
+            response['selection'] = None
+            response['location_type'] = None
+
+        for each_location in data:
+            location_string_list = []
+
+            state = each_location.get('state') or ''
+            city = each_location.get('city') or ''
+            pincode = each_location.get('pincode') or ''
+
+            if text in state:
+                location_string_list.append(state)
+
+            elif text in city:
+                location_string_list.append(state)
+                location_string_list.append(city)
+            else:
+                location_string_list.append(state)
+                location_string_list.append(city)
+                location_string_list.append(pincode)
+
+
+            location_item = ', '.join(location_string_list)
+            location_list.add(location_item)
+
+        response['location_list'] = location_list
+        result.append(response)
+
+        return result
