@@ -109,12 +109,10 @@ class PincodeSearch(APIView):
             return Response(ERROR_RESPONSE, status=status_code)
 
     def format_location_data(self, data, text):
-
         location_list = set()
 
         for each_location in data:
-
-            location_string_list = []
+            location_string_list = list()
 
             state = each_location.get('state') or ''
             city = each_location.get('city') or ''
@@ -127,13 +125,25 @@ class PincodeSearch(APIView):
                 location_string_list.append(state)
                 location_string_list.append(city)
 
-            else:
+            if text in pincode:
                 location_string_list.append(state)
                 location_string_list.append(city)
                 location_string_list.append(pincode)
+
+            location_string_list = self.remove_duplicates(location_string_list)
 
             location_item = ', '.join(location_string_list)
             location_list.add(location_item)
 
 
         return location_list
+
+    @staticmethod
+    def remove_duplicates(location_string_list):
+        cleaned_list = []
+
+        for loc in location_string_list:
+            if loc not in cleaned_list:
+                cleaned_list.append(loc)
+
+        return cleaned_list
