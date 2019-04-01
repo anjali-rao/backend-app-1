@@ -110,26 +110,10 @@ class PincodeSearch(APIView):
 
     def format_location_data(self, data, text):
 
-        result, response, location_list = [], {}, set()
-        sample_location = data[0] if data else {}
-
-        if text in sample_location.get('state', ''):
-            response['selection'] = sample_location.get('state')
-            response['location_type'] = 'state'
-
-        elif text in sample_location.get('city', ''):
-            response['selection'] = sample_location.get('city')
-            response['location_type'] = 'city'
-
-        elif text in sample_location.get('pincode', ''):
-            response['selection'] = sample_location.get('pincode')
-            response['location_type'] = 'pincode'
-
-        else:
-            response['selection'] = None
-            response['location_type'] = None
+        location_list = set()
 
         for each_location in data:
+
             location_string_list = []
 
             state = each_location.get('state') or ''
@@ -139,19 +123,17 @@ class PincodeSearch(APIView):
             if text in state:
                 location_string_list.append(state)
 
-            elif text in city:
+            if text in city:
                 location_string_list.append(state)
                 location_string_list.append(city)
+
             else:
                 location_string_list.append(state)
                 location_string_list.append(city)
                 location_string_list.append(pincode)
 
-
             location_item = ', '.join(location_string_list)
             location_list.add(location_item)
 
-        response['location_list'] = location_list
-        result.append(response)
 
-        return result
+        return location_list
