@@ -6,15 +6,20 @@ from utils import constants, get_choices
 
 
 class Category(BaseModel):
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, db_index=True)
     description = models.TextField(null=True, blank=True)
+    logo = models.ImageField(
+        upload_to=constants.CATEGORY_UPLOAD_PATH,
+        default=constants.DEFAULT_LOGO)
+    hexa_code = models.CharField(
+        max_length=8, default=constants.DEFAULT_HEXA_CODE)
 
     def __str__(self):
         return self.name
 
 
 class Company(BaseModel):
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, db_index=True)
     short_name = models.CharField(max_length=128)
     categories = models.ManyToManyField('product.Category')
     logo = models.ImageField(
@@ -44,33 +49,36 @@ class CompanyDetails(BaseModel):
 class CompanyCategory(BaseModel):
     category = models.ForeignKey('product.Category')
     company = models.ForeignKey('product.Company')
-    claim_settlement = models.TextField(null=True, blank=True)
+    claim_settlement = models.CharField(max_length=128, null=True, blank=True)
     offer_flag = models.BooleanField(default=False)
-    # network = models.ManyToManyField(NetworkHospital)
 
     class Meta:
         unique_together = ('category', 'company')
 
     def __str__(self):
-        return '%s - %s' % (self.category.name, self.company.name)
+        return '%s - %s' % (self.company.short_name, self.category.name)
 
 
 class ProductVariant(BaseModel):
-    company_category = models.ForeignKey('product.CompanyCategory')
-    name = models.CharField(max_length=128, default="")
+    company_category = models.ForeignKey(
+        'product.CompanyCategory', null=True, blank=True)
+    name = models.CharField(max_length=256, default="")
+    parent_product = models.CharField(max_length=128, null=True, blank=True)
+    feature_variant = models.CharField(max_length=256, default='base')
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, blank=True)
-    adult = models.IntegerField(default=0)
-    children = models.IntegerField(default=0)
-    city = models.CharField(max_length=64, null=True, blank=True)
+    adult = models.IntegerField(null=True, blank=True, db_index=True)
+    children = models.IntegerField(null=True, blank=True, db_index=True)
+    citytier = models.CharField(max_length=256, null=True, blank=True)
     chronic = models.BooleanField(default=True)
 
     def get_product_details(self):
-        from goplannr.settings import BASE_HOST
+        from goplannr.settings import BASE_HOST, DEBUG
+        logo = self.company_category.company.logo.url
         return {
-            'name': self.name,
+            'name': self.parent_product,
             'company': self.company_category.company.name,
-            'logo': BASE_HOST + self.company_category.company.logo.url
+            'logo': logo if not DEBUG else (BASE_HOST + logo)
         }
 
     def get_basic_details(self):
@@ -90,27 +98,25 @@ class ProductVariant(BaseModel):
                 category='ALL', file_type=file_type).last()
         return helpfile.file.url if helpfile else ''
 
-    class Meta:
-        unique_together = ('company_category', 'name')
-
     def __str__(self):
         return self.name
 
 
 class CustomerSegment(BaseModel):
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, db_index=True)
 
     def __str__(self):
         return self.name
 
 
 class FeatureMaster(BaseModel):
-    category = models.ForeignKey('product.Category')
+    category = models.ForeignKey('product.Category', null=True, blank=True)
     name = models.CharField(max_length=127, default="")
     feature_type = models.CharField(
         max_length=32, default='Others',
         choices=get_choices(constants.FEATURE_TYPES))
-    description = models.TextField(default="")
+    short_description = models.CharField(max_length=128, null=True, blank=True)
+    long_description = models.TextField(default="")
 
     def __str__(self):
         return "%s - %s" % (
@@ -118,11 +124,13 @@ class FeatureMaster(BaseModel):
 
 
 class Feature(BaseModel):
-    feature_master = models.ForeignKey('product.FeatureMaster')
-    product_variant = models.ForeignKey('product.ProductVariant')
-    short_description = models.CharField(max_length=256)
-    rating = models.IntegerField(default=0.0)
-    long_description = models.CharField(max_length=256)
+    feature_master = models.ForeignKey(
+        'product.FeatureMaster', null=True, blank=True)
+    product_variant = models.ForeignKey(
+        'product.ProductVariant', null=True, blank=True)
+    rating = models.FloatField(default=0.0)
+    short_description = models.CharField(max_length=156)
+    long_description = models.CharField(max_length=512)
 
     def __str__(self):
         return "%s - %s" % (
@@ -130,9 +138,14 @@ class Feature(BaseModel):
 
 
 class FeatureCustomerSegmentScore(BaseModel):
-    feature = models.ForeignKey(Feature)
-    customer_segment = models.ForeignKey(CustomerSegment)
+    feature_master = models.ForeignKey('product.FeatureMaster')
+    customer_segment = models.ForeignKey('product.CustomerSegment')
     score = models.FloatField(default=0.0)
+
+    def __str__(self):
+        return '%s - %s' % (
+            self.feature_master.name, self.customer_segment.name
+        )
 
 
 class SumInsuredMaster(models.Model):
@@ -152,19 +165,20 @@ class DeductibleMaster(models.Model):
 
 
 class Premium(BaseModel):
-    product_variant = models.ForeignKey('product.ProductVariant')
-    sum_insured = models.ForeignKey('product.SumInsuredMaster')
-    min_age = models.IntegerField(default=0)
-    max_age = models.IntegerField(default=0)
+    product_variant = models.ForeignKey(
+        'product.ProductVariant', null=True, blank=True)
+    sum_insured = models.IntegerField(default=0.0, db_index=True)
+    min_age = models.IntegerField(default=0, db_index=True)
+    max_age = models.IntegerField(default=0, db_index=True)
     deductible = models.ForeignKey(
         'product.DeductibleMaster', null=True, blank=True)
-    base_premium = models.FloatField(default=constants.DEFAULT_BASE_PREMIUM)
+    base_premium = models.IntegerField(default=constants.DEFAULT_BASE_PREMIUM)
     gst = models.FloatField(default=constants.DEFAULT_GST)
     commission = models.FloatField(default=constants.DEFAULT_COMMISSION)
 
     def get_details(self):
         return {
-            'sum_insured': self.sum_insured.number,
+            'sum_insured': self.sum_insured,
             'amount': self.amount,
             'commision': self.get_commission_amount()
         }
@@ -174,6 +188,6 @@ class Premium(BaseModel):
 
     @property
     def amount(self):
-        return (
+        return round((
             self.gst * self.base_premium
-        ) + self.base_premium + self.commission
+        ) + self.base_premium + (self.base_premium * self.commission), 2)

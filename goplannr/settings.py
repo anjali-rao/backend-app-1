@@ -46,6 +46,8 @@ ROOT_URLCONF = 'goplannr.urls'
 
 ALLOWED_HOSTS = get_env_var('ALLOWED_HOSTS').split(',')
 
+RAVEN_CONFIG = get_env_var('RAVEN_CONFIG')
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -62,20 +64,27 @@ INSTALLED_APPS = [
     'crm',
     'product',
     'sales',
-    'questionnaire'
-    # 'raven.contrib.django.raven_compat',
+    'questionnaire',
+    'raven.contrib.django.raven_compat',
     # 'django_hosts',
 ]
-
-# RAVEN_CONFIG = get_env_var('RAVEN_CONFIG')
 
 if DEBUG:
     STATICFILES_DIRS = [
         os.path.join(BASE_DIR, "static"),
     ]
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR + '/media'
 else:
     STATIC_ROOT = "static"
-
+    # For S3 Document Stroage
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_ACCESS_KEY_ID = get_env_var('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = get_env_var('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = 'develop-goplannr'
+    MEDIA_URL = 'https://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
+    MEDIA_ROOT = 'https://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
+    AWS_AUTO_CREATE_BUCKET = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -89,7 +98,6 @@ MIDDLEWARE = [
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
-
 
 TEMPLATES = [
     {
@@ -108,10 +116,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'goplannr.wsgi.application'
-
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR + '/media'
 
 DATABASES = {
     'default': {

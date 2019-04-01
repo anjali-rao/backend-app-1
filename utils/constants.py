@@ -19,6 +19,7 @@ CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
 FEATURE_TYPES = (
     'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
     'Exclusion')
+APPLICATION_TYPES = ('health_insurance')
 
 DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = {
@@ -26,6 +27,10 @@ DOCS_UPLOAD_TYPES = {
     'license': 'advisor/license',
     'photo': 'advisor/selfie'
 }
+TIER_1_CITIES = ('Bengaluru', 'Delhi', 'Mumbai', 'Kolkota')
+TIER_2_CITIES = ('Lucknow', 'Allahabad')
+
+API_CACHE_TIME = 3600
 
 # Defaults
 DEFAULT_LOGO = 'enterprise/goplannr.png'
@@ -83,4 +88,3 @@ ACCOUNT_CREATION_FIELDS = (
 COMPANY_UPLOAD_PATH = 'company'
 ENTERPRISE_UPLOAD_PATH = 'enterprise'
 CATEGORY_UPLOAD_PATH = 'category'
-

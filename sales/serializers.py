@@ -6,6 +6,8 @@ from utils import constants
 
 from content.serializers import FaqSerializer, Faq
 
+from content.models import NetworkHospital
+
 
 class RecommendationSerializer(serializers.ModelSerializer):
     quote_id = serializers.SerializerMethodField()
@@ -21,14 +23,15 @@ class RecommendationSerializer(serializers.ModelSerializer):
         return obj.id
 
     def get_sum_insured(self, obj):
-        return obj.premium.sum_insured.number
+        return obj.premium.sum_insured
 
     def get_premium(self, obj):
-        return round(obj.premium.amount, 2)
+        return obj.premium.amount
 
     def get_features(self, obj):
-        return list(obj.quotefeature_set.values_list(
-                    'feature__feature_master__name'), flat=True)
+        features = obj.quotefeature_set.values_list(
+            'feature__feature_master__name', flat=True) or []
+        return features[:5]
 
     def get_product(self, obj):
         return obj.premium.product_variant.get_product_details()
@@ -62,7 +65,7 @@ class QuoteSerializer(serializers.ModelSerializer):
         return obj.id
 
     def get_sum_insured(self, obj):
-        return obj.premium.sum_insured.number
+        return obj.premium.sum_insured
 
     def get_premium(self, obj):
         return obj.premium.amount
@@ -71,7 +74,7 @@ class QuoteSerializer(serializers.ModelSerializer):
         return obj.premium.product_variant.get_product_details()
 
     def get_recommendation_score(seld, obj):
-        return obj.feature_score()
+        return obj.recommendation_score
 
     class Meta:
         model = Quote
@@ -84,40 +87,52 @@ class QuoteSerializer(serializers.ModelSerializer):
 class QuoteFeatureSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
-    feature_master_id = serializers.SerializerMethodField()
 
     def get_name(self, obj):
         return obj.feature.feature_master.name
 
     def get_description(self, obj):
-        return obj.feature.feature_master.description
-
-    def get_feature_master_id(self, obj):
-        return obj.feature.feature_master.id
+        return obj.feature.short_description
 
     class Meta:
         model = QuoteFeature
-        fields = ('id', 'name', 'score', 'description', 'feature_master_id')
+        fields = ('id', 'name', 'score', 'description')
 
 
 class QuotesDetailsSerializer(serializers.ModelSerializer):
-    benifits = serializers.SerializerMethodField()
+    suminsured = serializers.SerializerMethodField()
+    premium = serializers.SerializerMethodField()
+    benefits = serializers.SerializerMethodField()
     coverage = serializers.SerializerMethodField()
     faq = serializers.SerializerMethodField()
     company_details = serializers.SerializerMethodField()
 
-    def get_benifits(self, obj):
+    def get_benefits(self, obj):
         return QuoteFeatureSerializer(
             obj.quotefeature_set.all(), many=True).data
 
     def get_coverage(self, obj):
-        coverage = dict.fromkeys(constants.FEATURE_TYPES, set())
         features = obj.quotefeature_set.values(
             'feature__feature_master__feature_type',
             'feature__feature_master__name')
+        coverages_added = set()
+        coverages = []
         for feature in features:
-            coverage[feature['feature__feature_master__feature_type']].add(feature['feature__feature_master__name'])
-        return coverage
+            try:
+                find_coverage = next(
+                    coverage for coverage in coverages if coverage['name'] == feature[ # noqa
+                        'feature__feature_master__feature_type'])
+                find_coverage['value'].append(
+                    feature['feature__feature_master__name'])
+            except StopIteration:
+                coverages.append({
+                    'name': feature['feature__feature_master__feature_type'],
+                    'value': [feature['feature__feature_master__name']]
+                })
+            coverages_added.add(feature['feature__feature_master__name'])
+        for pending in set(constants.FEATURE_TYPES) - set(coverages_added):
+            coverages.append({'name': pending, 'value': None})
+        return coverages
 
     def get_faq(self, obj):
         return FaqSerializer(Faq.objects.all(), many=True).data
@@ -127,9 +142,57 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
         details.update(obj.premium.product_variant.get_basic_details())
         return details
 
+    def get_suminsured(self, obj):
+        return obj.premium.sum_insured
+
+    def get_premium(self, obj):
+        return obj.premium.amount
+
     class Meta:
         model = Quote
-        fields = ('id', 'coverage', 'benifits', 'faq', 'company_details')
+        fields = (
+            'id', 'suminsured', 'premium', 'coverage', 'benefits', 'faq',
+            'company_details')
+
+
+class CompareSerializer(serializers.ModelSerializer):
+    quote_id = serializers.SerializerMethodField()
+    suminsured = serializers.SerializerMethodField()
+    premium = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    features = serializers.SerializerMethodField()
+    network_coverage = serializers.SerializerMethodField()
+
+    def get_quote_id(self, obj):
+        return obj.id
+
+    def get_suminsured(self, obj):
+        return obj.premium.sum_insured
+
+    def get_premium(self, obj):
+        return obj.premium.amount
+
+    def get_product(self, obj):
+        return obj.premium.product_variant.get_product_details()
+
+    def get_features(self, obj):
+        return obj.get_feature_details()
+
+    def get_network_coverage(self, obj):
+        return [
+            {
+                'name': 'hospitals',
+                'value': NetworkHospital.objects.filter(
+                    city=obj.lead.city).count()
+            }
+        ]
+
+    class Meta:
+        model = Quote
+        fields = (
+            'quote_id', 'suminsured', 'premium', 'product',
+            'features', 'network_coverage'
+        )
 
 
 class CreateApplicationSerializer(serializers.ModelSerializer):
