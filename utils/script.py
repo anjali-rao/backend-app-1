@@ -115,5 +115,30 @@ def upload_premiums(filename):
         instance.save()
 
 
+def upload_customersegmentfeaturescore(filename):
+    from product.models import (
+        FeatureMaster, FeatureCustomerSegmentScore, CustomerSegment
+    )
+    for row in readcsv(filename):
+        feature_masters = FeatureMaster.objects.filter(
+            name=row['Feature_master'])
+        feature_types = [i for i, j in row.items() if i != 'Feature_master' and i != 'Base'] # noqa
+        if not feature_masters.exists():
+            continue
+        feature_master = feature_masters.get()
+        for feature in feature_types:
+            score = row[feature].replace('%', '')
+            if score == '':
+                continue
+            customer_segment = CustomerSegment.objects.get(
+                name=feature.replace('-', '_').replace(' ', '_'))
+            instance, created = FeatureCustomerSegmentScore.objects.get_or_create(
+                feature_master_id=feature_master.id,
+                customer_segment_id=customer_segment.id)
+            instance.score = float(score) / 100
+            instance.save()
+
+
+
 
 

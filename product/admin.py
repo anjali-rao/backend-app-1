@@ -77,5 +77,5 @@ class PremiumAdmin(admin.ModelAdmin):
 
 @admin.register(FeatureCustomerSegmentScore)
 class FeatureCustomerSegmentScoreAdmin(admin.ModelAdmin):
-    list_display = ('feature', 'customer_segment', 'score')
-    raw_id_fields = ('feature',)
+    list_display = ('feature_master', 'customer_segment', 'score')
+    raw_id_fields = ('feature_master',)
