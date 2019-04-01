@@ -73,7 +73,6 @@ class Lead(BaseModel):
                 self.refresh_quote_data()
         except Lead.DoesNotExist:
             self.parse_family()
-            self.customer_segment_id = self.get_customer_segment().id
         super(Lead, self).save(*args, **kwargs)
         self.__original_final_score = self.final_score
 
@@ -108,6 +107,7 @@ class Lead(BaseModel):
         else:
             self.final_score = 50
         self.final_score *= 100000
+        self.customer_segment_id = self.get_customer_segment().id
         self.save()
 
     def refresh_quote_data(self):
@@ -117,20 +117,24 @@ class Lead(BaseModel):
         # product_variant__citytier=self.citytier,
         # min_age__gte=self.min_age, max_age__lte=self.max_age,
         premiums = Premium.objects.select_related(
-            'product_variant', 'sum_insured').filter(
+            'product_variant').filter(
             product_variant__company_category__category_id=self.category_id,
-            min_age__gte=self.min_age, sum_insured__number=self.final_score,
-            product_variant__adult=self.adult,
-            product_variant__children=self.children)
+            min_age__gte=self.min_age, product_variant__children=self.children,
+            product_variant__adult=self.adult, sum_insured=self.final_score
+        )
         for premium in premiums:
+            if premium.product_variant.parent is None:
+                continue
+            features = premium.product_variant.parent.feature_set.select_related('feature_master').all() # noqa
             quote = Quote.objects.create(
                 lead_id=self.id, premium_id=premium.id)
-            features = premium.product_variant.feature_set.only('id').all()
             for feature in features:
                 feature_score = FeatureCustomerSegmentScore.objects.only(
                     'score').filter(
-                        feature_id=feature.id,
+                        feature_master_id=feature.feature_master.id,
                         customer_segment_id=self.customer_segment.id).last()
+                if feature_score is None:
+                    continue
                 QuoteFeature.objects.create(
                     quote_id=quote.id, feature_id=feature.id,
                     score=feature_score.score
@@ -138,22 +142,41 @@ class Lead(BaseModel):
 
     def get_customer_segment(self):
         from product.models import CustomerSegment
-        segment_name = 'young adult'
+        from questionnaire.models import Response
+        responses = Response.objects.select_related(
+            'answer', 'question').filter(lead_id=self.id)
+        segment_name = 'young_adult'
         if 'self_age' in self.family:
             age = int(self.family['self_age'])
             if age <= 35:
-                segment_name = 'young adult'
+                segment_name = 'young_adult'
             if any(x in self.family for x in ['mother_age', 'father_age']) and age < 35: # noqa
-                segment_name = 'young adult with dependent parents'
+                segment_name = 'young_adult_with_dependent_parents'
+            if age > 50:
+                segment_name = 'senior_citizens'
             if 'spouse_age' in self.family:
                 if age < 35:
-                    segment_name = 'young couple'
+                    segment_name = 'young_couple'
                 if age > 50:
-                    segment_name = 'senior citizens'
+                    segment_name = 'senior_citizens'
                 if self.family.get('kid') >= 1 and age < 40:
-                    segment_name = 'young family'
+                    segment_name = 'young_family'
                 if self.family.get('kid') >= 1 and age < 60:
-                    segment_name = 'middle aged family'
+                    segment_name = 'middle_aged_family'
+            emp_resp = responses.filter(question__title='Occupation')
+            if emp_resp.exists() and emp_resp.filter(
+                    answer__answer='Self Employed or Business').exists():
+                segment_name = 'self_employed'
+        if self.max_age < 40 and self.children >= 1:
+            segment_name = 'young_family'
+        elif self.max_age <= 35 and self.adult == 1:
+            segment_name = 'young_adult'
+        elif self.max_age <= 35 and self.adult == 2:
+            segment_name = 'young_couple'
+        elif self.max_age < 60 and self.children >= 1:
+            segment_name = 'middle_aged_family'
+        elif self.max_age >= 50:
+            segment_name = 'senior_citizens'
         return CustomerSegment.objects.get(name=segment_name)
 
     def get_recommendated_quote(self):

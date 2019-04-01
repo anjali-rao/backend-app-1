@@ -12,6 +12,7 @@ from product.models import (
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ('name', 'short_name', 'website')
+    search_fields = ('name',)
 
 
 @admin.register(Category)
@@ -30,6 +31,7 @@ class CompanyDetailsAdmin(admin.ModelAdmin):
 class ComapanyCategoryAdmin(admin.ModelAdmin):
     list_display = ('category', 'company', 'claim_settlement')
     raw_id_fields = ('category', 'company')
+    search_fields = ('category__name', 'company__name')
 
 
 @admin.register(ProductVariant)
@@ -46,7 +48,7 @@ class CustomerSegmentAdmin(admin.ModelAdmin):
 
 @admin.register(FeatureMaster)
 class FeatureMasterAdmin(admin.ModelAdmin):
-    list_display = ('category', 'name', 'description')
+    list_display = ('category', 'name', 'short_description')
     search_fields = ('category__id',)
     raw_id_fields = ('category',)
 
@@ -72,10 +74,10 @@ class DeductibleMasterAdmin(admin.ModelAdmin):
 class PremiumAdmin(admin.ModelAdmin):
     list_display = ('product_variant', 'sum_insured', 'min_age', 'max_age')
     search_fields = ('product_variant__id',)
-    raw_id_fields = ('product_variant', 'sum_insured', 'deductible')
+    raw_id_fields = ('product_variant', 'deductible')
 
 
 @admin.register(FeatureCustomerSegmentScore)
 class FeatureCustomerSegmentScoreAdmin(admin.ModelAdmin):
-    list_display = ('feature', 'customer_segment', 'score')
-    raw_id_fields = ('feature',)
+    list_display = ('feature_master', 'customer_segment', 'score')
+    raw_id_fields = ('feature_master',)

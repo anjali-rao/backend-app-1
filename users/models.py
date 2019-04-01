@@ -311,7 +311,7 @@ class State(models.Model):
 
 
 class Pincode(models.Model):
-    pincode = models.CharField(max_length=6, unique=True)
+    pincode = models.CharField(max_length=6)
     city = models.CharField(max_length=64)
     state = models.ForeignKey('users.State', null=True, blank=True)
     city_type = models.IntegerField(
