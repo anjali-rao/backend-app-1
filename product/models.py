@@ -178,7 +178,7 @@ class Premium(BaseModel):
 
     def get_details(self):
         return {
-            'sum_insured': self.sum_insured.number,
+            'sum_insured': self.sum_insured,
             'amount': self.amount,
             'commision': self.get_commission_amount()
         }
@@ -190,4 +190,4 @@ class Premium(BaseModel):
     def amount(self):
         return round((
             self.gst * self.base_premium
-        ) + self.base_premium + self.commission, 2)
+        ) + self.base_premium + (self.base_premium * self.commission), 2)
