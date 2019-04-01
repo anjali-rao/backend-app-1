@@ -23,10 +23,10 @@ class RecommendationSerializer(serializers.ModelSerializer):
         return obj.id
 
     def get_sum_insured(self, obj):
-        return obj.premium.sum_insured.number
+        return obj.premium.sum_insured
 
     def get_premium(self, obj):
-        return round(obj.premium.amount, 2)
+        return obj.premium.amount
 
     def get_features(self, obj):
         features = obj.quotefeature_set.values_list(
@@ -65,10 +65,10 @@ class QuoteSerializer(serializers.ModelSerializer):
         return obj.id
 
     def get_sum_insured(self, obj):
-        return obj.premium.sum_insured.number
+        return obj.premium.sum_insured
 
     def get_premium(self, obj):
-        return round(obj.premium.amount, 2)
+        return obj.premium.amount
 
     def get_product(self, obj):
         return obj.premium.product_variant.get_product_details()
@@ -160,10 +160,10 @@ class CompareSerializer(serializers.ModelSerializer):
         return obj.id
 
     def get_suminsured(self, obj):
-        return obj.premium.sum_insured.number
+        return obj.premium.sum_insured
 
     def get_premium(self, obj):
-        return round(obj.premium.amount, 2)
+        return obj.premium.amount
 
     def get_product(self, obj):
         return obj.premium.product_variant.get_product_details()

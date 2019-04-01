@@ -142,6 +142,11 @@ class FeatureCustomerSegmentScore(BaseModel):
     customer_segment = models.ForeignKey('product.CustomerSegment')
     score = models.FloatField(default=0.0)
 
+    def __str__(self):
+        return '%s - %s' % (
+            self.feature_master.name, self.customer_segment.name
+        )
+
 
 class SumInsuredMaster(models.Model):
     text = models.CharField(max_length=64)

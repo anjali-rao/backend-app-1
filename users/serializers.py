@@ -103,7 +103,8 @@ class CreateUserSerializer(serializers.ModelSerializer):
         data = {
             'account_id': account.id,
             'user_type': validated_data['user_type'],
-            'enterprise_id': validated_data['enterprise_id']
+            'enterprise_id': validated_data['enterprise_id'],
+            'is_active': True
         }
         instance = User.objects.create(**data)
         instance.generate_referral()

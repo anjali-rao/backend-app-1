@@ -37,8 +37,8 @@ class Quote(BaseModel):
         features = []
         for feature in self.quotefeature_set.annotate(
             name=models.F('feature__feature_master__name'),
-            description=models.F('feature__feature_master__description'),
-            short_text=models.F('feature__short_description')
+            description=models.F('feature__feature_master__long_description'),
+            short_text=models.F('feature__feature_master__short_description')
         ).values('name', 'score', 'description', 'short_text'):
             features.append({
                 'name': feature['name'],

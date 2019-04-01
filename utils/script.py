@@ -81,7 +81,7 @@ def upload_product_variant(filename):
         instance.parent_product = row['parent_product']
         if 'null' not in row['adults']:
             instance.parent_id = row['parent_product_id']
-            instance.adults = row['adults']
+            instance.adult = row['adults']
             instance.children = row['children']
             instance.citytier = row['variant_citytier']
             instance.chronic = row['variant_chronic'] != 'Non Chronic'
