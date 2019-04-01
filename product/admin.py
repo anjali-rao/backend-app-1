@@ -12,6 +12,7 @@ from product.models import (
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ('name', 'short_name', 'website')
+    search_fields = ('name',)
 
 
 @admin.register(Category)
@@ -30,6 +31,7 @@ class CompanyDetailsAdmin(admin.ModelAdmin):
 class ComapanyCategoryAdmin(admin.ModelAdmin):
     list_display = ('category', 'company', 'claim_settlement')
     raw_id_fields = ('category', 'company')
+    search_fields = ('category__name', 'company__name')
 
 
 @admin.register(ProductVariant)
