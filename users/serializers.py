@@ -70,8 +70,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     referral_reference = serializers.CharField(required=False)
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
-    email = serializers.CharField(required=False)
-    pan_no = serializers.CharField(required=True)
+    email = serializers.CharField(required=True)
 
     def validate_password(self, value):
         return make_password(value)
