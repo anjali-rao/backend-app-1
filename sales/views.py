@@ -27,7 +27,7 @@ class GetQuotes(generics.ListAPIView):
             lead.save()
         queryset = lead.get_quotes()
         if queryset.exists():
-            return queryset
+            return queryset.order_by('premium')
         raise exceptions.NotFound("No Quotes found for given lead.")
 
 
@@ -71,14 +71,12 @@ class GetRecommendatedQuote(generics.ListAPIView):
                 if self.request.query_params.get('suminsured'):
                     lead.final_score = self.request.query_params['suminsured']
                     lead.save()
-                else:
+                elif self.request.query_params.get('rest'):
                     lead.calculate_final_score()
-                return [lead.get_recommendated_quote()]
+                return [lead.get_recommendated_quotes()]
         except Lead.DoesNotExist:
             raise exceptions.NotFound('Lead doesnot exists')
         except IntegrityError:
-            raise exceptions.APIException(
-                'No recommendated Quote found for given suminsured')
-        except ValueError:
-            raise exceptions.APIException(
-                'Curently we are unable to suggest any quote. please try again.') # noqa
+            pass
+        raise exceptions.APIException(
+            'Curently we are unable to suggest any quote. please try again.') # noqa

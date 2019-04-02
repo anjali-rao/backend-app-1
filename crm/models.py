@@ -58,7 +58,7 @@ class Lead(BaseModel):
     customer_segment = models.ForeignKey(
         'product.CustomerSegment', null=True, blank=True)
     adult = models.IntegerField(default=0)
-    pincode = models.CharField(max_length=6)
+    pincode = models.CharField(max_length=6, null=True)
     children = models.IntegerField(default=0)
     family = JSONField(default={})
     tax_saving = models.FloatField(default=0.30)
@@ -114,17 +114,8 @@ class Lead(BaseModel):
         quotes = self.get_quotes()
         if quotes.exists():
             quotes.delete()
-        # product_variant__citytier=self.citytier,
-        # min_age__gte=self.min_age, max_age__lte=self.max_age,
-        premiums = Premium.objects.select_related(
-            'product_variant').filter(
-            product_variant__company_category__category_id=self.category_id,
-            min_age__gte=self.min_age, product_variant__children=self.children,
-            product_variant__adult=self.adult, sum_insured=self.final_score
-        )
-        for premium in premiums:
-            if premium.product_variant.parent is None:
-                continue
+        quote_features = []
+        for premium in self.get_premiums():
             features = premium.product_variant.parent.feature_set.select_related('feature_master').all() # noqa
             quote = Quote.objects.create(
                 lead_id=self.id, premium_id=premium.id)
@@ -135,10 +126,25 @@ class Lead(BaseModel):
                         customer_segment_id=self.customer_segment.id).last()
                 if feature_score is None:
                     continue
-                QuoteFeature.objects.create(
+                quote_features.append(QuoteFeature(
                     quote_id=quote.id, feature_id=feature.id,
                     score=feature_score.score
-                )
+                ))
+        QuoteFeature.objects.bulk_create(quote_features)
+
+    def get_premiums(self):
+        # product_variant__citytier=self.citytier,
+        # min_age__gte=self.min_age, max_age__lte=self.max_age,
+        premiums = Premium.objects.select_related(
+            'product_variant'
+        ).filter(
+            product_variant__company_category__category_id=self.category_id,
+            sum_insured=self.final_score, product_variant__adult=self.adult,
+            min_age__gte=self.min_age
+        )
+        if self.children <= 4:
+            return premiums.filter(product_variant__children=self.children)
+        return premiums
 
     def get_customer_segment(self):
         from product.models import CustomerSegment
@@ -177,13 +183,10 @@ class Lead(BaseModel):
             segment_name = 'middle_aged_family'
         elif self.max_age >= 50:
             segment_name = 'senior_citizens'
-        return CustomerSegment.objects.get(name=segment_name)
+        return CustomerSegment.objects.only('id').get(name=segment_name)
 
-    def get_recommendated_quote(self):
-        quotes_scores = dict()
-        for quote in self.quote_set.all():
-            quotes_scores[quote.recommendation_score] = quote
-        return quotes_scores[max(quotes_scores.keys())]
+    def get_recommendated_quotes(self):
+        return self.quote_set.all().order_by('-recommendation_score')[0]
 
     def get_quotes(self):
         return self.quote_set.all()

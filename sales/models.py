@@ -14,11 +14,7 @@ class Quote(BaseModel):
         max_length=16, choices=constants.STATUS_CHOICES,
         default='pending')
     premium = models.ForeignKey('product.Premium', null=True, blank=True)
-
-    @property
-    def recommendation_score(self):
-        return QuoteFeature.objects.filter(quote_id=self.id).aggregate(
-            s=models.Sum('feature_recommendation_score'))['s']
+    recommendation_score = models.FloatField(default=0.0)
 
     class Meta:
         unique_together = ('lead', 'premium',)
@@ -38,7 +34,7 @@ class Quote(BaseModel):
         for feature in self.quotefeature_set.annotate(
             name=models.F('feature__feature_master__name'),
             description=models.F('feature__feature_master__long_description'),
-            short_text=models.F('feature__feature_master__short_description')
+            short_text=models.F('feature__short_description')
         ).values('name', 'score', 'description', 'short_text'):
             features.append({
                 'name': feature['name'],
@@ -53,11 +49,12 @@ class QuoteFeature(BaseModel):
     quote = models.ForeignKey('sales.Quote', on_delete=models.CASCADE)
     feature = models.ForeignKey('product.feature', on_delete=models.CASCADE)
     score = models.FloatField(default=0.0)
-    feature_recommendation_score = models.FloatField(default=0.0)
 
     def save(self, *args, **kwargs):
-        self.feature_recommendation_score = self.feature.rating * self.score
         super(QuoteFeature, self).save(*args, **kwargs)
+        self.quote.recommendation_score += float(
+            self.feature.rating * self.score)
+        self.quote.save()
 
 
 class KYCDocuments(BaseModel):
