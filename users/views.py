@@ -99,6 +99,7 @@ class PincodeSearch(APIView):
 
         data = []
         EMPTY_RESPONSE = {'detail': 'Please pass a text parameter.'}
+
         status_code = status.HTTP_400_BAD_REQUEST
         text = request.query_params.get('text')
 
@@ -125,7 +126,6 @@ class PincodeSearch(APIView):
             return Response(ERROR_RESPONSE, status=status_code)
 
     def format_location_data(self, data, text):
-
         location_list = set()
 
         for each_location in data:
@@ -139,7 +139,7 @@ class PincodeSearch(APIView):
                 location_string_list.append(state)
 
             if text in city:
-                # location_string_list.append(state)
+                location_string_list.append(state)
                 location_string_list.append(city)
 
             if text in pincode:
