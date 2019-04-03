@@ -35,7 +35,8 @@ class Account(AbstractUser):
         choices=get_choices(constants.GENDER), max_length=8,
         null=True, blank=True)
     address = models.ForeignKey('users.Address', null=True, blank=True)
-    pincode = models.ForeignKey('users.Pincode', max_length=6, null=True, blank=True)
+    pincode = models.ForeignKey(
+        'users.Pincode', max_length=6, null=True, blank=True)
 
     def send_notification(self, **kwargs):
         return getattr(self, 'send_%s' % kwargs['type'])(kwargs)
@@ -108,16 +109,23 @@ class User(BaseModel):
         choices=get_choices(constants.USER_TYPE), max_length=16,
         default=constants.DEFAULT_USER_TYPE)
     campaign = models.ForeignKey('users.Campaign', null=True, blank=True)
-    enterprise_id = models.PositiveIntegerField(null=True, blank=True)
     flag = JSONField(default=constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
+    content_type = models.ForeignKey(ContentType)
+    enterprise_id = models.PositiveIntegerField()
+    enterprise = GenericForeignKey('content_type', 'enterprise_id')
 
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
-    object_id = models.PositiveIntegerField(null=True, blank=True)
-    content_object = GenericForeignKey()
+    def save(self, *args, **kwargs):
+        if not self.__class__.objects.filter(pk=self.id):
+            models_name = 'subcriberenterprise'
+            if self.user_type == 'enterprise':
+                models_name = 'enterprise'
+            self.content_type_id = ContentType.objects.get(
+                app_label='users', model=models_name).id
+        super(User, self).save(*args, **kwargs)
 
     def __unicode__(self):
-        return self.account.username
+        return self.account.get_full_name()
 
     @property
     def enterprise(self):

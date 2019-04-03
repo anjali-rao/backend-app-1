@@ -60,7 +60,7 @@ class OTPVerificationSerializer(serializers.Serializer):
 
 class CreateUserSerializer(serializers.ModelSerializer):
     pincode = serializers.CharField(
-        required=False, allow_blank=True, max_length=6)
+        required=True, allow_blank=True, max_length=6)
     pan_no = serializers.CharField(
         required=False, allow_blank=True, max_length=10)
     phone_no = serializers.CharField(required=True, max_length=10)
@@ -95,6 +95,9 @@ class CreateUserSerializer(serializers.ModelSerializer):
                 constants.INVALID_TRANSACTION_ID)
         return value
 
+    def validate_pincode(self, value):
+        return Pincode.objects.get(pincode='560034').id
+
     def create(self, validated_data):
         validated_data.update(User.get_referral_details(
             validated_data.get('referral_code')))
@@ -110,6 +113,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return instance
 
     def get_account(self, validated_data):
+        validated_data['pincode_id'] = validated_data['pincode']
         acc = Account.get_account(validated_data['phone_no'])
         for field_name in constants.ACCOUNT_CREATION_FIELDS:
             setattr(acc, field_name, validated_data.get(field_name))
@@ -134,7 +138,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
 
 class AccountSerializer(serializers.ModelSerializer):
-    pincode =serializers.SerializerMethodField()
+    pincode = serializers.SerializerMethodField()
 
     def get_pincode(self, obj):
 
