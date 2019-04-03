@@ -80,7 +80,7 @@ INVALID_PINCODE = 'Invalid pincode provided.'
 # Creation Fields
 ACCOUNT_CREATION_FIELDS = (
     'password', 'first_name', 'last_name', 'email',
-    'pincode', 'pan_no'
+    'pincode_id', 'pan_no'
 )
 
 

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import models
+from utils.model import BaseModel, models
 from utils import constants, get_choices
 from django.utils.functional import cached_property
 
 
-class Category(models.Model):
+class Category(BaseModel):
     name = models.CharField(max_length=128, db_index=True)
     description = models.TextField(null=True, blank=True)
     logo = models.ImageField(
@@ -19,7 +19,7 @@ class Category(models.Model):
         return self.name
 
 
-class Company(models.Model):
+class Company(BaseModel):
     name = models.CharField(max_length=128, db_index=True)
     short_name = models.CharField(max_length=128)
     categories = models.ManyToManyField('product.Category')
@@ -38,7 +38,7 @@ class Company(models.Model):
         return self.name
 
 
-class CompanyDetails(models.Model):
+class CompanyDetails(BaseModel):
     company = models.OneToOneField('product.Company')
     fact_file = models.TextField(null=True, blank=True)
     joint_venture = models.TextField(null=True, blank=True)
@@ -47,7 +47,7 @@ class CompanyDetails(models.Model):
     additional_info = models.TextField(null=True, blank=True)
 
 
-class CompanyCategory(models.Model):
+class CompanyCategory(BaseModel):
     category = models.ForeignKey('product.Category')
     company = models.ForeignKey('product.Company')
     claim_settlement = models.CharField(max_length=128, null=True, blank=True)
@@ -60,7 +60,7 @@ class CompanyCategory(models.Model):
         return '%s - %s' % (self.company.short_name, self.category.name)
 
 
-class ProductVariant(models.Model):
+class ProductVariant(BaseModel):
     company_category = models.ForeignKey(
         'product.CompanyCategory', null=True, blank=True)
     name = models.CharField(max_length=256, default="")
@@ -104,14 +104,14 @@ class ProductVariant(models.Model):
         return self.name
 
 
-class CustomerSegment(models.Model):
+class CustomerSegment(BaseModel):
     name = models.CharField(max_length=128, db_index=True)
 
     def __str__(self):
         return self.name
 
 
-class FeatureMaster(models.Model):
+class FeatureMaster(BaseModel):
     category = models.ForeignKey('product.Category', null=True, blank=True)
     name = models.CharField(max_length=127, default="")
     feature_type = models.CharField(
@@ -125,7 +125,7 @@ class FeatureMaster(models.Model):
             self.name, self.category.name)
 
 
-class Feature(models.Model):
+class Feature(BaseModel):
     feature_master = models.ForeignKey(
         'product.FeatureMaster', null=True, blank=True)
     product_variant = models.ForeignKey(
@@ -139,7 +139,7 @@ class Feature(models.Model):
             self.product_variant.name, self.feature_master.name)
 
 
-class FeatureCustomerSegmentScore(models.Model):
+class FeatureCustomerSegmentScore(BaseModel):
     feature_master = models.ForeignKey('product.FeatureMaster')
     customer_segment = models.ForeignKey('product.CustomerSegment')
     score = models.FloatField(default=0.0)
@@ -158,7 +158,7 @@ class SumInsuredMaster(models.Model):
         return self.text
 
 
-class DeductibleMaster(models.Model):
+class DeductibleMaster(BaseModel):
     text = models.CharField(max_length=100)
     number = models.IntegerField()
 
@@ -166,7 +166,7 @@ class DeductibleMaster(models.Model):
         return self.text
 
 
-class Premium(models.Model):
+class Premium(BaseModel):
     product_variant = models.ForeignKey(
         'product.ProductVariant', null=True, blank=True)
     sum_insured = models.IntegerField(default=0.0, db_index=True)
