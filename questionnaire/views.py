@@ -18,8 +18,12 @@ class GetQuestionnaire(generics.ListAPIView):
     serializer_class = QuestionnSerializers
 
     def get_queryset(self):
-        return Question.objects.filter(
+        questionnaire = Question.objects.filter(
             category_id=self.request.query_params.get('category'))
+        if not questionnaire:
+            raise exceptions.NotFound(
+                'No Questionnaire found for given category id')
+        return questionnaire
 
 
 class RecordQuestionnaireResponse(generics.CreateAPIView):
@@ -42,16 +46,12 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
                 lead.calculate_final_score()
             return Response(
                 RecommendationSerializer(
-                    lead.get_recommendated_quote()).data,
+                    lead.get_recommendated_quotes()).data,
                 status=status.HTTP_201_CREATED)
         except IntegrityError:
-            raise exceptions.APIException(
-                'Unable to process request currently. Please try again')
-        except ValueError:
-            return Response({
-                'lead_id': lead.id,
-                'message': "No recommendated quotes found"
-            }, status=404)
+            pass
+        raise exceptions.APIException(
+            'Unable to process request currently. Please try again')
 
     def create_lead(self, category_id, family, pincode):
         from crm.models import Lead

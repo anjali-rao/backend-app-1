@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from utils.model import BaseModel, models
+from django.db import models
 from utils import constants, get_choices
+from django.utils.functional import cached_property
 
 
-class Category(BaseModel):
+class Category(models.Model):
     name = models.CharField(max_length=128, db_index=True)
     description = models.TextField(null=True, blank=True)
     logo = models.ImageField(
@@ -18,7 +19,7 @@ class Category(BaseModel):
         return self.name
 
 
-class Company(BaseModel):
+class Company(models.Model):
     name = models.CharField(max_length=128, db_index=True)
     short_name = models.CharField(max_length=128)
     categories = models.ManyToManyField('product.Category')
@@ -37,7 +38,7 @@ class Company(BaseModel):
         return self.name
 
 
-class CompanyDetails(BaseModel):
+class CompanyDetails(models.Model):
     company = models.OneToOneField('product.Company')
     fact_file = models.TextField(null=True, blank=True)
     joint_venture = models.TextField(null=True, blank=True)
@@ -46,7 +47,7 @@ class CompanyDetails(BaseModel):
     additional_info = models.TextField(null=True, blank=True)
 
 
-class CompanyCategory(BaseModel):
+class CompanyCategory(models.Model):
     category = models.ForeignKey('product.Category')
     company = models.ForeignKey('product.Company')
     claim_settlement = models.CharField(max_length=128, null=True, blank=True)
@@ -59,7 +60,7 @@ class CompanyCategory(BaseModel):
         return '%s - %s' % (self.company.short_name, self.category.name)
 
 
-class ProductVariant(BaseModel):
+class ProductVariant(models.Model):
     company_category = models.ForeignKey(
         'product.CompanyCategory', null=True, blank=True)
     name = models.CharField(max_length=256, default="")
@@ -76,9 +77,10 @@ class ProductVariant(BaseModel):
         from goplannr.settings import BASE_HOST, DEBUG
         logo = self.company_category.company.logo.url
         return {
-            'name': self.parent_product,
+            'name': self.feature_variant,
             'company': self.company_category.company.name,
-            'logo': logo if not DEBUG else (BASE_HOST + logo)
+            'logo': logo if not DEBUG else (BASE_HOST + logo),
+            'variant_name': self.feature_variant
         }
 
     def get_basic_details(self):
@@ -102,14 +104,14 @@ class ProductVariant(BaseModel):
         return self.name
 
 
-class CustomerSegment(BaseModel):
+class CustomerSegment(models.Model):
     name = models.CharField(max_length=128, db_index=True)
 
     def __str__(self):
         return self.name
 
 
-class FeatureMaster(BaseModel):
+class FeatureMaster(models.Model):
     category = models.ForeignKey('product.Category', null=True, blank=True)
     name = models.CharField(max_length=127, default="")
     feature_type = models.CharField(
@@ -123,7 +125,7 @@ class FeatureMaster(BaseModel):
             self.name, self.category.name)
 
 
-class Feature(BaseModel):
+class Feature(models.Model):
     feature_master = models.ForeignKey(
         'product.FeatureMaster', null=True, blank=True)
     product_variant = models.ForeignKey(
@@ -137,7 +139,7 @@ class Feature(BaseModel):
             self.product_variant.name, self.feature_master.name)
 
 
-class FeatureCustomerSegmentScore(BaseModel):
+class FeatureCustomerSegmentScore(models.Model):
     feature_master = models.ForeignKey('product.FeatureMaster')
     customer_segment = models.ForeignKey('product.CustomerSegment')
     score = models.FloatField(default=0.0)
@@ -164,7 +166,7 @@ class DeductibleMaster(models.Model):
         return self.text
 
 
-class Premium(BaseModel):
+class Premium(models.Model):
     product_variant = models.ForeignKey(
         'product.ProductVariant', null=True, blank=True)
     sum_insured = models.IntegerField(default=0.0, db_index=True)
@@ -180,13 +182,14 @@ class Premium(BaseModel):
         return {
             'sum_insured': self.sum_insured,
             'amount': self.amount,
-            'commision': self.get_commission_amount()
+            'commision': self.commission_amount
         }
 
-    def get_commission_amount(self):
+    @cached_property
+    def commission_amount(self):
         return self.amount * self.commission
 
-    @property
+    @cached_property
     def amount(self):
         return round((
             self.gst * self.base_premium

@@ -8,6 +8,8 @@ from content.serializers import FaqSerializer, Faq
 
 from content.models import NetworkHospital
 
+from django.db.models import F
+
 
 class RecommendationSerializer(serializers.ModelSerializer):
     quote_id = serializers.SerializerMethodField()
@@ -29,9 +31,15 @@ class RecommendationSerializer(serializers.ModelSerializer):
         return obj.premium.amount
 
     def get_features(self, obj):
-        features = obj.quotefeature_set.values_list(
-            'feature__feature_master__name', flat=True) or []
-        return features[:5]
+        features = list()
+        for f in obj.quotefeature_set.annotate(
+            feature_master_name=F('feature__feature_master__name'),
+            feature_value=F('feature__short_description')
+        ).values('feature_master_name', 'feature_value').order_by(
+                '-feature__rating'):
+            features.append('%s: %s' % (
+                f['feature_master_name'], f['feature_value']))
+        return features
 
     def get_product(self, obj):
         return obj.premium.product_variant.get_product_details()

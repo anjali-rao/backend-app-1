@@ -19,10 +19,7 @@ class HelpFile(BaseModel):
         choices=get_choices(constants.HELP_FILES_TYPE),
         default="ALL", max_length=128
     )
-    category = models.CharField(
-        choices=get_choices(
-            Category.objects.values_list('name', flat=True)
-        ), default="ALL", max_length=512)
+    category = models.CharField(max_length=100)
 
 
 class ContactUs(BaseModel):
