@@ -20,6 +20,10 @@ import uuid
 import jwt
 from django.utils.translation import ugettext_lazy as _
 
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
+
 
 class Account(AbstractUser):
     phone_no = models.CharField(max_length=10)
@@ -31,7 +35,7 @@ class Account(AbstractUser):
         choices=get_choices(constants.GENDER), max_length=8,
         null=True, blank=True)
     address = models.ForeignKey('users.Address', null=True, blank=True)
-    pincode = models.CharField(max_length=6, null=True, blank=True)
+    pincode = models.ForeignKey('users.Pincode', max_length=6, null=True, blank=True)
 
     def send_notification(self, **kwargs):
         return getattr(self, 'send_%s' % kwargs['type'])(kwargs)
@@ -107,6 +111,10 @@ class User(BaseModel):
     enterprise_id = models.PositiveIntegerField(null=True, blank=True)
     flag = JSONField(default=constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey()
 
     def __unicode__(self):
         return self.account.username
@@ -209,6 +217,9 @@ class Enterprise(BaseModel):
         upload_to=constants.ENTERPRISE_UPLOAD_PATH,
         default=constants.DEFAULT_LOGO)
 
+    person = GenericRelation(User, related_query_name='enterprise_user')
+
+
     def __str__(self):
         return self.name
 
@@ -225,6 +236,9 @@ class SubcriberEnterprise(BaseModel):
     logo = models.ImageField(
         upload_to=constants.ENTERPRISE_UPLOAD_PATH,
         default=constants.DEFAULT_LOGO)
+
+    person = GenericRelation(User, related_query_name='subscriber_enterprise_user')
+
 
     def __str__(self):
         return self.name

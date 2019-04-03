@@ -11,7 +11,8 @@ from url_filter.integrations.drf import DjangoFilterBackend
 from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
-    AccountSearchSerializers, Account, PincodeSerializer, Pincode
+    AccountSearchSerializers, Account, User, PincodeSerializer, Pincode,
+    UserSerializer
 )
 
 
@@ -63,18 +64,33 @@ class SearchAccount(generics.ListAPIView):
     serializer_class = AccountSearchSerializers
 
     def get_queryset(self):
-        queryset = Account.objects.filter(
-            user__user_type__in=['subscriber', 'pos'])
+
+        query = {}
+        filter_location = {}
         params = self.request.query_params
-        if 'pincode' in params:
-            queryset = queryset.filter(pincode=params['pincode'])
-        if 'company' in params:
-            queryset = queryset.filter(
-                user__enterprise__company_id=params['company'])
-        if 'category' in params:
-                queryset = queryset.filter(
-                    user__enterprise__categories=params['category'])
-        return queryset
+
+        filter_location[0] = 'account__pincode__state__name'
+        filter_location[1] = 'account__pincode__city'
+        filter_location[2] = 'account__pincode__pincode'
+
+        query['user_type__in'] = ['subscriber']
+
+        if params.get('location'):
+            location_info = params.get('location', '').split(', ')
+
+            for index, value in enumerate(location_info):
+                query[filter_location.get(index)] = value
+
+        if params.get('category'):
+            query['subscriber_enterprise_user__categories__name'] = params.get(
+                'category', '').title()
+
+        try:
+            result = User.objects.filter(**query)
+        except Exception as e:
+            result = []
+        
+        return result
 
 
 class PincodeSearch(APIView):
@@ -82,7 +98,8 @@ class PincodeSearch(APIView):
     def get(self, request, version, format=None):
 
         data = []
-        EMPTY_RESPONSE = {'message': 'Please pass a text parameter.'}
+        EMPTY_RESPONSE = {'detail': 'Please pass a text parameter.'}
+
         status_code = status.HTTP_400_BAD_REQUEST
         text = request.query_params.get('text')
 
@@ -93,7 +110,7 @@ class PincodeSearch(APIView):
                 text = str(text).title()
                 res = Pincode.objects.filter(
                     Q(pincode__contains=text) | Q(city__contains=text) |
-                    Q(state__name__contains=text))[:10]
+                    Q(state__name__contains=text))[:50]
 
                 if res:
                     data = PincodeSerializer(res, many=True).data

@@ -134,12 +134,20 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
 
 class AccountSerializer(serializers.ModelSerializer):
+    pincode =serializers.SerializerMethodField()
+
+    def get_pincode(self, obj):
+
+        if obj.pincode:
+            return PincodeSerializer(obj.pincode).data
+        else:
+            return {}
 
     class Meta:
         model = Account
         fields = (
             'id', 'first_name', 'last_name', 'email', 'phone_no',
-            'gender', 'address'
+            'gender', 'address', 'pincode'
         )
 
 
@@ -282,16 +290,15 @@ class AccountDetailsSerializers(serializers.ModelSerializer):
 
 class AccountSearchSerializers(serializers.ModelSerializer):
 
-    details = serializers.SerializerMethodField()
+    account = serializers.SerializerMethodField()
 
-    def get_details(self, obj):
-        return AccountDetailsSerializers(obj.advisordetails).data
+    def get_account(self, obj):
+        return AccountSerializer(obj.account).data
 
     class Meta:
-        model = Account
+        model = User
         fields = (
-            'phone', 'pincode', 'pan_no', 'gender', 'address', 'age',
-            'details'
+            'account',
         )
 
 
