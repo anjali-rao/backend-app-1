@@ -35,8 +35,7 @@ class Account(AbstractUser):
         choices=get_choices(constants.GENDER), max_length=8,
         null=True, blank=True)
     address = models.ForeignKey('users.Address', null=True, blank=True)
-    pincode = models.ForeignKey(
-        'users.Pincode', max_length=6, null=True, blank=True)
+    pincode = models.ForeignKey('users.Pincode', null=True, blank=True)
 
     def send_notification(self, **kwargs):
         return getattr(self, 'send_%s' % kwargs['type'])(kwargs)

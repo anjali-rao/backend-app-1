@@ -2,17 +2,13 @@ from __future__ import unicode_literals
 from rest_framework import permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from rest_framework import status
 from rest_framework.views import APIView
 from django.db.models import Q
-
-from url_filter.integrations.drf import DjangoFilterBackend
 
 from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
-    AccountSearchSerializers, Account, User, PincodeSerializer, Pincode,
-    UserSerializer
+    AccountSearchSerializers, User, PincodeSerializer, Pincode
 )
 
 
@@ -86,11 +82,10 @@ class SearchAccount(generics.ListAPIView):
                 'category', '').title()
 
         try:
-            result = User.objects.filter(**query)
-        except Exception as e:
-            result = []
-        
-        return result
+            return User.objects.filter(**query)
+        except Exception:
+            pass
+        return []
 
 
 class PincodeSearch(APIView):
@@ -99,31 +94,23 @@ class PincodeSearch(APIView):
 
         data = []
         EMPTY_RESPONSE = {'detail': 'Please pass a text parameter.'}
-
-        status_code = status.HTTP_400_BAD_REQUEST
         text = request.query_params.get('text')
-
         try:
-
             if text:
-
                 text = str(text).title()
-                res = Pincode.objects.filter(
+                pincodes = Pincode.objects.filter(
                     Q(pincode__contains=text) | Q(city__contains=text) |
                     Q(state__name__contains=text))[:50]
-
-                if res:
-                    data = PincodeSerializer(res, many=True).data
+                if pincodes:
+                    data = PincodeSerializer(pincodes, many=True).data
                     data = self.format_location_data(data, text)
 
                 return Response(data, status=status.HTTP_200_OK)
-
-            else:
-                return Response(EMPTY_RESPONSE, status=status_code)
+            return Response(EMPTY_RESPONSE, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
             ERROR_RESPONSE = {'message': e}
-            return Response(ERROR_RESPONSE, status=status_code)
+            return Response(ERROR_RESPONSE, status=status.HTTP_400_BAD_REQUEST)
 
     def format_location_data(self, data, text):
         location_list = set()
@@ -151,7 +138,6 @@ class PincodeSearch(APIView):
 
             location_item = ', '.join(location_string_list)
             location_list.add(location_item)
-
 
         return location_list
 
