@@ -96,7 +96,11 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return value
 
     def validate_pincode(self, value):
-        return Pincode.objects.get(pincode='560034').id
+        pincodes = Pincode.objects.filter(pincode=value)
+        if not pincodes.exists():
+            raise serializers.ValidationError(
+                constants.INVALID_PINCODE)
+        return pincodes.get().id
 
     def create(self, validated_data):
         validated_data.update(User.get_referral_details(
