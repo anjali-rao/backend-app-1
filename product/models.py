@@ -77,7 +77,7 @@ class ProductVariant(BaseModel):
         from goplannr.settings import BASE_HOST, DEBUG
         logo = self.company_category.company.logo.url
         return {
-            'name': self.feature_variant,
+            'name': '%s | %s' % (self.parent_product, self.feature_variant),
             'company': self.company_category.company.name,
             'logo': logo if not DEBUG else (BASE_HOST + logo),
             'variant_name': self.feature_variant

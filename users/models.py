@@ -224,9 +224,7 @@ class Enterprise(BaseModel):
     logo = models.ImageField(
         upload_to=constants.ENTERPRISE_UPLOAD_PATH,
         default=constants.DEFAULT_LOGO)
-
     person = GenericRelation(User, related_query_name='enterprise_user')
-
 
     def __str__(self):
         return self.name
@@ -244,9 +242,8 @@ class SubcriberEnterprise(BaseModel):
     logo = models.ImageField(
         upload_to=constants.ENTERPRISE_UPLOAD_PATH,
         default=constants.DEFAULT_LOGO)
-
-    person = GenericRelation(User, related_query_name='subscriber_enterprise_user')
-
+    person = GenericRelation(
+        User, related_query_name='subscriber_enterprise_user')
 
     def __str__(self):
         return self.name
@@ -333,11 +330,12 @@ class State(models.Model):
 
 
 class Pincode(models.Model):
-    pincode = models.CharField(max_length=6, db_index=True)
+    pincode = models.CharField(
+        max_length=6, unique=True, db_index=True)
     city = models.CharField(max_length=64, db_index=True)
     state = models.ForeignKey('users.State', null=True, blank=True)
     city_type = models.IntegerField(
-        choices=constants.CITY_TIER, default=2)
+        choices=constants.CITY_TIER, default=3)
 
     def __unicode__(self):
         return '%s - %s - (%s)' % (self.pincode, self.city, self.state.name)
