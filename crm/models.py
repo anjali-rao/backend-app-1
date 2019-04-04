@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from django.contrib.postgres.fields import JSONField
 
-from utils.model import BaseModel, models
+from utils.models import BaseModel, models
 from utils import constants
 
 from sales.models import Quote, QuoteFeature
@@ -114,9 +114,10 @@ class Lead(BaseModel):
         self.save()
 
     def refresh_quote_data(self):
-        quotes = self.get_quotes()
-        if quotes.exists():
-            quotes.delete()
+        # Refer Pranshu for quotes deletion.
+        # quotes = self.get_quotes()
+        # if quotes.exists():
+            # quotes.delete()
         quote_features = []
         for premium in self.get_premiums():
             features = premium.product_variant.parent.feature_set.select_related('feature_master').all() # noqa
@@ -168,9 +169,9 @@ class Lead(BaseModel):
                     segment_name = 'young_couple'
                 if age > 50:
                     segment_name = 'senior_citizens'
-                if self.family.get('kid') >= 1 and age < 40:
+                if self.family.get('kid', 0) >= 1 and age < 40:
                     segment_name = 'young_family'
-                if self.family.get('kid') >= 1 and age < 60:
+                if self.family.get('kid', 0) >= 1 and age < 60:
                     segment_name = 'middle_aged_family'
             emp_resp = responses.filter(question__title='Occupation')
             if emp_resp.exists() and emp_resp.filter(

@@ -14,6 +14,6 @@ def send_sms(phone_no, message):
         }]
     }
     url = '%s%s' % (SMS_API, SMS_API_KEY)
-    url += "&method=sms.json&json=" + urllib.quote(json.dumps(json_data))
+    url += "&method=sms.json&json=" + urllib.parse.quote(json.dumps(json_data))
     response = requests.post(url)
     return response.json()
