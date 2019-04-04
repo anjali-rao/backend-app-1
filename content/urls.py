@@ -1,9 +1,9 @@
-from django.conf.urls import url
+from django.urls import path
 
 from content.views import (
     GetFaq
 )
 
 urlpatterns = [
-    url(r'faq$', GetFaq.as_view())
+    path('faq', GetFaq.as_view())
 ]

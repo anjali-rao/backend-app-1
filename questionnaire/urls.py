@@ -1,10 +1,10 @@
-from django.conf.urls import url
+from django.urls import path
 
 from questionnaire.views import (
     GetQuestionnaire, RecordQuestionnaireResponse
 )
 
 urlpatterns = [
-    url(r'user/questionnaire$', GetQuestionnaire.as_view()),
-    url(r'user/questionnaire/record$', RecordQuestionnaireResponse.as_view())
+    path('user/questionnaire', GetQuestionnaire.as_view()),
+    path('user/questionnaire/record', RecordQuestionnaireResponse.as_view())
 ]

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from utils.model import BaseModel, models
+from utils.models import BaseModel, models
 from utils import get_choices, constants
 
-#from product.models import Category
+from product.models import Category
 
 
 class Faq(BaseModel):
@@ -21,7 +21,7 @@ class HelpFile(BaseModel):
     )
     category = models.CharField(
         choices=get_choices(
-            [1, 2]
+            Category.objects.values_list('name', flat=True)
         ), default="ALL", max_length=512)
 
 

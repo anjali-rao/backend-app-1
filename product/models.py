@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from utils.model import BaseModel, models
+from utils.models import BaseModel, models
 from utils import constants, get_choices
 from django.utils.functional import cached_property
 
