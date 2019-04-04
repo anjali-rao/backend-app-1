@@ -224,7 +224,9 @@ class Enterprise(BaseModel):
     logo = models.ImageField(
         upload_to=constants.ENTERPRISE_UPLOAD_PATH,
         default=constants.DEFAULT_LOGO)
-    person = GenericRelation(User, related_query_name='enterprise_user')
+    person = GenericRelation(
+        User, related_query_name='enterprise_user',
+        object_id_field='enterprise_id')
 
     def __str__(self):
         return self.name
@@ -243,7 +245,8 @@ class SubcriberEnterprise(BaseModel):
         upload_to=constants.ENTERPRISE_UPLOAD_PATH,
         default=constants.DEFAULT_LOGO)
     person = GenericRelation(
-        User, related_query_name='subscriber_enterprise_user')
+        User, related_query_name='subscriber_enterprise_user',
+        object_id_field='enterprise_id')
 
     def __str__(self):
         return self.name
