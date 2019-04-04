@@ -9,11 +9,12 @@ from django.contrib.postgres.fields import JSONField
 
 
 class Quote(BaseModel):
-    lead = models.ForeignKey('crm.Lead')
+    lead = models.ForeignKey('crm.Lead', on_delete=models.CASCADE)
     status = models.CharField(
         max_length=16, choices=constants.STATUS_CHOICES,
         default='pending')
-    premium = models.ForeignKey('product.Premium', null=True, blank=True)
+    premium = models.ForeignKey(
+        'product.Premium', null=True, blank=True, on_delete=models.CASCADE)
     recommendation_score = models.FloatField(default=0.0)
 
     class Meta:
@@ -58,7 +59,7 @@ class QuoteFeature(BaseModel):
 
 
 class KYCDocuments(BaseModel):
-    client = models.ForeignKey('sales.Client')
+    client = models.ForeignKey('sales.Client', on_delete=models.CASCADE)
     number = models.CharField(max_length=64)
     doc_type = models.CharField(
         choices=get_choices(constants.KYC_DOC_TYPES), max_length=16)
@@ -90,8 +91,8 @@ class Application(BaseModel):
     reference_no = models.CharField(max_length=15, unique=True)
     application_type = models.CharField(
         max_length=32, choices=get_choices(constants.APPLICATION_TYPES))
-    quote = models.OneToOneField('sales.Quote')
-    address = models.ForeignKey('users.Address')
+    quote = models.OneToOneField('sales.Quote', on_delete=models.CASCADE)
+    address = models.ForeignKey('users.Address', on_delete=models.CASCADE)
     status = models.CharField(
         max_length=32, choices=constants.STATUS_CHOICES, default='pending')
     people_listed = models.IntegerField(default=0)
@@ -118,11 +119,13 @@ class Application(BaseModel):
 
 
 class Policy(BaseModel):
-    application = models.OneToOneField('sales.Application')
-    contact = models.ForeignKey('crm.Contact')
-    client = models.ForeignKey(Client)
+    application = models.OneToOneField(
+        'sales.Application', on_delete=models.CASCADE)
+    contact = models.ForeignKey('crm.Contact', on_delete=models.CASCADE)
+    client = models.ForeignKey('sales.Client', on_delete=models.CASCADE)
     policy_data = JSONField()
 
 
 class HealthInsurance(BaseModel):
-    application = models.OneToOneField('sales.Application')
+    application = models.OneToOneField(
+        'sales.Application', on_delete=models.CASCADE)
