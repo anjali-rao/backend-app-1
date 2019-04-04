@@ -186,7 +186,7 @@ class Lead(BaseModel):
         return CustomerSegment.objects.only('id').get(name=segment_name)
 
     def get_recommendated_quotes(self):
-        return self.quote_set.all().order_by('-recommendation_score')[0]
+        return self.quote_set.all().order_by('-recommendation_score')[:5]
 
     def get_quotes(self):
         return self.quote_set.all()
