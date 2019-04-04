@@ -114,7 +114,6 @@ class Lead(BaseModel):
         self.save()
 
     def refresh_quote_data(self):
-        # Refer Pranshu for quotes deletion.
         quotes = self.get_quotes()
         if quotes.exists():
             quotes.delete()
