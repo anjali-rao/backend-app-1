@@ -113,7 +113,7 @@ class User(BaseModel):
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
     flag = JSONField(default=constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     enterprise_id = models.PositiveIntegerField()
     enterprise = GenericForeignKey('content_type', 'enterprise_id')
 

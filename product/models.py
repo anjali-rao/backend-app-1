@@ -145,7 +145,8 @@ class Feature(BaseModel):
 
 
 class FeatureCustomerSegmentScore(BaseModel):
-    feature = models.ForeignKey('product.Feature', on_delete=models.CASCADE)
+    feature_master = models.ForeignKey(
+        'product.FeatureMaster', on_delete=models.CASCADE)
     customer_segment = models.ForeignKey(
         'product.CustomerSegment', on_delete=models.CASCADE)
     score = models.FloatField(default=0.0)
