@@ -13,7 +13,7 @@ import math
 
 
 class Contact(BaseModel):
-    user = models.ForeignKey('users.User')
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
     name = models.CharField(max_length=32)
     phone_no = models.CharField(max_length=10)
     email = models.EmailField(max_length=64, null=True, blank=True)
@@ -41,9 +41,10 @@ class Contact(BaseModel):
 
 
 class Lead(BaseModel):
-    user = models.ForeignKey('users.user')
-    contact = models.ForeignKey('crm.Contact', null=True, blank=True)
-    category = models.ForeignKey('product.Category')
+    user = models.ForeignKey('users.user', on_delete=models.CASCADE)
+    contact = models.ForeignKey(
+        'crm.Contact', null=True, blank=True, on_delete=models.CASCADE)
+    category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
     amount = models.FloatField(default=0.0)
     final_score = models.FloatField(default=0.0, db_index=True)
     status = models.IntegerField(
@@ -52,15 +53,17 @@ class Lead(BaseModel):
         choices=constants.LEAD_STAGE_CHOICES, default=0)
     product_id = models.IntegerField(null=True, blank=True)
     # notes = models.ManyToManyField(Note)
-    campaign = models.ForeignKey('users.Campaign', null=True, blank=True)
+    campaign = models.ForeignKey(
+        'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
     max_age = models.IntegerField(default=0)
     min_age = models.IntegerField(default=0)
     customer_segment = models.ForeignKey(
-        'product.CustomerSegment', null=True, blank=True)
+        'product.CustomerSegment', null=True, blank=True,
+        on_delete=models.CASCADE)
     adult = models.IntegerField(default=0)
     pincode = models.CharField(max_length=6, null=True)
     children = models.IntegerField(default=0)
-    family = JSONField(default={})
+    family = JSONField(default=dict)
     tax_saving = models.FloatField(default=0.30)
     wellness_rewards = models.FloatField(default=0.10)
     health_checkups = models.FloatField(default=0.0)

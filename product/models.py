@@ -39,7 +39,7 @@ class Company(BaseModel):
 
 
 class CompanyDetails(BaseModel):
-    company = models.OneToOneField('product.Company')
+    company = models.OneToOneField('product.Company', on_delete=models.CASCADE)
     fact_file = models.TextField(null=True, blank=True)
     joint_venture = models.TextField(null=True, blank=True)
     formation_year = models.CharField(max_length=4, null=True, blank=True)
@@ -48,8 +48,8 @@ class CompanyDetails(BaseModel):
 
 
 class CompanyCategory(BaseModel):
-    category = models.ForeignKey('product.Category')
-    company = models.ForeignKey('product.Company')
+    category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
+    company = models.ForeignKey('product.Company', on_delete=models.CASCADE)
     claim_settlement = models.CharField(max_length=128, null=True, blank=True)
     offer_flag = models.BooleanField(default=False)
 
@@ -62,9 +62,11 @@ class CompanyCategory(BaseModel):
 
 class ProductVariant(BaseModel):
     company_category = models.ForeignKey(
-        'product.CompanyCategory', null=True, blank=True)
+        'product.CompanyCategory', null=True, blank=True,
+        on_delete=models.CASCADE)
     name = models.CharField(max_length=256, default="")
-    parent_product = models.CharField(max_length=128, null=True, blank=True)
+    parent_product = models.CharField(
+        max_length=128, null=True, blank=True, default='GoPlannr')
     feature_variant = models.CharField(max_length=256, default='base')
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, blank=True)
@@ -112,7 +114,8 @@ class CustomerSegment(BaseModel):
 
 
 class FeatureMaster(BaseModel):
-    category = models.ForeignKey('product.Category', null=True, blank=True)
+    category = models.ForeignKey(
+        'product.Category', null=True, blank=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=127, default="")
     feature_type = models.CharField(
         max_length=32, default='Others',
@@ -127,9 +130,11 @@ class FeatureMaster(BaseModel):
 
 class Feature(BaseModel):
     feature_master = models.ForeignKey(
-        'product.FeatureMaster', null=True, blank=True)
+        'product.FeatureMaster', null=True, blank=True,
+        on_delete=models.CASCADE)
     product_variant = models.ForeignKey(
-        'product.ProductVariant', null=True, blank=True)
+        'product.ProductVariant', null=True, blank=True,
+        on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
     short_description = models.CharField(max_length=156)
     long_description = models.CharField(max_length=512)
@@ -140,8 +145,9 @@ class Feature(BaseModel):
 
 
 class FeatureCustomerSegmentScore(BaseModel):
-    feature_master = models.ForeignKey('product.FeatureMaster')
-    customer_segment = models.ForeignKey('product.CustomerSegment')
+    feature = models.ForeignKey('product.Feature', on_delete=models.CASCADE)
+    customer_segment = models.ForeignKey(
+        'product.CustomerSegment', on_delete=models.CASCADE)
     score = models.FloatField(default=0.0)
 
     def __str__(self):
@@ -168,13 +174,16 @@ class DeductibleMaster(BaseModel):
 
 class Premium(BaseModel):
     product_variant = models.ForeignKey(
-        'product.ProductVariant', null=True, blank=True)
+        'product.ProductVariant', null=True, blank=True,
+        on_delete=models.CASCADE)
     sum_insured = models.IntegerField(default=0.0, db_index=True)
     min_age = models.IntegerField(default=0, db_index=True)
     max_age = models.IntegerField(default=0, db_index=True)
+
     deductible = models.ForeignKey(
-        'product.DeductibleMaster', null=True, blank=True)
-    base_premium = models.IntegerField(default=constants.DEFAULT_BASE_PREMIUM)
+        'product.DeductibleMaster', null=True, blank=True,
+        on_delete=models.CASCADE)
+    base_premium = models.FloatField(default=constants.DEFAULT_BASE_PREMIUM)
     gst = models.FloatField(default=constants.DEFAULT_GST)
     commission = models.FloatField(default=constants.DEFAULT_COMMISSION)
 

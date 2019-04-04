@@ -4,7 +4,7 @@ import json
 import os
 import redis
 
-CONFIGURATION_FILE = os.environ.get('GOPLANNR_CONFIG')
+CONFIGURATION_FILE = os.environ.get('GOPLANNR_CONFIG3')
 
 if CONFIGURATION_FILE is None:
     raise ImproperlyConfigured(

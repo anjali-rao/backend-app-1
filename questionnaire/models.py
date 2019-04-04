@@ -6,7 +6,7 @@ from utils import constants, get_choices
 
 
 class Question(BaseModel):
-    category = models.ForeignKey('product.Category')
+    category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
     title = models.CharField(max_length=32)
     question_type = models.CharField(
         max_length=10, choices=get_choices(constants.QUESTION_COICES),
@@ -19,7 +19,8 @@ class Question(BaseModel):
 
 
 class Answer(BaseModel):
-    question = models.ForeignKey('questionnaire.Question')
+    question = models.ForeignKey(
+        'questionnaire.Question', on_delete=models.CASCADE)
     answer = models.CharField(max_length=128)
     score = models.IntegerField(default=0)
 
@@ -28,9 +29,12 @@ class Answer(BaseModel):
 
 
 class Response(BaseModel):
-    question = models.ForeignKey('questionnaire.Question')
-    lead = models.ForeignKey('crm.Lead')
-    answer = models.ForeignKey('questionnaire.Answer')
+    question = models.ForeignKey(
+        'questionnaire.Question', on_delete=models.CASCADE)
+    lead = models.ForeignKey(
+        'crm.Lead', on_delete=models.CASCADE)
+    answer = models.ForeignKey(
+        'questionnaire.Answer', on_delete=models.CASCADE)
 
     def __str__(self):
         return '%s - %s | %s' % (
