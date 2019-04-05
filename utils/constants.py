@@ -88,3 +88,5 @@ ACCOUNT_CREATION_FIELDS = (
 COMPANY_UPLOAD_PATH = 'company'
 ENTERPRISE_UPLOAD_PATH = 'enterprise'
 CATEGORY_UPLOAD_PATH = 'category'
+
+DEBUG_HOST = 'http://localhost:8000'

@@ -148,8 +148,7 @@ class AccountSerializer(serializers.ModelSerializer):
 
         if obj.pincode:
             return PincodeSerializer(obj.pincode).data
-        else:
-            return {}
+        return dict()
 
     class Meta:
         model = Account
@@ -163,8 +162,8 @@ class EnterpriseSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
 
     def get_logo(self, obj):
-        from goplannr.settings import BASE_HOST
-        return BASE_HOST + obj.logo.url
+        from goplannr.settings import DEBUG
+        return (constants.DEBUG_HOST if DEBUG else '') + obj.logo.url
 
     class Meta:
         model = Enterprise
