@@ -52,7 +52,7 @@ class Quote(BaseModel):
                 'answer': self.premium.product_variant.company_category.claim_settlement # noqa
             },
             {
-                'question': 'COMPANY DETATILS',
+                'question': 'COMPANY DETAILS',
                 'answer': '%s\n%s' % (
                     self.premium.product_variant.company_category.company.name,
                     self.premium.product_variant.company_category.company.website # noqa
