@@ -33,7 +33,7 @@ TIER_2_CITIES = ('Lucknow', 'Allahabad')
 API_CACHE_TIME = 3600
 
 # Defaults
-DEFAULT_LOGO = 'enterprise/goplannr.png'
+DEFAULT_LOGO = 'enterprise/goplannr.jpeg'
 HELP_FILES_PATH = 'contents'
 DEFAULT_HEXA_CODE = '#005db1'
 OCCUPATION_DEFAULT_CHOICE = 3
