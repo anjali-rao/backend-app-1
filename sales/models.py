@@ -45,6 +45,21 @@ class Quote(BaseModel):
             })
         return features
 
+    def get_faq(self):
+        return [
+            {
+                'question': 'CLAIM SETTLEMENT RATIO',
+                'answer': self.premium.product_variant.company_category.claim_settlement # noqa
+            },
+            {
+                'question': 'COMPANY DETATILS',
+                'answer': '%s\n%s' % (
+                    self.premium.product_variant.company_category.company.name,
+                    self.premium.product_variant.company_category.company.website # noqa
+                )
+            }
+        ]
+
 
 class QuoteFeature(BaseModel):
     quote = models.ForeignKey('sales.Quote', on_delete=models.CASCADE)
