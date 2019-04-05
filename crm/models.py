@@ -115,9 +115,9 @@ class Lead(BaseModel):
 
     def refresh_quote_data(self):
         # Refer Pranshu for quotes deletion.
-        # quotes = self.get_quotes()
-        # if quotes.exists():
-            # quotes.delete()
+        quotes = self.get_quotes()
+        if quotes.exists():
+            quotes.delete()
         quote_features = []
         for premium in self.get_premiums():
             features = premium.product_variant.parent.feature_set.select_related('feature_master').all() # noqa
