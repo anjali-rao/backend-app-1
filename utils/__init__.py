@@ -1,8 +1,11 @@
 from django.utils.crypto import get_random_string
 
 
-def get_choices(choice_type):
-    return tuple([(x, x) for x in choice_type])
+def get_choices(choice_type, extra=None):
+    choices = [(x, x) for x in choice_type]
+    if extra:
+        choices.append((extra, extra))
+    return tuple(choices)
 
 
 def get_upload_path(instance, filename):
