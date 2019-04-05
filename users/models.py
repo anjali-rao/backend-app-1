@@ -13,7 +13,7 @@ from django.utils.timezone import now
 from django.dispatch import receiver
 from django.core.cache import cache
 
-from goplannr.settings import JWT_SECRET, BASE_HOST, DEBUG
+from goplannr.settings import JWT_SECRET, DEBUG
 
 import uuid
 
@@ -126,18 +126,8 @@ class User(BaseModel):
                 app_label='users', model=models_name).id
         super(User, self).save(*args, **kwargs)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.account.get_full_name()
-
-    @property
-    def enterprise(self):
-        if self.user_type == 'subscriber':
-            modelClass = SubcriberEnterprise
-        else:
-            modelClass = Enterprise
-        enterprises = modelClass.objects.filter(id=self.enterprise_id)
-        if enterprises.exists():
-            return enterprises.get()
 
     def get_authorization_key(self):
         return jwt.encode(
@@ -207,7 +197,8 @@ class User(BaseModel):
                 'name', 'id', 'hexa_code', 'logo'):
             categories.append({
                 'id': category.id, 'hexa_code': category.hexa_code,
-                'logo': (BASE_HOST if DEBUG else '') + category.logo.url,
+                'logo': (
+                    constants.DEBUG_HOST if DEBUG else '') + category.logo.url,
                 'name': category.name.split(' ')[0]
             })
         return categories
@@ -289,7 +280,7 @@ class Documents(BaseModel):
         choices=get_choices(constants.DOC_TYPES), max_length=16)
     file = models.FileField(upload_to=get_upload_path)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.doc_type
 
 
@@ -297,7 +288,7 @@ class Bank(models.Model):
     name = models.CharField(max_length=256)
     is_active = models.BooleanField(default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.bank_name
 
 
@@ -308,7 +299,7 @@ class BankBranch(models.Model):
     micr = models.CharField(max_length=128)
     city = models.CharField(max_length=64)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s => %s:%s' % (self.bank_name, self.branch_name, self.ifsc)
 
 
@@ -332,7 +323,7 @@ class BankAccount(BaseModel):
 class State(models.Model):
     name = models.CharField(max_length=128, db_index=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -345,7 +336,7 @@ class Pincode(models.Model):
     city_type = models.IntegerField(
         choices=constants.CITY_TIER, default=3)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s - (%s)' % (self.pincode, self.city, self.state.name)
 
     @classmethod
