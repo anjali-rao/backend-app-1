@@ -5,7 +5,7 @@ from sales.views import (
     CompareRecommendation, GetRecommendatedQuotes)
 
 urlpatterns = [
-    path('quote/(?P<pk>[0-9]+)', QuotesDetails.as_view()),
+    path('quote/<int:pk>', QuotesDetails.as_view()),
     path('quotes', GetQuotes.as_view()),
     path('quotes/recommendation', GetRecommendatedQuotes.as_view()),
     path('quotes/compare', CompareRecommendation.as_view()),

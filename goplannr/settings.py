@@ -46,8 +46,6 @@ ROOT_URLCONF = 'goplannr.urls'
 
 ALLOWED_HOSTS = get_env_var('ALLOWED_HOSTS').split(',')
 
-RAVEN_CONFIG = get_env_var('RAVEN_CONFIG')
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -64,9 +62,7 @@ INSTALLED_APPS = [
     'crm',
     'product',
     'sales',
-    'questionnaire',
-    'raven.contrib.django.raven_compat',
-    # 'django_hosts',
+    'questionnaire'
 ]
 
 if DEBUG:
@@ -77,6 +73,8 @@ if DEBUG:
     MEDIA_ROOT = BASE_DIR + '/media'
 else:
     STATIC_ROOT = "static"
+    RAVEN_CONFIG = get_env_var('RAVEN_CONFIG')
+    INSTALLED_APPS.append('raven.contrib.django.raven_compat')
     # For S3 Document Stroage
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     AWS_ACCESS_KEY_ID = get_env_var('AWS_ACCESS_KEY_ID')
