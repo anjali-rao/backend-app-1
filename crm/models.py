@@ -138,8 +138,7 @@ class Lead(BaseModel):
 
     def get_premiums(self):
         # product_variant__citytier=self.citytier,
-        # min_age__gte=self.min_age, max_age__lte=self.max_age,
-        premiums = Premium.objects.select_related(
+        queryset = Premium.objects.select_related(
             'product_variant'
         ).filter(
             product_variant__company_category__category_id=self.category_id,
@@ -147,8 +146,9 @@ class Lead(BaseModel):
             min_age__gte=self.min_age
         )
         if self.children <= 4:
-            return premiums.filter(product_variant__children=self.children)
-        return premiums
+            queryset = queryset.filter(product_variant__children=self.children)
+        return [
+            query for query in queryset if query.max_age - self.max_age >= 0]
 
     def get_customer_segment(self):
         from product.models import CustomerSegment
