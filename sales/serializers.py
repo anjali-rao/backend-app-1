@@ -4,8 +4,6 @@ from sales.models import Quote, QuoteFeature, Application, Client
 from users.models import Pincode, Address
 from utils import constants
 
-from content.serializers import FaqSerializer, Faq
-
 from content.models import NetworkHospital
 
 from django.db.models import F
@@ -143,7 +141,7 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
         return coverages
 
     def get_faq(self, obj):
-        return FaqSerializer(Faq.objects.all(), many=True).data
+        return obj.get_faq()
 
     def get_company_details(self, obj):
         details = obj.premium.product_variant.get_product_details()

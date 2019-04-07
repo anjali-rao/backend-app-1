@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from django.contrib.postgres.fields import JSONField
 
-from utils.model import BaseModel, models
+from utils.models import BaseModel, models
 from utils import constants
 
 from sales.models import Quote, QuoteFeature
@@ -13,7 +13,7 @@ import math
 
 
 class Contact(BaseModel):
-    user = models.ForeignKey('users.User')
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
     name = models.CharField(max_length=32)
     phone_no = models.CharField(max_length=10)
     email = models.EmailField(max_length=64, null=True, blank=True)
@@ -41,9 +41,10 @@ class Contact(BaseModel):
 
 
 class Lead(BaseModel):
-    user = models.ForeignKey('users.user')
-    contact = models.ForeignKey('crm.Contact', null=True, blank=True)
-    category = models.ForeignKey('product.Category')
+    user = models.ForeignKey('users.user', on_delete=models.CASCADE)
+    contact = models.ForeignKey(
+        'crm.Contact', null=True, blank=True, on_delete=models.CASCADE)
+    category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
     amount = models.FloatField(default=0.0)
     final_score = models.FloatField(default=0.0, db_index=True)
     status = models.IntegerField(
@@ -52,15 +53,17 @@ class Lead(BaseModel):
         choices=constants.LEAD_STAGE_CHOICES, default=0)
     product_id = models.IntegerField(null=True, blank=True)
     # notes = models.ManyToManyField(Note)
-    campaign = models.ForeignKey('users.Campaign', null=True, blank=True)
+    campaign = models.ForeignKey(
+        'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
     max_age = models.IntegerField(default=0)
     min_age = models.IntegerField(default=0)
     customer_segment = models.ForeignKey(
-        'product.CustomerSegment', null=True, blank=True)
+        'product.CustomerSegment', null=True, blank=True,
+        on_delete=models.CASCADE)
     adult = models.IntegerField(default=0)
     pincode = models.CharField(max_length=6, null=True)
     children = models.IntegerField(default=0)
-    family = JSONField(default={})
+    family = JSONField(default=dict)
     tax_saving = models.FloatField(default=0.30)
     wellness_rewards = models.FloatField(default=0.10)
     health_checkups = models.FloatField(default=0.0)
@@ -111,6 +114,7 @@ class Lead(BaseModel):
         self.save()
 
     def refresh_quote_data(self):
+        # Refer Pranshu for quotes deletion.
         quotes = self.get_quotes()
         if quotes.exists():
             quotes.delete()
@@ -134,8 +138,7 @@ class Lead(BaseModel):
 
     def get_premiums(self):
         # product_variant__citytier=self.citytier,
-        # min_age__gte=self.min_age, max_age__lte=self.max_age,
-        premiums = Premium.objects.select_related(
+        queryset = Premium.objects.select_related(
             'product_variant'
         ).filter(
             product_variant__company_category__category_id=self.category_id,
@@ -143,8 +146,9 @@ class Lead(BaseModel):
             min_age__gte=self.min_age
         )
         if self.children <= 4:
-            return premiums.filter(product_variant__children=self.children)
-        return premiums
+            queryset = queryset.filter(product_variant__children=self.children)
+        return [
+            query for query in queryset if query.max_age - self.max_age >= 0]
 
     def get_customer_segment(self):
         from product.models import CustomerSegment
@@ -165,9 +169,9 @@ class Lead(BaseModel):
                     segment_name = 'young_couple'
                 if age > 50:
                     segment_name = 'senior_citizens'
-                if self.family.get('kid') >= 1 and age < 40:
+                if self.family.get('kid', 0) >= 1 and age < 40:
                     segment_name = 'young_family'
-                if self.family.get('kid') >= 1 and age < 60:
+                if self.family.get('kid', 0) >= 1 and age < 60:
                     segment_name = 'middle_aged_family'
             emp_resp = responses.filter(question__title='Occupation')
             if emp_resp.exists() and emp_resp.filter(
@@ -186,7 +190,7 @@ class Lead(BaseModel):
         return CustomerSegment.objects.only('id').get(name=segment_name)
 
     def get_recommendated_quotes(self):
-        return self.quote_set.all().order_by('-recommendation_score')[0]
+        return self.quote_set.all().order_by('-recommendation_score')[:5]
 
     def get_quotes(self):
         return self.quote_set.all()

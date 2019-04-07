@@ -59,7 +59,7 @@ class CompareRecommendation(generics.ListAPIView):
             id__in=self.request.query_params['quotes'].split(','))
 
 
-class GetRecommendatedQuote(generics.ListAPIView):
+class GetRecommendatedQuotes(generics.ListAPIView):
     authentication_classes = (UserAuthentication,)
     serializer_class = RecommendationSerializer
 
@@ -71,9 +71,9 @@ class GetRecommendatedQuote(generics.ListAPIView):
                 if self.request.query_params.get('suminsured'):
                     lead.final_score = self.request.query_params['suminsured']
                     lead.save()
-                elif self.request.query_params.get('rest'):
+                elif self.request.query_params.get('reset'):
                     lead.calculate_final_score()
-                return [lead.get_recommendated_quotes()]
+                return lead.get_recommendated_quotes()
         except Lead.DoesNotExist:
             raise exceptions.NotFound('Lead doesnot exists')
         except IntegrityError:

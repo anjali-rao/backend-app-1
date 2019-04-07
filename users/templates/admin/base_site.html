@@ -1,0 +1,82 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% block title %} GoPlannr | {{ site_title }}{% endblock %}
+{% block extrahead %}
+<style type="text/css">
+	#header {
+    	width: auto;
+    	height: 45px;
+    	padding: 10px 40px;
+    	background: #005db1;
+    	line-height: 40px;
+    	color: white;
+    	overflow: hidden;
+    	border-bottom: 1px solid #f7f7f7;
+	}
+
+	#header a:link, #header a:visited {
+    	color: white;
+	}
+
+	#header a:focus , #header a:hover {
+    	text-decoration: underline;
+    	color: white;
+	}
+	/* BREADCRUMBS */
+
+	div.breadcrumbs {
+		background: #005db9;
+    	padding: 5px 35px;
+    	border: none;
+	    font-size: 14px;
+    	color: #c4dce8;
+	    text-align: left;
+	}
+
+	div.breadcrumbs a {
+    	color: #fff;
+	}
+
+	div.breadcrumbs a:focus, div.breadcrumbs a:hover {
+    	color: white;
+	}
+	.module h2, .module caption, .inline-group h2 {
+    	margin: 0;
+	    padding: 8px;
+	    font-weight: 400;
+	    font-size: 13px;
+	    text-align: left;
+	    background: #005db1;
+	    color: #fff;
+	}
+	#user-tools {
+	    float: right;
+	    padding: 0;
+	    margin: 0 0 0 20px;
+	    font-weight: 300;
+	    font-size: 13px;
+	    letter-spacing: 0.5px;
+	    text-transform: uppercase;
+	    text-align: right;
+	}
+	#content-related .module h2 {
+	    background: #005db1;
+	    padding: 6px;
+	    margin-bottom: 16px;
+	    border-bottom: 1px solid #005db1;
+	    font-size: 18px;
+	    color: #fff;
+	}
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+	<a href="{% url 'admin:index' %}">
+		<img src="{% static 'img/logo.png' %}" style="width:1	60px;height:45px;"/>
+		<span style="color: white"></span>
+	</a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

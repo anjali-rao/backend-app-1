@@ -46,7 +46,7 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
                 lead.calculate_final_score()
             return Response(
                 RecommendationSerializer(
-                    lead.get_recommendated_quotes()).data,
+                    lead.get_recommendated_quotes(), many=True).data,
                 status=status.HTTP_201_CREATED)
         except IntegrityError:
             pass
