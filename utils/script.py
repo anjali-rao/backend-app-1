@@ -70,21 +70,11 @@ def upload_feature_master(filename):
 
 def upload_product_variant(filename):
     from product.models import ProductVariant
-    counter = 1
     for row in readcsv(filename):
-        if '#' in row['id']:
-            row['id'] = counter
         instance, created = ProductVariant.objects.get_or_create(pk=row['id'])
-        counter += 1
         instance.company_category_id = row['companycategory_id']
         instance.name = row['product_short_name']
         instance.parent_product = row['parent_product']
-        if 'null' not in row['adults']:
-            instance.parent_id = row['parent_product_id']
-            instance.adult = row['adults']
-            instance.children = row['children']
-            instance.citytier = row['variant_citytier']
-            instance.chronic = row['variant_chronic'] != 'Non Chronic'
         instance.save()
 
 
@@ -94,7 +84,7 @@ def upload_feature(filename):
         instance, created = Feature.objects.get_or_create(pk=row['id'])
         instance.product_variant_id = row['productvariant_id']
         instance.feature_master_id = row['feature_master_id']
-        instance.rating = float(row['rating'])
+        instance.rating = float(row['rating'] or 0)
         instance.short_description = row['short_description']
         instance.long_description = row['long_description']
         instance.save()
@@ -107,6 +97,9 @@ def upload_premiums(filename):
         instance.base_premium = row['base_premium'].replace(',', '').replace(',', '') # noqa
         instance.max_age = int(row['max_age'])
         instance.min_age = int(row['min_age'])
+        instance.adults = int(row['adults'])
+        instance.childrens = int(row['children'])
+        instance.citytier = row['variant_city_tier']
         instance.product_variant_id = row['productvariant_id']
         instance.sum_insured = row['sum_insured'].replace(',', '').replace(',', '').replace(',', '') # noqa
         instance.gst = float(int(row['gst'].replace('%', ''))) / 100
@@ -132,13 +125,10 @@ def upload_customersegmentfeaturescore(filename):
                 continue
             customer_segment = CustomerSegment.objects.get(
                 name=feature.replace('-', '_').replace(' ', '_'))
-            instance, created = FeatureCustomerSegmentScore.objects.get_or_create(
+            instance = FeatureCustomerSegmentScore.objects.get_or_create(
                 feature_master_id=feature_master.id,
-                customer_segment_id=customer_segment.id)
+                customer_segment_id=customer_segment.id)[0]
             instance.score = float(score) / 100
             instance.save()
-
-
-
 
 

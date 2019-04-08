@@ -68,11 +68,6 @@ class ProductVariant(BaseModel):
     parent_product = models.CharField(
         max_length=128, null=True, blank=True, default='GoPlannr')
     feature_variant = models.CharField(max_length=256, default='base')
-    parent = models.ForeignKey(
-        'self', on_delete=models.CASCADE, null=True, blank=True)
-    adult = models.IntegerField(null=True, blank=True, db_index=True)
-    children = models.IntegerField(null=True, blank=True, db_index=True)
-    citytier = models.CharField(max_length=256, null=True, blank=True)
     chronic = models.BooleanField(default=True)
 
     def get_product_details(self):
@@ -180,13 +175,16 @@ class Premium(BaseModel):
     product_variant = models.ForeignKey(
         'product.ProductVariant', null=True, blank=True,
         on_delete=models.CASCADE)
-    sum_insured = models.IntegerField(default=0.0, db_index=True)
-    min_age = models.IntegerField(default=0, db_index=True)
-    max_age = models.IntegerField(default=0, db_index=True)
-
     deductible = models.ForeignKey(
         'product.DeductibleMaster', null=True, blank=True,
         on_delete=models.CASCADE)
+    sum_insured = models.IntegerField(default=0.0, db_index=True)
+    min_age = models.IntegerField(default=0, db_index=True)
+    max_age = models.IntegerField(default=0, db_index=True)
+    adults = models.IntegerField(null=True, blank=True, db_index=True)
+    childrens = models.IntegerField(null=True, blank=True, db_index=True)
+    citytier = models.CharField(
+        max_length=256, null=True, blank=True, db_index=True)
     base_premium = models.FloatField(default=constants.DEFAULT_BASE_PREMIUM)
     gst = models.FloatField(default=constants.DEFAULT_GST)
     commission = models.FloatField(default=constants.DEFAULT_COMMISSION)

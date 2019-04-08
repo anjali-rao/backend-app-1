@@ -36,8 +36,8 @@ class ComapanyCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
-    list_display = ('company_category', 'name', 'parent')
-    raw_id_fields = ('company_category', 'parent')
+    list_display = ('company_category', 'name',)
+    raw_id_fields = ('company_category',)
 
 
 @admin.register(CustomerSegment)
