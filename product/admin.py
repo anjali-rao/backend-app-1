@@ -36,8 +36,8 @@ class ComapanyCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
-    list_display = ('company_category', 'name', 'parent')
-    raw_id_fields = ('company_category', 'parent')
+    list_display = ('company_category', 'name',)
+    raw_id_fields = ('company_category',)
 
 
 @admin.register(CustomerSegment)
@@ -75,6 +75,8 @@ class PremiumAdmin(admin.ModelAdmin):
     list_display = ('product_variant', 'sum_insured', 'min_age', 'max_age')
     search_fields = ('product_variant__id',)
     raw_id_fields = ('product_variant', 'deductible')
+    ordering = ('sum_insured',)
+    list_filter = ('sum_insured', 'min_age', 'max_age')
 
 
 @admin.register(FeatureCustomerSegmentScore)
