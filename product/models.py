@@ -184,7 +184,7 @@ class Premium(BaseModel):
     adults = models.IntegerField(null=True, blank=True, db_index=True)
     childrens = models.IntegerField(null=True, blank=True, db_index=True)
     citytier = models.CharField(
-        max_length=256, null=True, blank=True, db_index=True)
+        max_length=256, null=True, blank=True)
     base_premium = models.FloatField(default=constants.DEFAULT_BASE_PREMIUM)
     gst = models.FloatField(default=constants.DEFAULT_GST)
     commission = models.FloatField(default=constants.DEFAULT_COMMISSION)

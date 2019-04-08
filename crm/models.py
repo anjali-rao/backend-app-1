@@ -79,10 +79,10 @@ class Lead(BaseModel):
 
     def parse_family_json(self):
         if 'daughter_total' in self.family:
-            self.children += self.family['daughter_total']
+            self.childrens += self.family['daughter_total']
             self.family.pop('daughter_total')
         if 'son_total' in self.family:
-            self.children += self.family['son_total']
+            self.childrens += self.family['son_total']
             self.family.pop('son_total')
         ages = self.family.values()
         self.effective_age = int(max(ages))
@@ -117,11 +117,12 @@ class Lead(BaseModel):
         ).filter(
             product_variant__company_category__category_id=self.category_id,
             sum_insured=self.final_score, adults=self.adults,
-            min_age__gte=self.effective_age, max_age__lte=self.effective_age
         )
-        if self.children <= 4:
+        if self.childrens <= 4:
             queryset = queryset.filter(childrens=self.childrens)
-        return queryset
+        return [
+            query for query in queryset if self.effective_age in range(
+                query.min_age, query.max_age)]
 
     def refresh_quote_data(self):
         # Refer Pranshu for quotes deletion.
@@ -174,13 +175,13 @@ class Lead(BaseModel):
             if emp_resp.exists() and emp_resp.filter(
                     answer__answer='Self Employed or Business').exists():
                 segment_name = 'self_employed'
-        if self.effective_age < 40 and self.children >= 1:
+        if self.effective_age < 40 and self.childrens >= 1:
             segment_name = 'young_family'
-        elif self.effective_age <= 35 and self.adult == 1:
+        elif self.effective_age <= 35 and self.adults == 1:
             segment_name = 'young_adult'
-        elif self.effective_age <= 35 and self.adult == 2:
+        elif self.effective_age <= 35 and self.adults == 2:
             segment_name = 'young_couple'
-        elif self.effective_age < 60 and self.children >= 1:
+        elif self.effective_age < 60 and self.childrens >= 1:
             segment_name = 'middle_aged_family'
         elif self.effective_age >= 50:
             segment_name = 'senior_citizens'
