@@ -35,6 +35,8 @@ class RecommendationSerializer(serializers.ModelSerializer):
             feature_value=F('feature__short_description')
         ).values('feature_master_name', 'feature_value').order_by(
                 '-feature__rating'):
+            if f['feature_value'].lower() in ['data unavailable', '']:
+                continue
             features.append('%s: %s' % (
                 f['feature_master_name'], f['feature_value']))
         return features
