@@ -53,7 +53,7 @@ class Quote(BaseModel):
     def get_faq(self):
         return [
             {
-                'question': 'Claim settlement ration',
+                'question': 'Claim settlement ratio',
                 'answer': self.premium.product_variant.company_category.claim_settlement # noqa
             },
             {
