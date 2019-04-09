@@ -20,6 +20,11 @@ class Quote(BaseModel):
     class Meta:
         unique_together = ('lead', 'premium',)
 
+    def __str__(self):
+        return '%s - %s' % (
+            self.lead.final_score,
+            self.premium.product_variant.company_category.company.name)
+
     @classmethod
     def get_compareable_features(cls, *quotes_ids):
         features = list()
@@ -48,12 +53,12 @@ class Quote(BaseModel):
     def get_faq(self):
         return [
             {
-                'question': 'CLAIM SETTLEMENT RATIO',
+                'question': 'Claim settlement ratio',
                 'answer': self.premium.product_variant.company_category.claim_settlement # noqa
             },
             {
-                'question': 'COMPANY DETAILS',
-                'answer': '%s\n%s' % (
+                'question': 'Company details',
+                'answer': 'Name:%s\nWebsite%s' % (
                     self.premium.product_variant.company_category.company.name,
                     self.premium.product_variant.company_category.company.website # noqa
                 )

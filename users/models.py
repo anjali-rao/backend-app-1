@@ -117,6 +117,9 @@ class User(BaseModel):
     enterprise_id = models.PositiveIntegerField()
     enterprise = GenericForeignKey('content_type', 'enterprise_id')
 
+    class Meta:
+        unique_together = ('user_type', 'enterprise_id')
+
     def save(self, *args, **kwargs):
         if not self.__class__.objects.filter(pk=self.id):
             models_name = 'subcriberenterprise'

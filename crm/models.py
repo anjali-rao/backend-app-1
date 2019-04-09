@@ -122,7 +122,7 @@ class Lead(BaseModel):
             queryset = queryset.filter(childrens=self.childrens)
         return [
             query for query in queryset if self.effective_age in range(
-                query.min_age, query.max_age)]
+                query.min_age, query.max_age + 1)]
 
     def refresh_quote_data(self):
         # Refer Pranshu for quotes deletion.
