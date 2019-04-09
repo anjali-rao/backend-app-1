@@ -12,7 +12,8 @@ class QuestionnSerializers(serializers.ModelSerializer):
         return obj.id
 
     def get_answers(self, obj):
-        return AnswerSerializer(obj.answer_set.all(), many=True).data
+        return AnswerSerializer(
+            obj.answer_set.all().order_by('id'), many=True).data
 
     class Meta:
         model = Question
