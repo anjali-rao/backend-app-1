@@ -21,7 +21,7 @@ class HelpFile(BaseModel):
     )
     category = models.CharField(
         choices=get_choices(
-            Category.objects.values_list('name', flat=True)
+            Category.objects.values_list('name', flat=True), 'ALL'
         ), default="ALL", max_length=512)
 
 
