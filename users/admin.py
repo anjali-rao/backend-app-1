@@ -98,11 +98,13 @@ class SubcriberEnterpriseAdmin(admin.ModelAdmin):
 class StateAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
+    list_filter = ('name',)
+    readonly_fields = ('name',)
 
 
 @admin.register(Pincode)
 class PincodeAdmin(admin.ModelAdmin):
     list_display = ('pincode', 'city', 'state', 'city_type')
     search_fields = ('pincode', 'state__name', 'city')
-    list_filter = ('state__name', 'city')
+    list_filter = ('state__name', 'city_type')
     raw_id_fields = ('state',)

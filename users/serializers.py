@@ -60,7 +60,7 @@ class OTPVerificationSerializer(serializers.Serializer):
 
 class CreateUserSerializer(serializers.ModelSerializer):
     pincode = serializers.CharField(
-        required=False, allow_blank=True, max_length=6)
+        required=True, allow_blank=True, max_length=6)
     pan_no = serializers.CharField(
         required=False, allow_blank=True, max_length=10)
     phone_no = serializers.CharField(required=True, max_length=10)
@@ -95,6 +95,13 @@ class CreateUserSerializer(serializers.ModelSerializer):
                 constants.INVALID_TRANSACTION_ID)
         return value
 
+    def validate_pincode(self, value):
+        pincodes = Pincode.objects.filter(pincode=value)
+        if not pincodes.exists():
+            raise serializers.ValidationError(
+                constants.INVALID_PINCODE)
+        return pincodes.get().id
+
     def create(self, validated_data):
         validated_data.update(User.get_referral_details(
             validated_data.get('referral_code')))
@@ -110,6 +117,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return instance
 
     def get_account(self, validated_data):
+        validated_data['pincode_id'] = validated_data['pincode']
         acc = Account.get_account(validated_data['phone_no'])
         for field_name in constants.ACCOUNT_CREATION_FIELDS:
             setattr(acc, field_name, validated_data.get(field_name))
@@ -134,12 +142,19 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
 
 class AccountSerializer(serializers.ModelSerializer):
+    pincode = serializers.SerializerMethodField()
+
+    def get_pincode(self, obj):
+
+        if obj.pincode:
+            return PincodeSerializer(obj.pincode).data
+        return dict()
 
     class Meta:
         model = Account
         fields = (
             'id', 'first_name', 'last_name', 'email', 'phone_no',
-            'gender', 'address'
+            'gender', 'address', 'pincode'
         )
 
 
@@ -147,8 +162,8 @@ class EnterpriseSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
 
     def get_logo(self, obj):
-        from goplannr.settings import BASE_HOST
-        return BASE_HOST + obj.logo.url
+        from goplannr.settings import DEBUG
+        return (constants.DEBUG_HOST if DEBUG else '') + obj.logo.url
 
     class Meta:
         model = Enterprise
@@ -282,16 +297,15 @@ class AccountDetailsSerializers(serializers.ModelSerializer):
 
 class AccountSearchSerializers(serializers.ModelSerializer):
 
-    details = serializers.SerializerMethodField()
+    account = serializers.SerializerMethodField()
 
-    def get_details(self, obj):
-        return AccountDetailsSerializers(obj.advisordetails).data
+    def get_account(self, obj):
+        return AccountSerializer(obj.account).data
 
     class Meta:
-        model = Account
+        model = User
         fields = (
-            'phone', 'pincode', 'pan_no', 'gender', 'address', 'age',
-            'details'
+            'account',
         )
 
 

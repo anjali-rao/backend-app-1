@@ -29,8 +29,6 @@ def get_env_var(setting, configs=configs):
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DEBUG = get_env_var('DEBUG')
-BASE_HOST = get_env_var(
-    'DEFAULT_HOST') if DEBUG else get_env_var('PRODUCTTION_HOST')
 
 AUTH_USER_MODEL = 'users.Account'
 
@@ -45,8 +43,6 @@ JWT_SECRET = get_env_var('JWT_SECRET')
 ROOT_URLCONF = 'goplannr.urls'
 
 ALLOWED_HOSTS = get_env_var('ALLOWED_HOSTS').split(',')
-
-RAVEN_CONFIG = get_env_var('RAVEN_CONFIG')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -64,9 +60,7 @@ INSTALLED_APPS = [
     'crm',
     'product',
     'sales',
-    'questionnaire',
-    'raven.contrib.django.raven_compat',
-    # 'django_hosts',
+    'questionnaire'
 ]
 
 if DEBUG:
@@ -77,6 +71,8 @@ if DEBUG:
     MEDIA_ROOT = BASE_DIR + '/media'
 else:
     STATIC_ROOT = "static"
+    RAVEN_CONFIG = get_env_var('RAVEN_CONFIG')
+    INSTALLED_APPS.append('raven.contrib.django.raven_compat')
     # For S3 Document Stroage
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     AWS_ACCESS_KEY_ID = get_env_var('AWS_ACCESS_KEY_ID')
@@ -102,7 +98,9 @@ CORS_ORIGIN_ALLOW_ALL = True
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'users/templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

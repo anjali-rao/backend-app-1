@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from utils.model import BaseModel, models
+from utils.models import BaseModel, models
 from utils import (
     constants, get_choices, get_upload_path, genrate_random_string
 )
@@ -13,12 +13,16 @@ from django.utils.timezone import now
 from django.dispatch import receiver
 from django.core.cache import cache
 
-from goplannr.settings import JWT_SECRET, BASE_HOST, DEBUG
+from goplannr.settings import JWT_SECRET, DEBUG
 
 import uuid
 
 import jwt
 from django.utils.translation import ugettext_lazy as _
+
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
 
 
 class Account(AbstractUser):
@@ -30,8 +34,10 @@ class Account(AbstractUser):
     gender = models.CharField(
         choices=get_choices(constants.GENDER), max_length=8,
         null=True, blank=True)
-    address = models.ForeignKey('users.Address', null=True, blank=True)
-    pincode = models.CharField(max_length=6, null=True, blank=True)
+    address = models.ForeignKey(
+        'users.Address', null=True, blank=True, on_delete=models.CASCADE)
+    pincode = models.ForeignKey(
+        'users.Pincode', null=True, blank=True, on_delete=models.CASCADE)
 
     def send_notification(self, **kwargs):
         return getattr(self, 'send_%s' % kwargs['type'])(kwargs)
@@ -99,27 +105,32 @@ class Account(AbstractUser):
 
 class User(BaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    account = models.ForeignKey('users.Account')
+    account = models.ForeignKey('users.Account', on_delete=models.CASCADE)
     user_type = models.CharField(
         choices=get_choices(constants.USER_TYPE), max_length=16,
         default=constants.DEFAULT_USER_TYPE)
-    campaign = models.ForeignKey('users.Campaign', null=True, blank=True)
-    enterprise_id = models.PositiveIntegerField(null=True, blank=True)
+    campaign = models.ForeignKey(
+        'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
     flag = JSONField(default=constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    enterprise_id = models.PositiveIntegerField()
+    enterprise = GenericForeignKey('content_type', 'enterprise_id')
 
-    def __unicode__(self):
-        return self.account.username
+    class Meta:
+        unique_together = ('user_type', 'enterprise_id')
 
-    @property
-    def enterprise(self):
-        if self.user_type == 'subscriber':
-            modelClass = SubcriberEnterprise
-        else:
-            modelClass = Enterprise
-        enterprises = modelClass.objects.filter(id=self.enterprise_id)
-        if enterprises.exists():
-            return enterprises.get()
+    def save(self, *args, **kwargs):
+        if not self.__class__.objects.filter(pk=self.id):
+            models_name = 'subcriberenterprise'
+            if self.user_type == 'enterprise':
+                models_name = 'enterprise'
+            self.content_type_id = ContentType.objects.get(
+                app_label='users', model=models_name).id
+        super(User, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.account.get_full_name()
 
     def get_authorization_key(self):
         return jwt.encode(
@@ -189,7 +200,8 @@ class User(BaseModel):
                 'name', 'id', 'hexa_code', 'logo'):
             categories.append({
                 'id': category.id, 'hexa_code': category.hexa_code,
-                'logo': (BASE_HOST if DEBUG else '') + category.logo.url,
+                'logo': (
+                    constants.DEBUG_HOST if DEBUG else '') + category.logo.url,
                 'name': category.name.split(' ')[0]
             })
         return categories
@@ -208,6 +220,9 @@ class Enterprise(BaseModel):
     logo = models.ImageField(
         upload_to=constants.ENTERPRISE_UPLOAD_PATH,
         default=constants.DEFAULT_LOGO)
+    person = GenericRelation(
+        User, related_query_name='enterprise_user',
+        object_id_field='enterprise_id')
 
     def __str__(self):
         return self.name
@@ -225,6 +240,9 @@ class SubcriberEnterprise(BaseModel):
     logo = models.ImageField(
         upload_to=constants.ENTERPRISE_UPLOAD_PATH,
         default=constants.DEFAULT_LOGO)
+    person = GenericRelation(
+        User, related_query_name='subscriber_enterprise_user',
+        object_id_field='enterprise_id')
 
     def __str__(self):
         return self.name
@@ -234,18 +252,18 @@ class SubcriberEnterprise(BaseModel):
 
 
 class AccountDetails(BaseModel):
-    account = models.OneToOneField(Account)
+    account = models.OneToOneField('users.Account', on_delete=models.CASCADE)
     agent_code = models.CharField(max_length=16)
     branch_code = models.CharField(max_length=16)
     designation = models.CharField(max_length=16)
     channel = models.CharField(max_length=16)
     status = models.CharField(max_length=32)
     languages = ArrayField(
-        models.CharField(max_length=16), default=[], blank=True, null=True)
+        models.CharField(max_length=16), default=list, blank=True, null=True)
     certifications = ArrayField(
-        models.CharField(max_length=16), default=[], blank=True, null=True)
+        models.CharField(max_length=16), default=list, blank=True, null=True)
     qualifications = ArrayField(
-        models.CharField(max_length=16), default=[], blank=True, null=True)
+        models.CharField(max_length=16), default=list, blank=True, null=True)
     short_description = models.TextField()
     long_description = models.TextField()
 
@@ -253,17 +271,19 @@ class AccountDetails(BaseModel):
 class Referral(BaseModel):
     referral_code = models.CharField(max_length=10, unique=True)
     referral_reference = models.CharField(max_length=10, null=True, blank=True)
-    enterprise = models.ForeignKey(Enterprise, null=True, blank=True)
-    user = models.ForeignKey(User, null=True, blank=True)
+    enterprise = models.ForeignKey(
+        'users.Enterprise', null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        'users.User', null=True, blank=True, on_delete=models.CASCADE)
 
 
 class Documents(BaseModel):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
     doc_type = models.CharField(
         choices=get_choices(constants.DOC_TYPES), max_length=16)
     file = models.FileField(upload_to=get_upload_path)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.doc_type
 
 
@@ -271,24 +291,24 @@ class Bank(models.Model):
     name = models.CharField(max_length=256)
     is_active = models.BooleanField(default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.bank_name
 
 
 class BankBranch(models.Model):
-    bank = models.ForeignKey(Bank)
+    bank = models.ForeignKey('users.Bank', on_delete=models.CASCADE)
     branch_name = models.CharField(max_length=128)
     ifsc = models.CharField(max_length=15, unique=True)
     micr = models.CharField(max_length=128)
     city = models.CharField(max_length=64)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s => %s:%s' % (self.bank_name, self.branch_name, self.ifsc)
 
 
 class BankAccount(BaseModel):
-    user = models.ForeignKey(User)
-    branch = models.OneToOneField(BankBranch)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    branch = models.OneToOneField('BankBranch', on_delete=models.CASCADE)
     account_no = models.IntegerField()
     default = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -306,18 +326,20 @@ class BankAccount(BaseModel):
 class State(models.Model):
     name = models.CharField(max_length=128, db_index=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
 class Pincode(models.Model):
-    pincode = models.CharField(max_length=6, db_index=True)
+    pincode = models.CharField(
+        max_length=6, unique=True, db_index=True)
     city = models.CharField(max_length=64, db_index=True)
-    state = models.ForeignKey('users.State', null=True, blank=True)
+    state = models.ForeignKey(
+        'users.State', null=True, blank=True, on_delete=models.CASCADE)
     city_type = models.IntegerField(
-        choices=constants.CITY_TIER, default=2)
+        choices=constants.CITY_TIER, default=3)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s - (%s)' % (self.pincode, self.city, self.state.name)
 
     @classmethod
@@ -330,7 +352,7 @@ class Pincode(models.Model):
 
 class Address(BaseModel):
     street = models.CharField(max_length=128)
-    pincode = models.ForeignKey('users.Pincode')
+    pincode = models.ForeignKey('users.Pincode', on_delete=models.CASCADE)
 
     @property
     def full_address(self):

@@ -4,9 +4,9 @@ from sales.models import Quote, QuoteFeature, Application, Client
 from users.models import Pincode, Address
 from utils import constants
 
-from content.serializers import FaqSerializer, Faq
-
 from content.models import NetworkHospital
+
+from django.db.models import F
 
 
 class RecommendationSerializer(serializers.ModelSerializer):
@@ -29,9 +29,17 @@ class RecommendationSerializer(serializers.ModelSerializer):
         return obj.premium.amount
 
     def get_features(self, obj):
-        features = obj.quotefeature_set.values_list(
-            'feature__feature_master__name', flat=True) or []
-        return features[:5]
+        features = list()
+        for f in obj.quotefeature_set.annotate(
+            feature_master_name=F('feature__feature_master__name'),
+            feature_value=F('feature__short_description')
+        ).values('feature_master_name', 'feature_value').order_by(
+                '-feature__rating'):
+            if f['feature_value'].lower() in ['data unavailable', '']:
+                continue
+            features.append('%s: %s' % (
+                f['feature_master_name'], f['feature_value']))
+        return features
 
     def get_product(self, obj):
         return obj.premium.product_variant.get_product_details()
@@ -135,7 +143,7 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
         return coverages
 
     def get_faq(self, obj):
-        return FaqSerializer(Faq.objects.all(), many=True).data
+        return obj.get_faq()
 
     def get_company_details(self, obj):
         details = obj.premium.product_variant.get_product_details()

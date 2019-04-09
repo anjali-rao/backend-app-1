@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from utils.model import BaseModel, models
+from utils.models import BaseModel, models
 from utils import constants, get_choices
+from django.utils.functional import cached_property
 
 
 class Category(BaseModel):
@@ -38,7 +39,7 @@ class Company(BaseModel):
 
 
 class CompanyDetails(BaseModel):
-    company = models.OneToOneField('product.Company')
+    company = models.OneToOneField('product.Company', on_delete=models.CASCADE)
     fact_file = models.TextField(null=True, blank=True)
     joint_venture = models.TextField(null=True, blank=True)
     formation_year = models.CharField(max_length=4, null=True, blank=True)
@@ -47,8 +48,8 @@ class CompanyDetails(BaseModel):
 
 
 class CompanyCategory(BaseModel):
-    category = models.ForeignKey('product.Category')
-    company = models.ForeignKey('product.Company')
+    category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
+    company = models.ForeignKey('product.Company', on_delete=models.CASCADE)
     claim_settlement = models.CharField(max_length=128, null=True, blank=True)
     offer_flag = models.BooleanField(default=False)
 
@@ -61,24 +62,25 @@ class CompanyCategory(BaseModel):
 
 class ProductVariant(BaseModel):
     company_category = models.ForeignKey(
-        'product.CompanyCategory', null=True, blank=True)
+        'product.CompanyCategory', null=True, blank=True,
+        on_delete=models.CASCADE)
     name = models.CharField(max_length=256, default="")
-    parent_product = models.CharField(max_length=128, null=True, blank=True)
+    parent_product = models.CharField(
+        max_length=128, null=True, blank=True, default='GoPlannr')
     feature_variant = models.CharField(max_length=256, default='base')
-    parent = models.ForeignKey(
-        'self', on_delete=models.CASCADE, null=True, blank=True)
-    adult = models.IntegerField(null=True, blank=True, db_index=True)
-    children = models.IntegerField(null=True, blank=True, db_index=True)
-    citytier = models.CharField(max_length=256, null=True, blank=True)
     chronic = models.BooleanField(default=True)
 
     def get_product_details(self):
-        from goplannr.settings import BASE_HOST, DEBUG
-        logo = self.company_category.company.logo.url
+        from goplannr.settings import DEBUG
         return {
             'name': self.parent_product,
             'company': self.company_category.company.name,
-            'logo': logo if not DEBUG else (BASE_HOST + logo)
+            'logo': (
+                constants.DEBUG_HOST if DEBUG else ''
+            ) + self.company_category.company.logo.url,
+            'variant_name': '%s - %s' % (
+                self.parent_product, self.feature_variant.title()
+            )
         }
 
     def get_basic_details(self):
@@ -110,7 +112,8 @@ class CustomerSegment(BaseModel):
 
 
 class FeatureMaster(BaseModel):
-    category = models.ForeignKey('product.Category', null=True, blank=True)
+    category = models.ForeignKey(
+        'product.Category', null=True, blank=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=127, default="")
     feature_type = models.CharField(
         max_length=32, default='Others',
@@ -125,9 +128,11 @@ class FeatureMaster(BaseModel):
 
 class Feature(BaseModel):
     feature_master = models.ForeignKey(
-        'product.FeatureMaster', null=True, blank=True)
+        'product.FeatureMaster', null=True, blank=True,
+        on_delete=models.CASCADE)
     product_variant = models.ForeignKey(
-        'product.ProductVariant', null=True, blank=True)
+        'product.ProductVariant', null=True, blank=True,
+        on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
     short_description = models.CharField(max_length=156)
     long_description = models.CharField(max_length=512)
@@ -138,8 +143,10 @@ class Feature(BaseModel):
 
 
 class FeatureCustomerSegmentScore(BaseModel):
-    feature_master = models.ForeignKey('product.FeatureMaster')
-    customer_segment = models.ForeignKey('product.CustomerSegment')
+    feature_master = models.ForeignKey(
+        'product.FeatureMaster', on_delete=models.CASCADE)
+    customer_segment = models.ForeignKey(
+        'product.CustomerSegment', on_delete=models.CASCADE)
     score = models.FloatField(default=0.0)
 
     def __str__(self):
@@ -156,7 +163,7 @@ class SumInsuredMaster(models.Model):
         return self.text
 
 
-class DeductibleMaster(models.Model):
+class DeductibleMaster(BaseModel):
     text = models.CharField(max_length=100)
     number = models.IntegerField()
 
@@ -166,13 +173,19 @@ class DeductibleMaster(models.Model):
 
 class Premium(BaseModel):
     product_variant = models.ForeignKey(
-        'product.ProductVariant', null=True, blank=True)
+        'product.ProductVariant', null=True, blank=True,
+        on_delete=models.CASCADE)
+    deductible = models.ForeignKey(
+        'product.DeductibleMaster', null=True, blank=True,
+        on_delete=models.CASCADE)
     sum_insured = models.IntegerField(default=0.0, db_index=True)
     min_age = models.IntegerField(default=0, db_index=True)
     max_age = models.IntegerField(default=0, db_index=True)
-    deductible = models.ForeignKey(
-        'product.DeductibleMaster', null=True, blank=True)
-    base_premium = models.IntegerField(default=constants.DEFAULT_BASE_PREMIUM)
+    adults = models.IntegerField(null=True, blank=True, db_index=True)
+    childrens = models.IntegerField(null=True, blank=True, db_index=True)
+    citytier = models.CharField(
+        max_length=256, null=True, blank=True)
+    base_premium = models.FloatField(default=constants.DEFAULT_BASE_PREMIUM)
     gst = models.FloatField(default=constants.DEFAULT_GST)
     commission = models.FloatField(default=constants.DEFAULT_COMMISSION)
 
@@ -180,14 +193,18 @@ class Premium(BaseModel):
         return {
             'sum_insured': self.sum_insured,
             'amount': self.amount,
-            'commision': self.get_commission_amount()
+            'commision': self.commission_amount
         }
 
-    def get_commission_amount(self):
+    @cached_property
+    def commission_amount(self):
         return self.amount * self.commission
 
-    @property
+    @cached_property
     def amount(self):
         return round((
             self.gst * self.base_premium
         ) + self.base_premium + (self.base_premium * self.commission), 2)
+
+    def __str__(self):
+        return '%s | %s-%s' % (self.sum_insured, self.min_age, self.max_age)
