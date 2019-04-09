@@ -118,7 +118,7 @@ class User(BaseModel):
     enterprise = GenericForeignKey('content_type', 'enterprise_id')
 
     class Meta:
-        unique_together = ('user_type', 'enterprise_id')
+        unique_together = ('user_type', 'enterprise_id', 'account')
 
     def save(self, *args, **kwargs):
         if not self.__class__.objects.filter(pk=self.id):
