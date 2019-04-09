@@ -112,4 +112,4 @@ class PincodeAdmin(admin.ModelAdmin):
 
 @admin.register(ContactUs)
 class ContactUs(admin.ModelAdmin):
-    list_display = ('phone_no', 'email')
+    list_display = ('phone_no', 'email', 'created')
