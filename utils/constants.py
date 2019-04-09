@@ -76,6 +76,7 @@ INVALID_ANSWER_ID = 'Invalid Answer id provided.'
 INVALID_QUESTION_ID = 'Invalid Answer id provided.'
 INVALID_GENDER_PROVIDED = 'Invalid gender input provided.'
 INVALID_PINCODE = 'Invalid pincode provided.'
+USER_ALREADY_EXISTS = 'User already exists for choosen product.'
 
 # Creation Fields
 ACCOUNT_CREATION_FIELDS = (
