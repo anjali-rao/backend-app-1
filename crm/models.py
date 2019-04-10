@@ -5,9 +5,9 @@ from django.contrib.postgres.fields import JSONField
 from utils.models import BaseModel, models
 from utils import constants
 
-from sales.models import Quote, QuoteFeature
+from sales.models import Quote
 from product.models import (
-    Premium, FeatureCustomerSegmentScore
+    Premium, FeatureCustomerSegmentScore, Feature
 )
 import math
 
@@ -125,28 +125,28 @@ class Lead(BaseModel):
                 query.min_age, query.max_age + 1)]
 
     def refresh_quote_data(self):
-        # Refer Pranshu for quotes deletion.
         quotes = self.get_quotes()
         if quotes.exists():
             quotes.delete()
-        quote_features = []
         for premium in self.get_premiums():
-            features = premium.product_variant.feature_set.select_related(
-                'feature_master').all()
+            feature_masters = premium.product_variant.feature_set.values_list(
+                'feature_master_id', flat=True)
             quote = Quote.objects.create(
                 lead_id=self.id, premium_id=premium.id)
-            for feature in features:
+            changed_made = False
+            for feature_master_id in feature_masters:
                 feature_score = FeatureCustomerSegmentScore.objects.only(
-                    'score').filter(
-                        feature_master_id=feature.feature_master.id,
+                    'score', 'feature_master_id').filter(
+                        feature_master_id=feature_master_id,
                         customer_segment_id=self.customer_segment.id).last()
-                if feature_score is None:
-                    continue
-                quote_features.append(QuoteFeature(
-                    quote_id=quote.id, feature_id=feature.id,
-                    score=feature_score.score
-                ))
-        QuoteFeature.objects.bulk_create(quote_features)
+                if feature_score is not None:
+                    if not changed_made:
+                        changed_made = False
+                    quote.recommendation_score += float(Feature.objects.filter(
+                        feature_master_id=feature_master_id).aggregate(
+                        s=models.Sum('rating'))['s'] * feature_score.score)
+            if changed_made:
+                quote.save()
 
     def get_customer_segment(self):
         from product.models import CustomerSegment

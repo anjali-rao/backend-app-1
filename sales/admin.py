@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from django.contrib import admin
 
 from sales.models import (
-    Quote, QuoteFeature, Client, KYCDocuments, Application
+    Quote, Client, KYCDocuments, Application
 )
 
 
@@ -12,12 +12,6 @@ from sales.models import (
 class QuoteAdmin(admin.ModelAdmin):
     list_display = ('lead', 'status', 'premium')
     raw_id_fields = ('lead', 'premium')
-
-
-@admin.register(QuoteFeature)
-class QuoteFeatureAdmin(admin.ModelAdmin):
-    list_display = ('quote', 'feature', 'score')
-    raw_id_fields = ('quote', 'feature')
 
 
 @admin.register(Client)
