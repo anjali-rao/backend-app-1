@@ -22,9 +22,8 @@ class HelpFileAdmin(admin.ModelAdmin):
 
 @admin.register(ContactUs)
 class ContactUs(admin.ModelAdmin):
-    list_display = ('title', 'value_type')
-    search_fields = ('title',)
-    list_filter = ('value_type',)
+    list_display = ('full_name', 'phone_no', 'email', 'created')
+    search_fields = ('phone_no', 'email', 'full_name')
 
 
 @admin.register(NetworkHospital)
