@@ -50,8 +50,8 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
                 status=status.HTTP_201_CREATED)
         except IntegrityError:
             pass
-        raise exceptions.APIException(
-            'Unable to process request currently. Please try again')
+        #raise exceptions.APIException(
+        #    'Unable to process request currently. Please try again')
 
     def create_lead(self, category_id, family, pincode):
         from crm.models import Lead
