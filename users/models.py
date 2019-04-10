@@ -360,15 +360,6 @@ class Address(BaseModel):
             self.street, self.pincode.city, self.state, self.pincode)
 
 
-class ContactUs(BaseModel):
-    phone_no = models.CharField(max_length=10)
-    email = models.EmailField(max_length=50, null=True)
-    full_name = models.CharField(max_length=50)
-
-    def __str__(self):
-        return "{} - {}".format(self.phone_no, self.full_name)
-
-
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))
 def user_post_save(sender, instance, created, **kwargs):
     if created:

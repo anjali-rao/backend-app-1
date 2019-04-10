@@ -11,10 +11,6 @@ from users.serializers import (
     AccountSearchSerializers, User, PincodeSerializer, Pincode
 )
 
-from .models import (
-    ContactUs
-)
-
 
 @api_view(['POST'])
 def generate_otp(request, version):
@@ -154,27 +150,3 @@ class PincodeSearch(APIView):
                 cleaned_list.append(loc)
 
         return cleaned_list
-
-
-class ContactUsAPI(APIView):
-
-    def post(self, request, version, format=None):
-        data = request.data
-        cleaned_data = {}
-        cleaned_data['phone_no'] = data.get('phone_no')
-        cleaned_data['full_name'] = data.get('full_name')
-        cleaned_data['email'] = data.get('email')
-
-        if (not data.get('phone_no')) or (not data.get('full_name')) or (not data.get('email')):
-            return Response({'details': 'Field missing'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            ContactUs.objects.create(**cleaned_data)
-            return Response({'details': 'Posted'}, status=status.HTTP_201_CREATED)
-        except:
-            return Response({'details': 'Failed to post data'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-
