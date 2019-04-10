@@ -78,10 +78,14 @@ class ProductVariant(BaseModel):
             'logo': (
                 constants.DEBUG_HOST if DEBUG else ''
             ) + self.company_category.company.logo.url,
-            'variant_name': '%s - %s' % (
-                self.parent_product, self.feature_variant.title()
-            )
+            'variant_name': self.product_short_name
         }
+
+    @cached_property
+    def product_short_name(self):
+        if self.feature_variant.lower() == 'base':
+            return self.parent_product
+        return '%s - %s' % (self.parent_product, self.feature_variant.title())
 
     def get_basic_details(self):
         return {
@@ -115,11 +119,12 @@ class FeatureMaster(BaseModel):
     category = models.ForeignKey(
         'product.Category', null=True, blank=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=127, default="")
+    order = models.IntegerField(default=1)
     feature_type = models.CharField(
         max_length=32, default='Others',
         choices=get_choices(constants.FEATURE_TYPES))
     short_description = models.CharField(max_length=128, null=True, blank=True)
-    long_description = models.TextField(default="")
+    long_description = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return "%s - %s" % (
@@ -134,8 +139,8 @@ class Feature(BaseModel):
         'product.ProductVariant', null=True, blank=True,
         on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
-    short_description = models.CharField(max_length=156)
-    long_description = models.CharField(max_length=512)
+    short_description = models.CharField(max_length=156, null=True, blank=True)
+    long_description = models.CharField(max_length=512, null=True, blank=True)
 
     def __str__(self):
         return "%s - %s" % (

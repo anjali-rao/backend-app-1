@@ -1,12 +1,10 @@
 from rest_framework import serializers
 
-from sales.models import Quote, QuoteFeature, Application, Client
+from sales.models import Quote, Application, Client
 from users.models import Pincode, Address
 from utils import constants
 
 from content.models import NetworkHospital
-
-from django.db.models import F
 
 
 class RecommendationSerializer(serializers.ModelSerializer):
@@ -30,15 +28,13 @@ class RecommendationSerializer(serializers.ModelSerializer):
 
     def get_features(self, obj):
         features = list()
-        for f in obj.quotefeature_set.annotate(
-            feature_master_name=F('feature__feature_master__name'),
-            feature_value=F('feature__short_description')
-        ).values('feature_master_name', 'feature_value').order_by(
-                '-feature__rating'):
-            if f['feature_value'].lower() in ['data unavailable', '']:
-                continue
+        for f in obj.premium.product_variant.feature_set.exclude(
+            short_description__in=[
+                'Data unavailable', '', 'Not covered', 'Not Covered']
+        ).order_by('-rating').values(
+                'feature_master__name', 'short_description')[:5]:
             features.append('%s: %s' % (
-                f['feature_master_name'], f['feature_value']))
+                f['feature_master__name'], f['short_description']))
         return features
 
     def get_product(self, obj):
@@ -92,21 +88,6 @@ class QuoteSerializer(serializers.ModelSerializer):
         )
 
 
-class QuoteFeatureSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-    description = serializers.SerializerMethodField()
-
-    def get_name(self, obj):
-        return obj.feature.feature_master.name
-
-    def get_description(self, obj):
-        return obj.feature.short_description
-
-    class Meta:
-        model = QuoteFeature
-        fields = ('id', 'name', 'score', 'description')
-
-
 class QuotesDetailsSerializer(serializers.ModelSerializer):
     suminsured = serializers.SerializerMethodField()
     premium = serializers.SerializerMethodField()
@@ -116,28 +97,34 @@ class QuotesDetailsSerializer(serializers.ModelSerializer):
     company_details = serializers.SerializerMethodField()
 
     def get_benefits(self, obj):
-        return QuoteFeatureSerializer(
-            obj.quotefeature_set.all(), many=True).data
+        benefits = []
+        for f in obj.get_feature_details().exclude(
+                short_description__in=['Not Covered', 'Not covered', ''])[:5]:
+            benefits.append({
+                'name': f['feature_master__name'].title(),
+                'description': f['short_description']
+            })
+        return benefits
 
     def get_coverage(self, obj):
-        features = obj.quotefeature_set.values(
-            'feature__feature_master__feature_type',
-            'feature__feature_master__name')
         coverages_added = set()
-        coverages = []
+        coverages = list()
+        features = obj.premium.product_variant.feature_set.values(
+            'feature_master__feature_type',
+            'feature_master__name')
         for feature in features:
             try:
                 find_coverage = next(
                     coverage for coverage in coverages if coverage['name'] == feature[ # noqa
-                        'feature__feature_master__feature_type'])
+                        'feature_master__feature_type'])
                 find_coverage['value'].append(
-                    feature['feature__feature_master__name'])
+                    feature['feature_master__name'])
             except StopIteration:
                 coverages.append({
-                    'name': feature['feature__feature_master__feature_type'],
-                    'value': [feature['feature__feature_master__name']]
+                    'name': feature['feature_master__feature_type'],
+                    'value': [feature['feature_master__name']]
                 })
-            coverages_added.add(feature['feature__feature_master__name'])
+            coverages_added.add(feature['feature_master__name'])
         for pending in set(constants.FEATURE_TYPES) - set(coverages_added):
             coverages.append({'name': pending, 'value': None})
         return coverages
@@ -184,7 +171,15 @@ class CompareSerializer(serializers.ModelSerializer):
         return obj.premium.product_variant.get_product_details()
 
     def get_features(self, obj):
-        return obj.get_feature_details()
+        features = list()
+        for f in obj.get_feature_details():
+            features.append({
+                'name': f['feature_master__name'].title(),
+                'description': f['feature_master__long_description'],
+                'short_text': (
+                    f['short_description'] or 'Not Covered').title()
+            })
+        return features
 
     def get_network_coverage(self, obj):
         return [

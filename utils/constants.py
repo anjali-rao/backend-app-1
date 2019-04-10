@@ -45,7 +45,7 @@ DEFAULT_COMMISSION = 0.20
 ADULT_AGE_LIMIT = 18
 
 # Success messages
-OTP_MESSAGE = 'Your One Time Password for GoPlannr is : %s'
+OTP_MESSAGE = 'Your One Time Password for <#>OneCover<#> is %s'
 OTP_SUCCESS = 'OTP verified successfully.'
 OTP_GENERATED = 'OTP send successfully.'
 AUTHORIZATION_GENERATED = 'Authorization key generated successfully.'
@@ -76,6 +76,7 @@ INVALID_ANSWER_ID = 'Invalid Answer id provided.'
 INVALID_QUESTION_ID = 'Invalid Answer id provided.'
 INVALID_GENDER_PROVIDED = 'Invalid gender input provided.'
 INVALID_PINCODE = 'Invalid pincode provided.'
+USER_ALREADY_EXISTS = 'User already exists for choosen product.'
 
 # Creation Fields
 ACCOUNT_CREATION_FIELDS = (

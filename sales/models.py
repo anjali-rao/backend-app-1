@@ -36,19 +36,10 @@ class Quote(BaseModel):
         return set(features)
 
     def get_feature_details(self):
-        features = []
-        for feature in self.quotefeature_set.annotate(
-            name=models.F('feature__feature_master__name'),
-            description=models.F('feature__feature_master__long_description'),
-            short_text=models.F('feature__short_description')
-        ).values('name', 'score', 'description', 'short_text'):
-            features.append({
-                'name': feature['name'],
-                'description': feature['description'],
-                'short_text': feature['short_text'],
-                'score': feature['score']
-            })
-        return features
+        return self.premium.product_variant.feature_set.values(
+            'feature_master__name', 'short_description',
+            'feature_master__long_description'
+        ).order_by('feature_master__order')
 
     def get_faq(self):
         return [
@@ -58,24 +49,12 @@ class Quote(BaseModel):
             },
             {
                 'question': 'Company details',
-                'answer': 'Name:%s\nWebsite%s' % (
+                'answer': 'Name: %s\nWebsite: %s' % (
                     self.premium.product_variant.company_category.company.name,
                     self.premium.product_variant.company_category.company.website # noqa
                 )
             }
         ]
-
-
-class QuoteFeature(BaseModel):
-    quote = models.ForeignKey('sales.Quote', on_delete=models.CASCADE)
-    feature = models.ForeignKey('product.feature', on_delete=models.CASCADE)
-    score = models.FloatField(default=0.0)
-
-    def save(self, *args, **kwargs):
-        super(QuoteFeature, self).save(*args, **kwargs)
-        self.quote.recommendation_score += float(
-            self.feature.rating * self.score)
-        self.quote.save()
 
 
 class KYCDocuments(BaseModel):
