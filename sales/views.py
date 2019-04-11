@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from rest_framework import generics, exceptions
+from rest_framework import generics
 
 from users.decorators import UserAuthentication
 from sales.serializers import (

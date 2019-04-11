@@ -19,7 +19,7 @@ CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
 FEATURE_TYPES = (
     'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
     'Exclusion')
-APPLICATION_TYPES = ('health_insurance')
+APPLICATION_TYPES = ('health_insurance', 'travel_insurance')
 
 DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = {
@@ -77,6 +77,7 @@ INVALID_QUESTION_ID = 'Invalid Answer id provided.'
 INVALID_GENDER_PROVIDED = 'Invalid gender input provided.'
 INVALID_PINCODE = 'Invalid pincode provided.'
 USER_ALREADY_EXISTS = 'User already exists for choosen product.'
+FAILED_APPLICATION_CREATION = 'Failed to add contact. Please contact GoPlannr.'
 
 # Creation Fields
 ACCOUNT_CREATION_FIELDS = (
