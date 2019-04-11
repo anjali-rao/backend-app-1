@@ -6,6 +6,12 @@ from utils import (
     constants, get_choices, get_kyc_upload_path, genrate_random_string)
 
 from django.contrib.postgres.fields import JSONField
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey, GenericRelation)
+from django.contrib.contenttypes.models import ContentType
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils.timezone import now
 
 
 class Quote(BaseModel):
@@ -25,16 +31,6 @@ class Quote(BaseModel):
             self.lead.final_score,
             self.premium.product_variant.company_category.company.name)
 
-    @classmethod
-    def get_compareable_features(cls, *quotes_ids):
-        features = list()
-        for quote_id in quotes_ids:
-            features.extend(
-                cls.objects.get(id=quote_id).quotefeature_set.annotate(
-                    name=models.F('feature__feature_master__name')
-                ).values_list('name', flat=True))
-        return set(features)
-
     def get_feature_details(self):
         return self.premium.product_variant.feature_set.values(
             'feature_master__name', 'short_description',
@@ -42,27 +38,20 @@ class Quote(BaseModel):
         ).order_by('feature_master__order')
 
     def get_faq(self):
+        company_category = self.premium.product_variant.company_category
         return [
             {
                 'question': 'Claim settlement ratio',
-                'answer': self.premium.product_variant.company_category.claim_settlement # noqa
+                'answer': company_category.claim_settlement
             },
             {
                 'question': 'Company details',
                 'answer': 'Name: %s\nWebsite: %s' % (
-                    self.premium.product_variant.company_category.company.name,
-                    self.premium.product_variant.company_category.company.website # noqa
+                    company_category.company.name,
+                    company_category.company.website
                 )
             }
         ]
-
-
-class KYCDocuments(BaseModel):
-    client = models.ForeignKey('sales.Client', on_delete=models.CASCADE)
-    number = models.CharField(max_length=64)
-    doc_type = models.CharField(
-        choices=get_choices(constants.KYC_DOC_TYPES), max_length=16)
-    file = models.FileField(upload_to=get_kyc_upload_path)
 
 
 class Client(BaseModel):
@@ -91,22 +80,29 @@ class Application(BaseModel):
     application_type = models.CharField(
         max_length=32, choices=get_choices(constants.APPLICATION_TYPES))
     quote = models.OneToOneField('sales.Quote', on_delete=models.CASCADE)
-    address = models.ForeignKey('users.Address', on_delete=models.CASCADE)
+    address = models.ForeignKey(
+        'users.Address', on_delete=models.CASCADE, null=True, blank=True)
     status = models.CharField(
         max_length=32, choices=constants.STATUS_CHOICES, default='pending')
     people_listed = models.IntegerField(default=0)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    insurance_id = models.PositiveIntegerField()
+    insurance = GenericForeignKey('content_type', 'insurance_id')
 
     def save(self, *args, **kwargs):
         try:
             self.__class__.objects.get(pk=self.id)
         except Application.DoesNotExist:
             self.generate_reference_no()
+            self.assign_insurance()
         super(Application, self).save(*args, **kwargs)
 
-    def assignInsurance(self):
-        # to DOs
-        if self.application_type == 'health_insurance':
-            HealthInsurance.objects.create()
+    def assign_insurance(self):
+        category = self.quote.premium.product_variant.company_category.category.name # noqa
+        if category == 'Health Insurance':
+            self.application_type = 'health_insurance'
+        elif category == 'Travel Insurance': # noqa
+            self.application_type = 'travel_insurance'
 
     def generate_reference_no(self):
         self.reference_no = 'GoPlannr%s' % genrate_random_string(10)
@@ -117,6 +113,26 @@ class Application(BaseModel):
                 self.reference_no = 'GoPlannr%s' % genrate_random_string(10)
 
 
+class HealthInsurance(BaseModel):
+    application = GenericRelation(
+        Application, related_query_name='health_insurance',
+        object_id_field='insurance_id')
+
+
+class TravelInsurance(BaseModel):
+    application = GenericRelation(
+        Application, related_query_name='travel_insurance',
+        object_id_field='insurance_id')
+
+
+class KYCDocuments(BaseModel):
+    client = models.ForeignKey('sales.Client', on_delete=models.CASCADE)
+    number = models.CharField(max_length=64)
+    doc_type = models.CharField(
+        choices=get_choices(constants.KYC_DOC_TYPES), max_length=16)
+    file = models.FileField(upload_to=get_kyc_upload_path)
+
+
 class Policy(BaseModel):
     application = models.OneToOneField(
         'sales.Application', on_delete=models.CASCADE)
@@ -125,6 +141,7 @@ class Policy(BaseModel):
     policy_data = JSONField()
 
 
-class HealthInsurance(BaseModel):
-    application = models.OneToOneField(
-        'sales.Application', on_delete=models.CASCADE)
+@receiver(post_save, sender=Application, dispatch_uid="action%s" % str(now()))
+def user_post_save(sender, instance, created, **kwargs):
+    if created:
+        pass

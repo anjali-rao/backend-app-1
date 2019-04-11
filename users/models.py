@@ -20,8 +20,8 @@ import uuid
 import jwt
 from django.utils.translation import ugettext_lazy as _
 
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
 
 
