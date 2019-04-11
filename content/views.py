@@ -6,7 +6,7 @@ from rest_framework import generics, permissions
 from users.decorators import UserAuthentication
 
 from content.serializers import (
-    Faq, FaqSerializer, ContactUsSerializer)
+    Faq, FaqSerializer, ContactUsSerializer, NewsLetterSerializer)
 
 
 class GetFaq(generics.ListAPIView):
@@ -18,3 +18,8 @@ class GetFaq(generics.ListAPIView):
 class ContactUsAPI(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = ContactUsSerializer
+
+
+class AddNewsLetter(generics.CreateAPIView):
+    permissions = [permissions.AllowAny]
+    serializer_class = NewsLetterSerializer
