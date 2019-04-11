@@ -20,6 +20,6 @@ class ContactUsAPI(generics.CreateAPIView):
     serializer_class = ContactUsSerializer
 
 
-class AddNewsLetter(generics.CreateAPIView):
+class AddNewsLetterSubscriber(generics.CreateAPIView):
     permissions = [permissions.AllowAny]
     serializer_class = NewsLetterSerializer
