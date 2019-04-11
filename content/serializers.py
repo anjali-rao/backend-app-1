@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from content.models import Faq, ContactUs, Newsletter
+from content.models import Faq, ContactUs, NewsletterSubscriber
 
 
 class FaqSerializer(serializers.ModelSerializer):
@@ -20,5 +20,5 @@ class ContactUsSerializer(serializers.ModelSerializer):
 class NewsLetterSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Newsletter
+        model = NewsletterSubscriber
         fields = ('email',)

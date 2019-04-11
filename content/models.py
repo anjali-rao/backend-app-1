@@ -42,6 +42,6 @@ class NetworkHospital(BaseModel):
     contact_number = models.CharField(blank=True, max_length=100)
 
 
-class Newsletter(BaseModel):
+class NewsletterSubscriber(BaseModel):
     email = models.EmailField()
     unsubscribe = models.BooleanField(default=False)
