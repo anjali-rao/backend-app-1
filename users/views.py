@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-from rest_framework import permissions, status, generics
+from rest_framework import permissions, status, generics, exceptions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -93,7 +93,6 @@ class PincodeSearch(APIView):
     def get(self, request, version, format=None):
 
         data = []
-        EMPTY_RESPONSE = {'detail': 'Please pass a text parameter.'}
         text = request.query_params.get('text')
         try:
             if text:
@@ -106,11 +105,9 @@ class PincodeSearch(APIView):
                     data = self.format_location_data(data, text)
 
                 return Response(data, status=status.HTTP_200_OK)
-            return Response(EMPTY_RESPONSE, status=status.HTTP_400_BAD_REQUEST)
-
+            raise exceptions.APIException('Please pass a text parameter.')
         except Exception as e:
-            ERROR_RESPONSE = {'message': e}
-            return Response(ERROR_RESPONSE, status=status.HTTP_400_BAD_REQUEST)
+            raise exceptions.APIException(e)
 
     def format_location_data(self, data, text):
         location_list = set()
@@ -118,9 +115,9 @@ class PincodeSearch(APIView):
         for each_location in data:
             location_string_list = list()
 
-            state = each_location.get('state') or ''
-            city = each_location.get('city') or ''
-            pincode = each_location.get('pincode') or ''
+            state = each_location.get('state', '')
+            city = each_location.get('city', '')
+            pincode = each_location.get('pincode', '')
 
             if text in state:
                 location_string_list.append(state)
