@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django.contrib import admin
 
-from crm.models import Lead, Contact
+from crm.models import Lead, Contact, KYCDocument
 
 
 @admin.register(Lead)
@@ -19,3 +19,11 @@ class ContactAdmin(admin.ModelAdmin):
     list_display = ('user', 'phone_no', 'email')
     search_fields = ('phone_no', 'user__account__phone_no')
     raw_id_fields = ('user',)
+
+
+@admin.register(KYCDocument)
+class KYCDocumentAdmin(admin.ModelAdmin):
+    list_display = ('contact', 'document_type', 'docunent_number')
+    raw_id_fields = ('contact',)
+    list_filter = ('document_type',)
+    search_fields = ('docunent_number', 'contact__phone_no')

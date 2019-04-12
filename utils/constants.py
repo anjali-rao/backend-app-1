@@ -1,48 +1,63 @@
 # Choices
 GENDER = ('male', 'female', 'transgender')
+
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
+
 CITY_TIER = ((0, 'First'), (1, 'Second'), (2, 'Third'))
+
 USER_FLAG = {'blacklist': False, 'training': False, 'exam_passed': None}
-OCCUPATION_CHOICES = (
-    (0, 'Student'), (1, 'Service'), (3, 'Self Employeed'), (4, 'Other'))
+
+OCCUPATION_CHOICES = ('student', 'service', 'self_employeed', 'others')
+
 LEAD_STATUS_CHOICES = (
-    (0, 'Fresh'), (1, 'In Progress'), (2, 'Closed'), (3, 'Dropped'))
+    ('fresh', 'Fresh'), ('inprogress', 'In Progress'),
+    ('closed', 'Closed'), ('dropped', 'Dropped'))
+
 LEAD_STAGE_CHOICES = (
-    (0, 'New'), (1, 'Appointment Scheduled'), (2, 'Needs'), (3, 'Quote'),
-    (4, 'Cart'), (5, 'Proposal'), (6, 'Payment'), (7, 'Submitted'),
-    (8, 'Issued'))
+    ('new', 'New'), ('appointment_scheduled', 'Appointment Scheduled'),
+    ('needs', 'Needs'), ('quote', 'Quote'), ('cart', 'Cart'),
+    ('proposal', 'Proposal'), ('payment', 'Payment'),
+    ('submitted', 'Submitted'), ('issued', 'Issued'))
+
 STATUS_CHOICES = (('pending','Pending'),('accepted','Accepted'),('rejected','Rejected')) # noqa
 KYC_DOC_TYPES = ('pan', 'passport', 'voter_card')
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
+
 FEATURE_TYPES = (
     'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
     'Exclusion')
+
 APPLICATION_TYPES = ('health_insurance', 'travel_insurance')
 
 DOC_TYPES = ('pan', 'license', 'photo')
+
 DOCS_UPLOAD_TYPES = {
     'pan': 'advisor/pan',
     'license': 'advisor/license',
     'photo': 'advisor/selfie'
 }
+
 TIER_1_CITIES = ('Bengaluru', 'Delhi', 'Mumbai', 'Kolkota')
 TIER_2_CITIES = ('Lucknow', 'Allahabad')
 
-API_CACHE_TIME = 3600
+EARNING_TYPES = ('commission', 'incentive')
+
+MARITAL_STATUS = ('married', 'single', 'divorced')
 
 # Defaults
 DEFAULT_LOGO = 'enterprise/goplannr.jpeg'
 HELP_FILES_PATH = 'contents'
 DEFAULT_HEXA_CODE = '#005db1'
-OCCUPATION_DEFAULT_CHOICE = 3
+OCCUPATION_DEFAULT_CHOICE = 'others'
 DEFAULT_USER_TYPE = 'subscriber'
 DEFAULT_ENTERPRISE = 'GoPlannr'
 DEFAULT_BASE_PREMIUM = 0.0
 DEFAULT_GST = 0.18
 DEFAULT_COMMISSION = 0.20
 ADULT_AGE_LIMIT = 18
+API_CACHE_TIME = 3600
 
 # Success messages
 OTP_MESSAGE = 'Your One Time Password for <#>OneCover<#> is %s'

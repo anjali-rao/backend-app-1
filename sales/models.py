@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import (
-    constants, get_choices, get_kyc_upload_path, genrate_random_string)
+    constants, get_choices, genrate_random_string)
 
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
@@ -29,7 +29,7 @@ class Quote(BaseModel):
 
     def __str__(self):
         return '%s - %s' % (
-            self.lead.final_score,
+            self.premium.amount,
             self.premium.product_variant.company_category.company.name)
 
     def get_feature_details(self):
@@ -53,27 +53,6 @@ class Quote(BaseModel):
                 )
             }
         ]
-
-
-class Client(BaseModel):
-    document_number = models.CharField(max_length=32, null=True, blank=True)
-    first_name = models.CharField(max_length=32, null=True, blank=True)
-    middle_name = models.CharField(max_length=32, null=True, blank=True)
-    last_name = models.CharField(max_length=32, null=True, blank=True)
-    dob = models.DateField(null=True, blank=True)
-    email = models.EmailField(null=True, blank=True)
-    contact_no = models.CharField(max_length=10, null=True, blank=True)
-    alternate_no = models.CharField(max_length=10, null=True, blank=True)
-
-    def update_details(self, data):
-        self.first_name = data['first_name']
-        self.last_name = data['last_name']
-        self.middle_name = data['middle_name']
-        self.dob = data['dob']
-        self.email = data['email']
-        self.contact_no = data['contact_no']
-        self.alternate_no = data['alternate_no']
-        self.save()
 
 
 class Application(BaseModel):
@@ -106,13 +85,38 @@ class Application(BaseModel):
                 self.reference_no = genrate_random_string(10)
 
     @cached_property
+    def active_members(self):
+        return self.member_set.filter(ignore=False)
+
+    @cached_property
+    def inactive_members(self):
+        return self.member_set.filter(ignore=True)
+
+    @cached_property
     def company_category(self):
         return self.quote.premium.product_variant.company_category
 
     def __str__(self):
-        return '%s - %s' % (
+        return '%s - %s - %s' % (
             self.reference_no, self.application_type,
             self.company_category.company.name)
+
+
+class Member(BaseModel):
+    application = models.ForeignKey(
+        'sales.Application', on_delete=models.CASCADE)
+    full_name = models.CharField(max_length=256)
+    dob = models.DateField()
+    gender = models.CharField(
+        choices=get_choices(constants.GENDER), max_length=16)
+    occupation = models.CharField(
+        choices=get_choices(constants.OCCUPATION_CHOICES), max_length=32)
+    ignore = models.BooleanField(default=False)
+
+    @property
+    def age(self):
+        days = (now().date() - self.dob).days
+        return '%s years and %s months' % ((days % 365) / 30, days / 365)
 
 
 class HealthInsurance(BaseModel):
@@ -127,19 +131,10 @@ class TravelInsurance(BaseModel):
         object_id_field='insurance_id')
 
 
-class KYCDocuments(BaseModel):
-    client = models.ForeignKey('sales.Client', on_delete=models.CASCADE)
-    number = models.CharField(max_length=64)
-    doc_type = models.CharField(
-        choices=get_choices(constants.KYC_DOC_TYPES), max_length=16)
-    file = models.FileField(upload_to=get_kyc_upload_path)
-
-
 class Policy(BaseModel):
     application = models.OneToOneField(
         'sales.Application', on_delete=models.CASCADE)
     contact = models.ForeignKey('crm.Contact', on_delete=models.CASCADE)
-    client = models.ForeignKey('sales.Client', on_delete=models.CASCADE)
     policy_data = JSONField()
 
 

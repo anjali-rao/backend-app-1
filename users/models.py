@@ -350,6 +350,27 @@ class Pincode(models.Model):
         return None
 
 
+class Earnings(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    quote = models.ForeignKey(
+        'sales.Quote', on_delete=models.CASCADE, null=True, blank=True)
+    amount = models.FloatField(default=0.0)
+    earning_type = models.CharField(
+        choices=get_choices(constants.EARNING_TYPES), max_length=16)
+    sub_type = models.CharField(max_length=32)
+    paid = models.BooleanField(default=False)
+
+    @classmethod
+    def get_user_earnings(cls, user_id, earning_type=None, sub_type=None):
+        query = dict(user_id=user_id)
+        if earning_type:
+            query['earning_type'] = earning_type
+        if sub_type:
+            query['sub_type'] = sub_type
+        return cls.objects.filter(**query).annotate(
+            s=models.Sum('amount'))['s']
+
+
 class Address(BaseModel):
     street = models.CharField(max_length=128)
     pincode = models.ForeignKey('users.Pincode', on_delete=models.CASCADE)
@@ -385,4 +406,3 @@ def account_post_save(sender, instance, created, **kwargs):
                 instance.phone_no), 'type': 'sms'
         }
         instance.send_notification(**message)
-

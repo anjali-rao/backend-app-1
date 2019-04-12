@@ -3,41 +3,13 @@ from __future__ import unicode_literals
 from django.contrib.postgres.fields import JSONField
 
 from utils.models import BaseModel, models
-from utils import constants
+from utils import constants, get_choices, get_kyc_upload_path
 
 from sales.models import Quote
 from product.models import (
     Premium, FeatureCustomerSegmentScore, Feature
 )
 import math
-
-
-class Contact(BaseModel):
-    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
-    name = models.CharField(max_length=32)
-    phone_no = models.CharField(max_length=10)
-    email = models.EmailField(max_length=64, null=True, blank=True)
-    pincode = models.CharField(max_length=6, null=True, blank=True)
-    date_of_birth = models.DateField(null=True, blank=True)
-    address = models.TextField(null=True, blank=True)
-    occupation = models.IntegerField(
-        choices=constants.OCCUPATION_CHOICES,
-        default=constants.OCCUPATION_DEFAULT_CHOICE)
-    is_married = models.BooleanField(default=False)
-    is_parent_dependent = models.BooleanField(default=False)
-    other_dependents = models.IntegerField(default=0)
-    income = models.FloatField(default=0.0)
-    no_of_kids = models.IntegerField(default=0)
-    status = models.IntegerField(
-        choices=((0, 'Fresh'), (1, 'Other')), default=0)
-    medical_history = models.BooleanField(default=False)
-    is_default = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        unique_together = ('user', 'phone_no',)
 
 
 class Lead(BaseModel):
@@ -51,10 +23,10 @@ class Lead(BaseModel):
     campaign = models.ForeignKey(
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
     amount = models.FloatField(default=0.0)
-    status = models.IntegerField(
-        choices=constants.LEAD_STATUS_CHOICES, default=0)
-    stage = models.IntegerField(
-        choices=constants.LEAD_STAGE_CHOICES, default=0)
+    status = models.CharField(
+        choices=constants.LEAD_STATUS_CHOICES, default='fresh', max_length=32)
+    stage = models.CharField(
+        choices=constants.LEAD_STAGE_CHOICES, default='new', max_length=32)
     # notes = models.ManyToManyField(Note)
     final_score = models.FloatField(default=0.0, db_index=True)
     effective_age = models.IntegerField(default=0)
@@ -65,17 +37,15 @@ class Lead(BaseModel):
     adults = models.IntegerField(default=0)
     childrens = models.IntegerField(default=0)
     family = JSONField(default=dict)
-    __original_final_score = None
 
     def save(self, *args, **kwargs):
         try:
-            self.__class__.objects.get(pk=self.id)
-            if self.final_score != self.__original_final_score:
+            current = self.__class__.objects.get(pk=self.id)
+            if self.final_score != current.final_score:
                 self.refresh_quote_data()
         except Lead.DoesNotExist:
             self.parse_family_json()
         super(Lead, self).save(*args, **kwargs)
-        self.__original_final_score = self.final_score
 
     def parse_family_json(self):
         if 'daughter_total' in self.family:
@@ -210,5 +180,47 @@ class Lead(BaseModel):
 
     def __str__(self):
         return "%s - %s" % (
-            self.contact.name if self.contact else 'Contact',
+            self.contact.first_name if self.contact else 'Contact',
             self.category.name)
+
+
+class Contact(BaseModel):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    phone_no = models.CharField(max_length=10)
+    first_name = models.CharField(max_length=32)
+    first_name = models.CharField(max_length=32, null=True, blank=True)
+    last_name = models.CharField(max_length=32, null=True, blank=True)
+    email = models.EmailField(max_length=64, null=True, blank=True)
+    dob = models.DateField(null=True, blank=True)
+    pincode = models.CharField(max_length=6, null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
+    occupation = models.CharField(
+        choices=get_choices(constants.OCCUPATION_CHOICES), null=True,
+        default=constants.OCCUPATION_DEFAULT_CHOICE, blank=True, max_length=32)
+    marital_status = models.CharField(
+        choices=get_choices(
+            constants.MARITAL_STATUS), max_length=32, null=True, blank=True)
+    annual_income = models.FloatField(default=0.0)
+    is_client = models.BooleanField(default=False)
+
+    def __str__(self):
+        return '%s: %s' % (self.first_name, self.phone_no)
+
+    def is_kyc_required(self):
+        try:
+            if not self.kycdocument.file:
+                return False
+        except Exception:
+            pass
+        return True
+
+    class Meta:
+        unique_together = ('user', 'phone_no',)
+
+
+class KYCDocument(BaseModel):
+    contact = models.OneToOneField('crm.Contact', on_delete=models.CASCADE)
+    docunent_number = models.CharField(max_length=64)
+    document_type = models.CharField(
+        choices=get_choices(constants.KYC_DOC_TYPES), max_length=16)
+    file = models.FileField(upload_to=get_kyc_upload_path)
