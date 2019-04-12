@@ -20,8 +20,8 @@ import uuid
 import jwt
 from django.utils.translation import ugettext_lazy as _
 
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
 
 
@@ -340,7 +340,7 @@ class Pincode(models.Model):
         choices=constants.CITY_TIER, default=3)
 
     def __str__(self):
-        return '%s - %s - (%s)' % (self.pincode, self.city, self.state.name)
+        return '%s - %s(%s)' % (self.city, self.pincode, self.state.name)
 
     @classmethod
     def get_pincode(cls, pincode):
@@ -350,14 +350,40 @@ class Pincode(models.Model):
         return None
 
 
+class Earnings(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    quote = models.ForeignKey(
+        'sales.Quote', on_delete=models.CASCADE, null=True, blank=True)
+    amount = models.FloatField(default=0.0)
+    earning_type = models.CharField(
+        choices=get_choices(constants.EARNING_TYPES), max_length=16)
+    sub_type = models.CharField(max_length=32)
+    paid = models.BooleanField(default=False)
+
+    @classmethod
+    def get_user_earnings(cls, user_id, earning_type=None, sub_type=None):
+        query = dict(user_id=user_id)
+        if earning_type:
+            query['earning_type'] = earning_type
+        if sub_type:
+            query['sub_type'] = sub_type
+        return cls.objects.filter(**query).annotate(
+            s=models.Sum('amount'))['s']
+
+
 class Address(BaseModel):
-    street = models.CharField(max_length=128)
+    flat_no = models.CharField(max_length=64, null=True, blank=True)
+    street = models.CharField(max_length=128, null=True, blank=True)
+    land_mark = models.CharField(max_length=128)
     pincode = models.ForeignKey('users.Pincode', on_delete=models.CASCADE)
 
     @property
     def full_address(self):
         return '%s, %s, %s - %s' % (
-            self.street, self.pincode.city, self.state, self.pincode)
+            self.flat_no, self.street, self.land_mark, self.pincode)
+
+    def __str__(self):
+        return self.full_address
 
 
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))
@@ -385,4 +411,3 @@ def account_post_save(sender, instance, created, **kwargs):
                 instance.phone_no), 'type': 'sms'
         }
         instance.send_notification(**message)
-

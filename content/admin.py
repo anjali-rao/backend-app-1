@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from django.contrib import admin
 
 from content.models import (
-    Faq, HelpFile, ContactUs, NetworkHospital)
+    Faq, HelpFile, ContactUs, NetworkHospital, NewsletterSubscriber)
 
 
 @admin.register(Faq)
@@ -30,3 +30,10 @@ class ContactUs(admin.ModelAdmin):
 class NetworkHospitalAdmin(admin.ModelAdmin):
     list_display = ('name', 'city', 'contact_number')
     search_fields = ('name', 'city')
+
+
+@admin.register(NewsletterSubscriber)
+class NewsletterSubscriberAdmin(admin.ModelAdmin):
+    list_display = ('email', 'unsubscribe')
+    search_fields = ('email',)
+    list_filter = ('unsubscribe',)

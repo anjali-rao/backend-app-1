@@ -1,34 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from rest_framework import generics, exceptions
+from rest_framework import generics
 
 from users.decorators import UserAuthentication
+from utils import mixins
 from sales.serializers import (
-    QuoteSerializer, Quote, CreateApplicationSerializer,
-    QuotesDetailsSerializer, CompareSerializer, RecommendationSerializer
+    CreateApplicationSerializer, GetProposalDetailsSerializer,
+    Application, UpdateContactDetailsSerializer
 )
 
-from crm.models import Lead
-from django.db import transaction, IntegrityError
-
-
-class GetQuotes(generics.ListAPIView):
-    authentication_classes = (UserAuthentication,)
-    serializer_class = QuoteSerializer
-
-    def get_queryset(self):
-        try:
-            lead = Lead.objects.get(id=self.request.query_params.get('lead'))
-        except Lead.DoesNotExist:
-            raise exceptions.NotFound('Lead doesnot exists')
-        if 'suminsured' in self.request.query_params:
-            lead.final_score = self.request.query_params['suminsured']
-            lead.save()
-        queryset = lead.get_quotes()
-        if queryset.exists():
-            return queryset.order_by('premium')
-        raise exceptions.NotFound("No Quotes found for given lead.")
+from django.core.exceptions import ValidationError
+from django.http import Http404
+from django.shortcuts import get_object_or_404 as _get_object_or_404
 
 
 class CreateApplication(generics.CreateAPIView):
@@ -36,47 +20,41 @@ class CreateApplication(generics.CreateAPIView):
     serializer_class = CreateApplicationSerializer
 
 
-class QuotesDetails(generics.RetrieveAPIView):
+class RetrieveUpdateProposerDetails(
+        mixins.MethodSerializerView, generics.RetrieveUpdateAPIView):
     authentication_classes = (UserAuthentication,)
-    serializer_class = QuotesDetailsSerializer
-    queryset = Quote.objects.all()
+    queryset = Application.objects.all()
+    method_serializer_classes = {
+        ('GET', ): GetProposalDetailsSerializer,
+        ('PATCH'): UpdateContactDetailsSerializer
+    }
 
+    def get_object(self):
+        """
+        Returns the object the view is displaying.
+        You may want to override this if you need to provide non-standard
+        queryset lookups.  Eg if objects are referenced using multiple
+        keyword arguments in the url conf.
+        """
+        queryset = self.filter_queryset(self.get_queryset())
 
-class CompareRecommendation(generics.ListAPIView):
-    authentication_classes = (UserAuthentication,)
-    serializer_class = CompareSerializer
+        # Perform the lookup filtering.
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
 
-    def get_queryset(self):
+        assert lookup_url_kwarg in self.kwargs, (
+            'Expected view %s to be called with a URL keyword argument '
+            'named "%s". Fix your URL conf, or set the `.lookup_field` '
+            'attribute on the view correctly.' %
+            (self.__class__.__name__, lookup_url_kwarg)
+        )
+
+        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
         try:
-            lead = Lead.objects.get(id=self.request.query_params.get('lead'))
-        except Lead.DoesNotExist:
-            raise exceptions.NotFound('Lead doesnot exists')
-        if not self.request.query_params.get('quotes') or len(
-                self.request.query_params['quotes'].split(',')) < 2:
-            raise exceptions.NotAcceptable(
-                'Atleast two quotes are required for comparision')
-        return lead.get_quotes().filter(
-            id__in=self.request.query_params['quotes'].split(','))
+            obj = _get_object_or_404(queryset, **filter_kwargs)
+        except (TypeError, ValueError, ValidationError):
+            obj = Http404
 
+        # May raise a permission denied
+        self.check_object_permissions(self.request, obj)
 
-class GetRecommendatedQuotes(generics.ListAPIView):
-    authentication_classes = (UserAuthentication,)
-    serializer_class = RecommendationSerializer
-
-    def get_queryset(self):
-        try:
-            with transaction.atomic():
-                lead = Lead.objects.get(
-                    id=self.request.query_params.get('lead'))
-                if self.request.query_params.get('suminsured'):
-                    lead.final_score = self.request.query_params['suminsured']
-                    lead.save()
-                elif self.request.query_params.get('reset'):
-                    lead.calculate_final_score()
-                return lead.get_recommendated_quotes()
-        except Lead.DoesNotExist:
-            raise exceptions.NotFound('Lead doesnot exists')
-        except IntegrityError:
-            pass
-        raise exceptions.APIException(
-            'Curently we are unable to suggest any quote. please try again.') # noqa
+        return obj.quote.lead.contact

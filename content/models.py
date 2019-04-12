@@ -40,3 +40,8 @@ class NetworkHospital(BaseModel):
     city = models.CharField(max_length=64)
     address = models.TextField()
     contact_number = models.CharField(blank=True, max_length=100)
+
+
+class NewsletterSubscriber(BaseModel):
+    email = models.EmailField()
+    unsubscribe = models.BooleanField(default=False)

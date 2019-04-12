@@ -9,7 +9,7 @@ from questionnaire.serializers import (
     QuestionnSerializers, Question, ResponseSerializer,
     QuestionnaireResponseSerializer
 )
-from sales.serializers import RecommendationSerializer
+from crm.serializers import QuoteRecommendationSerializer
 from django.db import transaction, IntegrityError
 
 
@@ -45,7 +45,7 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
                     ans_serializer.save(lead_id=lead.id)
                 lead.calculate_final_score()
             return Response(
-                RecommendationSerializer(
+                QuoteRecommendationSerializer(
                     lead.get_recommendated_quotes(), many=True).data,
                 status=status.HTTP_201_CREATED)
         except IntegrityError:
