@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from rest_framework import generics, status
-from rest_framework.response import Response
-# from rest_framework.views import APIView
+from rest_framework import generics
 
 from users.decorators import UserAuthentication
+from utils import mixins
 from sales.serializers import (
-    CreateApplicationSerializer, GetContactDetailsSerializer,
-    Application, UpdateContactDetailsSerializer, Contact
+    CreateApplicationSerializer, GetProposalDetailsSerializer,
+    Application, UpdateContactDetailsSerializer
 )
 
 from django.core.exceptions import ValidationError
@@ -21,10 +20,14 @@ class CreateApplication(generics.CreateAPIView):
     serializer_class = CreateApplicationSerializer
 
 
-class GetContactDetails(generics.RetrieveAPIView):
+class RetrieveUpdateProposerDetails(
+        mixins.MethodSerializerView, generics.RetrieveUpdateAPIView):
     authentication_classes = (UserAuthentication,)
-    serializer_class = GetContactDetailsSerializer
-    queryset = Contact.objects.all()
+    queryset = Application.objects.all()
+    method_serializer_classes = {
+        ('GET', ): GetProposalDetailsSerializer,
+        ('PATCH'): UpdateContactDetailsSerializer
+    }
 
     def get_object(self):
         """
@@ -54,15 +57,4 @@ class GetContactDetails(generics.RetrieveAPIView):
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
 
-        return obj.quote.lead.contacts.get()
-
-
-class UpdateContactDetails(generics.GenericAPIView):
-    authentication_classes = (UserAuthentication,)
-    serializer_class = UpdateContactDetailsSerializer
-
-    def post(self, request, version, format=None):
-        serializer = self.get_serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return obj.quote.lead.contact

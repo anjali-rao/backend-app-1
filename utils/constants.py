@@ -93,6 +93,7 @@ INVALID_GENDER_PROVIDED = 'Invalid gender input provided.'
 INVALID_PINCODE = 'Invalid pincode provided.'
 USER_ALREADY_EXISTS = 'User already exists for choosen product.'
 FAILED_APPLICATION_CREATION = 'Failed to add contact. Please contact GoPlannr.'
+APPLICATION_ALREAY_EXISTS = 'Application already exists with quote id.'
 
 # Creation Fields
 ACCOUNT_CREATION_FIELDS = (

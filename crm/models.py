@@ -186,14 +186,14 @@ class Lead(BaseModel):
 
 class Contact(BaseModel):
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    address = models.ForeignKey(
+        'users.Address', null=True, blank=True, on_delete=models.CASCADE)
     phone_no = models.CharField(max_length=10)
     first_name = models.CharField(max_length=32)
     first_name = models.CharField(max_length=32, null=True, blank=True)
     last_name = models.CharField(max_length=32, null=True, blank=True)
     email = models.EmailField(max_length=64, null=True, blank=True)
     dob = models.DateField(null=True, blank=True)
-    pincode = models.CharField(max_length=6, null=True, blank=True)
-    address = models.TextField(null=True, blank=True)
     occupation = models.CharField(
         choices=get_choices(constants.OCCUPATION_CHOICES), null=True,
         default=constants.OCCUPATION_DEFAULT_CHOICE, blank=True, max_length=32)

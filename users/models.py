@@ -340,7 +340,7 @@ class Pincode(models.Model):
         choices=constants.CITY_TIER, default=3)
 
     def __str__(self):
-        return '%s - %s - (%s)' % (self.pincode, self.city, self.state.name)
+        return '%s - %s(%s)' % (self.city, self.pincode, self.state.name)
 
     @classmethod
     def get_pincode(cls, pincode):
@@ -372,13 +372,18 @@ class Earnings(models.Model):
 
 
 class Address(BaseModel):
-    street = models.CharField(max_length=128)
+    flat_no = models.CharField(max_length=64, null=True, blank=True)
+    street = models.CharField(max_length=128, null=True, blank=True)
+    land_mark = models.CharField(max_length=128)
     pincode = models.ForeignKey('users.Pincode', on_delete=models.CASCADE)
 
     @property
     def full_address(self):
         return '%s, %s, %s - %s' % (
-            self.street, self.pincode.city, self.state, self.pincode)
+            self.flat_no, self.street, self.land_mark, self.pincode)
+
+    def __str__(self):
+        return self.full_address
 
 
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))

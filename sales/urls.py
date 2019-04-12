@@ -1,11 +1,10 @@
 from django.urls import path
 
 from sales.views import (
-    CreateApplication, GetContactDetails, UpdateContactDetails
+    CreateApplication, RetrieveUpdateProposerDetails
 )
 
 urlpatterns = [
-    path('lead/application/create', CreateApplication.as_view()),
-    path('lead/application/<int:pk>/contact', GetContactDetails.as_view()),
-    path('lead/application/contact/<int:pk>/update', UpdateContactDetails.as_view()) # noqa
+    path('application/create', CreateApplication.as_view()),
+    path('application/<int:pk>/contact', RetrieveUpdateProposerDetails.as_view()), # noqa
 ]

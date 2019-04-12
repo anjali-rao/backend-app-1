@@ -18,7 +18,7 @@ class LeadAdmin(admin.ModelAdmin):
 class ContactAdmin(admin.ModelAdmin):
     list_display = ('user', 'phone_no', 'email')
     search_fields = ('phone_no', 'user__account__phone_no')
-    raw_id_fields = ('user',)
+    raw_id_fields = ('user', 'address',)
 
 
 @admin.register(KYCDocument)
