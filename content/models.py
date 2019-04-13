@@ -26,13 +26,13 @@ class HelpFile(BaseModel):
 
 
 class ContactUs(BaseModel):
-    title = models.CharField(max_length=512)
-    description = models.TextField()
-    value = models.CharField(max_length=100)
-    value_type = models.CharField(
-        choices=get_choices(constants.CONTACT_CHANNELS),
-        default="phone",
-        max_length=255)
+    full_name = models.CharField(max_length=512)
+    phone_no = models.CharField(max_length=10)
+    email = models.EmailField(max_length=50)
+    message = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return "{} - {}".format(self.phone_no, self.full_name)
 
 
 class NetworkHospital(BaseModel):
@@ -40,3 +40,8 @@ class NetworkHospital(BaseModel):
     city = models.CharField(max_length=64)
     address = models.TextField()
     contact_number = models.CharField(blank=True, max_length=100)
+
+
+class NewsletterSubscriber(BaseModel):
+    email = models.EmailField()
+    unsubscribe = models.BooleanField(default=False)

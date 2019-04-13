@@ -7,7 +7,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from users.models import (
     Account, User, Campaign, AccountDetails, Documents, Bank, BankAccount,
-    BankBranch, Enterprise, SubcriberEnterprise, State, Pincode, ContactUs)
+    BankBranch, Enterprise, SubcriberEnterprise, State, Pincode, Address)
 
 
 @admin.register(Account)
@@ -110,6 +110,9 @@ class PincodeAdmin(admin.ModelAdmin):
     raw_id_fields = ('state',)
 
 
-@admin.register(ContactUs)
-class ContactUs(admin.ModelAdmin):
-    list_display = ('phone_no', 'email', 'created')
+@admin.register(Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ('flat_no', 'street', 'land_mark')
+    search_fields = ('pincode__pincode', 'pincode__state', 'pincode__city')
+    raw_id_fields = ('pincode',)
+    list_filter = ('pincode__state',)

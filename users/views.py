@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-from rest_framework import permissions, status, generics
+from rest_framework import permissions, status, generics, exceptions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -9,10 +9,6 @@ from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
     AccountSearchSerializers, User, PincodeSerializer, Pincode
-)
-
-from .models import (
-    ContactUs
 )
 
 
@@ -97,7 +93,6 @@ class PincodeSearch(APIView):
     def get(self, request, version, format=None):
 
         data = []
-        EMPTY_RESPONSE = {'detail': 'Please pass a text parameter.'}
         text = request.query_params.get('text')
         try:
             if text:
@@ -110,11 +105,9 @@ class PincodeSearch(APIView):
                     data = self.format_location_data(data, text)
 
                 return Response(data, status=status.HTTP_200_OK)
-            return Response(EMPTY_RESPONSE, status=status.HTTP_400_BAD_REQUEST)
-
+            raise exceptions.APIException('Please pass a text parameter.')
         except Exception as e:
-            ERROR_RESPONSE = {'message': e}
-            return Response(ERROR_RESPONSE, status=status.HTTP_400_BAD_REQUEST)
+            raise exceptions.APIException(e)
 
     def format_location_data(self, data, text):
         location_list = set()
@@ -122,9 +115,9 @@ class PincodeSearch(APIView):
         for each_location in data:
             location_string_list = list()
 
-            state = each_location.get('state') or ''
-            city = each_location.get('city') or ''
-            pincode = each_location.get('pincode') or ''
+            state = each_location.get('state', '')
+            city = each_location.get('city', '')
+            pincode = each_location.get('pincode', '')
 
             if text in state:
                 location_string_list.append(state)
@@ -154,27 +147,3 @@ class PincodeSearch(APIView):
                 cleaned_list.append(loc)
 
         return cleaned_list
-
-
-class ContactUsAPI(APIView):
-
-    def post(self, request, version, format=None):
-        data = request.data
-        cleaned_data = {}
-        cleaned_data['phone_no'] = data.get('phone_no')
-        cleaned_data['full_name'] = data.get('full_name')
-        cleaned_data['email'] = data.get('email')
-
-        if (not data.get('phone_no')) or (not data.get('full_name')) or (not data.get('email')):
-            return Response({'details': 'Field missing'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            ContactUs.objects.create(**cleaned_data)
-            return Response({'details': 'Posted'}, status=status.HTTP_201_CREATED)
-        except:
-            return Response({'details': 'Failed to post data'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-

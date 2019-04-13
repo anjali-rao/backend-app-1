@@ -5,5 +5,6 @@ urlpatterns = [
     path('', include('content.urls')),
     path('', include('product.urls')),
     path('', include('questionnaire.urls')),
-    path('', include('sales.urls'))
+    path('', include('sales.urls')),
+    path('', include('crm.urls'))
 ]

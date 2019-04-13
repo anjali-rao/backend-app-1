@@ -3,9 +3,16 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import (
-    constants, get_choices, get_kyc_upload_path, genrate_random_string)
+    constants, get_choices, genrate_random_string)
 
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
+from django.utils.functional import cached_property
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils.timezone import now
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey, GenericRelation)
 
 
 class Quote(BaseModel):
@@ -22,18 +29,8 @@ class Quote(BaseModel):
 
     def __str__(self):
         return '%s - %s' % (
-            self.lead.final_score,
+            self.premium.amount,
             self.premium.product_variant.company_category.company.name)
-
-    @classmethod
-    def get_compareable_features(cls, *quotes_ids):
-        features = list()
-        for quote_id in quotes_ids:
-            features.extend(
-                cls.objects.get(id=quote_id).quotefeature_set.annotate(
-                    name=models.F('feature__feature_master__name')
-                ).values_list('name', flat=True))
-        return set(features)
 
     def get_feature_details(self):
         return self.premium.product_variant.feature_set.values(
@@ -42,89 +39,131 @@ class Quote(BaseModel):
         ).order_by('feature_master__order')
 
     def get_faq(self):
+        company_category = self.premium.product_variant.company_category
         return [
             {
                 'question': 'Claim settlement ratio',
-                'answer': self.premium.product_variant.company_category.claim_settlement # noqa
+                'answer': company_category.claim_settlement
             },
             {
                 'question': 'Company details',
                 'answer': 'Name: %s\nWebsite: %s' % (
-                    self.premium.product_variant.company_category.company.name,
-                    self.premium.product_variant.company_category.company.website # noqa
+                    company_category.company.name,
+                    company_category.company.website
                 )
             }
         ]
 
 
-class KYCDocuments(BaseModel):
-    client = models.ForeignKey('sales.Client', on_delete=models.CASCADE)
-    number = models.CharField(max_length=64)
-    doc_type = models.CharField(
-        choices=get_choices(constants.KYC_DOC_TYPES), max_length=16)
-    file = models.FileField(upload_to=get_kyc_upload_path)
-
-
-class Client(BaseModel):
-    document_number = models.CharField(max_length=32)
-    first_name = models.CharField(max_length=32)
-    middle_name = models.CharField(max_length=32)
-    last_name = models.CharField(max_length=32)
-    dob = models.DateField()
-    email = models.EmailField()
-    contact_no = models.CharField(max_length=10)
-    alternate_no = models.CharField(max_length=10)
-
-    def update_details(self, data):
-        self.first_name = data['first_name']
-        self.last_name = data['last_name']
-        self.middle_name = data['middle_name']
-        self.dob = data['dob']
-        self.email = data['email']
-        self.contact_no = data['contact_no']
-        self.alternate_no = data['alternate_no']
-        self.save()
-
-
 class Application(BaseModel):
-    reference_no = models.CharField(max_length=15, unique=True)
+    reference_no = models.CharField(max_length=10, unique=True)
     application_type = models.CharField(
         max_length=32, choices=get_choices(constants.APPLICATION_TYPES))
     quote = models.OneToOneField('sales.Quote', on_delete=models.CASCADE)
-    address = models.ForeignKey('users.Address', on_delete=models.CASCADE)
+    address = models.ForeignKey(
+        'users.Address', on_delete=models.CASCADE, null=True, blank=True)
     status = models.CharField(
         max_length=32, choices=constants.STATUS_CHOICES, default='pending')
     people_listed = models.IntegerField(default=0)
+    content_type = models.ForeignKey(
+        ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    insurance_id = models.PositiveIntegerField(null=True, blank=True)
+    insurance = GenericForeignKey('content_type', 'insurance_id')
+    terms_and_conditions = models.BooleanField(null=True)
 
     def save(self, *args, **kwargs):
-        try:
-            self.__class__.objects.get(pk=self.id)
-        except Application.DoesNotExist:
+        if not self.__class__.objects.filter(pk=self.id).exists():
             self.generate_reference_no()
+            self.application_type = self.company_category.category.name.lower().replace(' ', '_') # noqaas
         super(Application, self).save(*args, **kwargs)
 
-    def assignInsurance(self):
-        # to DOs
-        if self.application_type == 'health_insurance':
-            HealthInsurance.objects.create()
-
     def generate_reference_no(self):
-        self.reference_no = 'GoPlannr%s' % genrate_random_string(10)
+        self.reference_no = genrate_random_string(10)
         if self.__class__.objects.filter(
                 reference_no=self.reference_no).exists():
             while self.__class__.objects.filter(
                     reference_no=self.reference_no).exists():
-                self.reference_no = 'GoPlannr%s' % genrate_random_string(10)
+                self.reference_no = genrate_random_string(10)
+
+    @cached_property
+    def active_members(self):
+        return self.member_set.filter(ignore=False)
+
+    @cached_property
+    def inactive_members(self):
+        return self.member_set.filter(ignore=True)
+
+    @cached_property
+    def company_category(self):
+        return self.quote.premium.product_variant.company_category
+
+    def __str__(self):
+        return '%s - %s - %s' % (
+            self.reference_no, self.application_type,
+            self.company_category.company.name)
+
+
+class Member(BaseModel):
+    application = models.ForeignKey(
+        'sales.Application', on_delete=models.CASCADE)
+    full_name = models.CharField(max_length=256, null=True, blank=True)
+    dob = models.DateField(null=True, blank=True)
+    gender = models.CharField(
+        choices=get_choices(constants.GENDER), max_length=16)
+    occupation = models.CharField(
+        choices=get_choices(constants.OCCUPATION_CHOICES), max_length=32,
+        null=True, blank=True
+    )
+    ignore = models.BooleanField(default=False)
+
+    @property
+    def age(self):
+        return '%s Years' % int((
+            now().today().date() - self.dob).days / 365.2425)
+
+
+class HealthInsurance(BaseModel):
+    application = GenericRelation(
+        Application, related_query_name='health_insurance',
+        object_id_field='insurance_id')
+
+
+class TravelInsurance(BaseModel):
+    application = GenericRelation(
+        Application, related_query_name='travel_insurance',
+        object_id_field='insurance_id')
 
 
 class Policy(BaseModel):
     application = models.OneToOneField(
         'sales.Application', on_delete=models.CASCADE)
     contact = models.ForeignKey('crm.Contact', on_delete=models.CASCADE)
-    client = models.ForeignKey('sales.Client', on_delete=models.CASCADE)
     policy_data = JSONField()
 
 
-class HealthInsurance(BaseModel):
-    application = models.OneToOneField(
-        'sales.Application', on_delete=models.CASCADE)
+@receiver(post_save, sender=Application, dispatch_uid="action%s" % str(now()))
+def application_post_save(sender, instance, created, **kwargs):
+    if created:
+        content_type = ContentType.objects.get(
+            model=instance.application_type.replace('_', ''),
+            app_label='sales')
+        instance.content_type_id = content_type.id
+        instance.insurance_id = content_type.model_class().objects.create().id
+        instance.save()
+        Quote.objects.filter(lead_id=instance.quote.lead.id).exclude(
+            id=instance.quote_id).update(status='rejected')
+        instance.quote.status = 'accepted'
+        instance.quote.save()
+        lead = instance.quote.lead
+        members = list()
+        for member, age in instance.quote.lead.family.items():
+            gender = lead.gender if member in 'self_age' else 'male'
+            if member == 'spouse_age':
+                gender = 'male' if lead.gender == 'female' else 'female'
+            elif member == 'mother_age':
+                gender = 'female'
+            members.append(Member(
+                application_id=instance.id, gender=gender,
+                dob='%s-01-01' % (now().year - int(age))
+            ))
+        Member.objects.bulk_create(members)

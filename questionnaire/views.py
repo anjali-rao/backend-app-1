@@ -9,7 +9,7 @@ from questionnaire.serializers import (
     QuestionnSerializers, Question, ResponseSerializer,
     QuestionnaireResponseSerializer
 )
-from sales.serializers import RecommendationSerializer
+from crm.serializers import QuoteRecommendationSerializer
 from django.db import transaction, IntegrityError
 
 
@@ -37,7 +37,7 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
             with transaction.atomic():
                 lead = self.create_lead(
                     serializer.data['category_id'], serializer.data['family'],
-                    serializer.data['pincode'])
+                    serializer.data['pincode'], serializer.data['gender'])
                 for response in serializer.data['answers']:
                     ans_serializer = QuestionnaireResponseSerializer(
                         data=response)
@@ -45,7 +45,7 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
                     ans_serializer.save(lead_id=lead.id)
                 lead.calculate_final_score()
             return Response(
-                RecommendationSerializer(
+                QuoteRecommendationSerializer(
                     lead.get_recommendated_quotes(), many=True).data,
                 status=status.HTTP_201_CREATED)
         except IntegrityError:
@@ -53,8 +53,8 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
         raise exceptions.APIException(
             'Unable to process request currently. Please try again')
 
-    def create_lead(self, category_id, family, pincode):
+    def create_lead(self, category_id, family, pincode, gender):
         from crm.models import Lead
         return Lead.objects.create(
             user_id=self.request.user.id, family=family, pincode=pincode,
-            category_id=category_id)
+            category_id=category_id, gender=gender)
