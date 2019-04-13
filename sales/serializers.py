@@ -15,7 +15,6 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
     contact_no = serializers.CharField(required=True, write_only=True)
     application_id = serializers.SerializerMethodField()
     application_reference_no = serializers.SerializerMethodField()
-    contact_id = serializers.SerializerMethodField()
 
     def create(self, validated_data):
         full_name = validated_data['contact_name'].split(' ')
@@ -24,24 +23,20 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                 instance = Application.objects.create(
                     quote_id=validated_data['quote_id'])
                 lead = instance.quote.lead
-                contacts = Contact.objects.filter(
-                    phone_no=validated_data['contact_no'])
-                if not contacts.exists():
-                    contact = Contact.objects.create(
-                        user_id=lead.user.id, first_name=full_name[0],
-                        phone_no=validated_data['contact_no'],
-                        last_name=(
-                            full_name[1] if len(full_name) == 2 else None)
-                    )
-                else:
-                    contact = contacts.get()
-                lead.contact_id = contact.id
-                lead.status = 'inprogress'
-                lead.stage = 'cart'
-                lead.save()
-                self.contact = contact
+                contact, created = Contact.objects.get_or_create(
+                    phone_no=validated_data['contact_no'],
+                    first_name=full_name[0],
+                    last_name=full_name[1] if len(full_name) == 2 else None
+                )
+                if created:
+                    contact.user_id = lead.user.id
+                    contact.save()
+                lead.update_fields(**dict(
+                    contact_id=contact.id, status='inprogress', stage='cart'
+                ))
             return instance
-        except IntegrityError:
+        except IntegrityError as e:
+            print(e)
             raise exceptions.NotAcceptable(
                 constants.APPLICATION_ALREAY_EXISTS,
                 404)
@@ -55,15 +50,11 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
     def get_application_reference_no(self, obj):
         return obj.reference_no
 
-    def get_contact_id(self, obj):
-        if hasattr(self, 'contact'):
-            return self.contact.id
-
     class Meta:
         model = Application
         fields = (
             'quote_id', 'application_id', 'application_reference_no',
-            'contact_name', 'contact_no', 'contact_id')
+            'contact_name', 'contact_no',)
         read_only_fields = ('reference_no',)
 
 
@@ -143,3 +134,7 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
         )
         read_only_fields = (
             'document_type', 'document_number', 'pincode')
+
+
+class GetApplicationMembers(serializers.ModelSerializer):
+    pass

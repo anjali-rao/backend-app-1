@@ -35,6 +35,7 @@ class Lead(BaseModel):
     health_checkups = models.FloatField(default=0.0)
     pincode = models.CharField(max_length=6, null=True)
     adults = models.IntegerField(default=0)
+    gender = models.CharField(max_length=12)
     childrens = models.IntegerField(default=0)
     family = JSONField(default=dict)
 
@@ -163,6 +164,11 @@ class Lead(BaseModel):
     def get_quotes(self):
         return self.quote_set.all().order_by('-recommendation_score')
 
+    def update_fields(self, contact_id, **kw):
+        for field in kw.keys():
+            setattr(self, field, kw[field])
+        self.save()
+
     @property
     def city(self):
         from users.models import Pincode
@@ -185,7 +191,8 @@ class Lead(BaseModel):
 
 
 class Contact(BaseModel):
-    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        'users.User', on_delete=models.CASCADE, null=True, blank=True)
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
     phone_no = models.CharField(max_length=10)

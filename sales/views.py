@@ -58,3 +58,13 @@ class RetrieveUpdateProposerDetails(
         self.check_object_permissions(self.request, obj)
 
         return obj.quote.lead.contact
+
+
+class RetrieveUpdateApplicationMembers(
+        mixins.MethodSerializerView, generics.RetrieveUpdateAPIView):
+    authentication_classes = (UserAuthentication,)
+    queryset = Application.objects.all()
+    method_serializer_classes = {
+        ('GET', ): GetProposalDetailsSerializer,
+        ('PATCH'): UpdateContactDetailsSerializer
+    }

@@ -69,6 +69,7 @@ class Application(BaseModel):
         ContentType, on_delete=models.CASCADE, null=True, blank=True)
     insurance_id = models.PositiveIntegerField(null=True, blank=True)
     insurance = GenericForeignKey('content_type', 'insurance_id')
+    terms_and_conditions = models.BooleanField(null=True)
 
     def save(self, *args, **kwargs):
         if not self.__class__.objects.filter(pk=self.id).exists():
@@ -105,18 +106,20 @@ class Application(BaseModel):
 class Member(BaseModel):
     application = models.ForeignKey(
         'sales.Application', on_delete=models.CASCADE)
-    full_name = models.CharField(max_length=256)
-    dob = models.DateField()
+    full_name = models.CharField(max_length=256, null=True, blank=True)
+    dob = models.DateField(null=True, blank=True)
     gender = models.CharField(
         choices=get_choices(constants.GENDER), max_length=16)
     occupation = models.CharField(
-        choices=get_choices(constants.OCCUPATION_CHOICES), max_length=32)
+        choices=get_choices(constants.OCCUPATION_CHOICES), max_length=32,
+        null=True, blank=True
+    )
     ignore = models.BooleanField(default=False)
 
     @property
     def age(self):
-        days = (now().date() - self.dob).days
-        return '%s years and %s months' % ((days % 365) / 30, days / 365)
+        return '%s Years' % int((
+            now().today().date() - self.dob).days / 365.2425)
 
 
 class HealthInsurance(BaseModel):
@@ -151,3 +154,16 @@ def application_post_save(sender, instance, created, **kwargs):
             id=instance.quote_id).update(status='rejected')
         instance.quote.status = 'accepted'
         instance.quote.save()
+        lead = instance.quote.lead
+        members = list()
+        for member, age in instance.quote.lead.family.items():
+            gender = lead.gender if member in 'self_age' else 'male'
+            if member == 'spouse_age':
+                gender = 'male' if lead.gender == 'female' else 'female'
+            elif member == 'mother_age':
+                gender = 'female'
+            members.append(Member(
+                application_id=instance.id, gender=gender,
+                dob='%s-01-01' % (now().year - int(age))
+            ))
+        Member.objects.bulk_create(members)
