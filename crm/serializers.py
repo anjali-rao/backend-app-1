@@ -71,7 +71,7 @@ class QuoteDetailsSerializer(serializers.ModelSerializer):
                     'name': feature['feature_master__feature_type'],
                     'value': [feature['feature_master__name']]
                 })
-            coverages_added.add(feature['feature_master__name'])
+            coverages_added.add(feature['feature_master__feature_type'])
         for pending in set(constants.FEATURE_TYPES) - set(coverages_added):
             coverages.append({'name': pending, 'value': None})
         return coverages
