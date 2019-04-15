@@ -23,7 +23,6 @@ class Quote(BaseModel):
     premium = models.ForeignKey(
         'product.Premium', null=True, blank=True, on_delete=models.CASCADE)
     recommendation_score = models.FloatField(default=0.0)
-    ignore = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('lead', 'premium',)
