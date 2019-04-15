@@ -57,4 +57,4 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
         from crm.models import Lead
         return Lead.objects.create(
             user_id=self.request.user.id, family=family, pincode=pincode,
-            category_id=category_id, gender=gender)
+            category_id=category_id, gender=gender.lower())
