@@ -80,7 +80,7 @@ else:
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     AWS_ACCESS_KEY_ID = get_env_var('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = get_env_var('AWS_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = 'develop-goplannr'
+    AWS_STORAGE_BUCKET_NAME = get_env_var('S3_BUCKET')
     MEDIA_URL = 'https://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
     MEDIA_ROOT = 'https://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
     AWS_AUTO_CREATE_BUCKET = True
