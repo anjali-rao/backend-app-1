@@ -40,6 +40,8 @@ STATIC_URL = '/static/'
 SECRET_KEY = get_env_var('SECRET_KEY')
 JWT_SECRET = get_env_var('JWT_SECRET')
 
+DEFAULT_HOST = "www"
+ROOT_HOSTCONF = 'goplannr.hosts'
 ROOT_URLCONF = 'goplannr.urls'
 
 ALLOWED_HOSTS = get_env_var('ALLOWED_HOSTS').split(',')
@@ -53,6 +55,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'django_hosts',
     'users',
     'payment',
     'activity',
@@ -83,6 +86,7 @@ else:
     AWS_AUTO_CREATE_BUCKET = True
 
 MIDDLEWARE = [
+    'django_hosts.middleware.HostsRequestMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -91,6 +95,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_hosts.middleware.HostsResponseMiddleware'
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True

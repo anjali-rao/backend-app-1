@@ -98,7 +98,7 @@ class Lead(BaseModel):
     def refresh_quote_data(self):
         quotes = self.get_quotes()
         if quotes.exists():
-            quotes.delete()
+            quotes.update(ignore=True)
         for premium in self.get_premiums():
             feature_masters = premium.product_variant.feature_set.values_list(
                 'feature_master_id', flat=True)
@@ -158,11 +158,12 @@ class Lead(BaseModel):
             segment_name = 'senior_citizens'
         return CustomerSegment.objects.only('id').get(name=segment_name)
 
-    def get_recommendated_quotes(self):
-        return self.quote_set.all().order_by('-recommendation_score')[:5]
-
     def get_quotes(self):
-        return self.quote_set.all().order_by('-recommendation_score')
+        return self.quote_set.filter(
+            ignore=False).order_by('-recommendation_score')
+
+    def get_recommendated_quotes(self):
+        return self.get_quotes()[:5]
 
     def update_fields(self, contact_id, **kw):
         for field in kw.keys():
@@ -196,7 +197,6 @@ class Contact(BaseModel):
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
     phone_no = models.CharField(max_length=10)
-    first_name = models.CharField(max_length=32)
     first_name = models.CharField(max_length=32, null=True, blank=True)
     last_name = models.CharField(max_length=32, null=True, blank=True)
     email = models.EmailField(max_length=64, null=True, blank=True)
@@ -220,9 +220,6 @@ class Contact(BaseModel):
         except Exception:
             pass
         return True
-
-    class Meta:
-        unique_together = ('user', 'phone_no',)
 
 
 class KYCDocument(BaseModel):

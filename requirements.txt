@@ -8,6 +8,7 @@ chardet==3.0.4
 decorator==4.4.0
 Django==2.1.7
 django-cors-headers==2.5.2
+django-hosts==3.0
 django-redis==4.10.0
 django-storages==1.7.1
 django-url-filter==0.3.12
