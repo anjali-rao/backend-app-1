@@ -10,9 +10,9 @@ from sales.models import (
 
 @admin.register(Quote)
 class QuoteAdmin(admin.ModelAdmin):
-    list_display = ('lead', 'status', 'premium', 'ignore')
+    list_display = ('lead', 'status', 'premium')
     raw_id_fields = ('lead', 'premium')
-    list_filter = ('status', 'ignore')
+    list_filter = ('status',)
 
 
 @admin.register(Application)
