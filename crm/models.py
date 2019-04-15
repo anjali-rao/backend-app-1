@@ -98,7 +98,8 @@ class Lead(BaseModel):
     def refresh_quote_data(self):
         quotes = self.get_quotes()
         if quotes.exists():
-            quotes.update(ignore=True)
+            for quote in quotes:
+                quote.delete()
         for premium in self.get_premiums():
             feature_masters = premium.product_variant.feature_set.values_list(
                 'feature_master_id', flat=True)
@@ -159,8 +160,7 @@ class Lead(BaseModel):
         return CustomerSegment.objects.only('id').get(name=segment_name)
 
     def get_quotes(self):
-        return self.quote_set.filter(
-            ignore=False).order_by('-recommendation_score')
+        return self.quote_set.all().order_by('-recommendation_score')
 
     def get_recommendated_quotes(self):
         return self.get_quotes()[:5]
