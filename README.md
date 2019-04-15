@@ -78,13 +78,12 @@ Configuration file
             "KEY_PREFIX": "goplanr"
         }
     },
-    "SMS_API": "<sms_api",
-    "SMS_API_KEY": "<sms_api_key>",
-    "DEBUG_HOST": "<debug_host>",
-    "PRODUCTTION_HOST": "<production_host>"
+    "SMS_API": "https://alerts.solutionsinfini.com/api/v4/?api_key=",
+    "SMS_API_KEY": "<SMS_API_KEY>",
+    "DEFAULT_HOST": "http://localhost:8000",
+    "PRODUCTTION_HOST": "http://api.goplannr.com",
+    "S3_BUCKET": "develop-goplannr" 
 }
-
-
 ```
 
 
