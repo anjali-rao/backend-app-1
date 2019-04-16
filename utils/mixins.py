@@ -23,3 +23,9 @@ class MethodSerializerView(object):
                 return serializer_cls
 
         raise exceptions.MethodNotAllowed(self.request.method)
+
+
+class APIException(exceptions.APIException):
+    status_code = 400
+    default_detail = 'Service temporarily unavailable, try again later.'
+    default_code = 'service_unavailable'

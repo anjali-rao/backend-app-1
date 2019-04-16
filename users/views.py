@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-from rest_framework import permissions, status, generics, exceptions
+from rest_framework import permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -11,6 +11,7 @@ from users.serializers import (
     AccountSearchSerializers, User, PincodeSerializer, Pincode
 )
 from utils import constants
+from utils.mixins import APIException
 
 from django.db.models import Q
 from django.db import transaction, IntegrityError
@@ -43,7 +44,7 @@ class RegisterUser(generics.CreateAPIView):
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
         except IntegrityError:
-            raise exceptions.APIException(constants.USER_ALREADY_EXISTS)
+            raise APIException(constants.USER_ALREADY_EXISTS)
 
         return Response(serializer.response, status=status.HTTP_201_CREATED)
 
@@ -114,9 +115,9 @@ class PincodeSearch(APIView):
                     data = self.format_location_data(data, text)
 
                 return Response(data, status=status.HTTP_200_OK)
-            raise exceptions.APIException('Please pass a text parameter.')
+            raise APIException('Please pass a text parameter.')
         except Exception as e:
-            raise exceptions.APIException(e)
+            raise APIException(e)
 
     def format_location_data(self, data, text):
         location_list = set()
