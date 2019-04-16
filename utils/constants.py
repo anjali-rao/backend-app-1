@@ -91,7 +91,7 @@ INVALID_ANSWER_ID = 'Invalid Answer id provided.'
 INVALID_QUESTION_ID = 'Invalid Answer id provided.'
 INVALID_GENDER_PROVIDED = 'Invalid gender input provided.'
 INVALID_PINCODE = 'Invalid pincode provided.'
-USER_ALREADY_EXISTS = 'User already exists for choosen product.'
+USER_ALREADY_EXISTS = 'User already exists as subscriber.'
 FAILED_APPLICATION_CREATION = 'Failed to add contact. Please contact GoPlannr.'
 APPLICATION_ALREAY_EXISTS = 'Application already exists with quote id.'
 

@@ -43,7 +43,7 @@ class RegisterUser(generics.CreateAPIView):
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
         except IntegrityError:
-            exceptions.APIException(constants.USER_ALREADY_EXISTS)
+            raise exceptions.APIException(constants.USER_ALREADY_EXISTS)
 
         return Response(serializer.response, status=status.HTTP_201_CREATED)
 
