@@ -110,19 +110,21 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             list(self.validated_data.items()) +
             list(kwargs.items())
         )
-        self.instance, created = self.Meta.model.objects.get_or_create(
-            first_name=validated_data['first_name'],
-            phone_no=validated_data['phone_no']
+        contact, created = self.Meta.model.objects.get_or_create(
+            phone_no=validated_data['phone_no'], parent=None
         )
-        self.instance = super(
-            UpdateContactDetailsSerializer, self).save(**kwargs)
-        self.instance.address_id = Address.objects.create(
-            pincode_id=Pincode.get_pincode(validated_data['pincode']).id
-        ).id
-        self.instance.save()
         if created:
+            self.instance = contact
             self.lead.contact_id = self.instance.id
             self.lead.save()
+        self.instance = super(
+            UpdateContactDetailsSerializer, self).save(**kwargs)
+        self.instance.update_fields(**dict(
+            address_id=Address.objects.create(
+                pincode_id=Pincode.get_pincode(validated_data['pincode']).id
+            ).id,
+            parent_id=(None if created else contact.id)
+        ))
 
     class Meta:
         model = Contact

@@ -50,14 +50,14 @@ class RetrieveUpdateProposerDetails(
 
         filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
         try:
-            obj = _get_object_or_404(queryset, **filter_kwargs)
+            obj = _get_object_or_404(
+                queryset, **filter_kwargs).quote.lead.contact
         except (TypeError, ValueError, ValidationError):
             obj = Http404
 
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
-
-        return obj.quote.lead.contact
+        return obj
 
 
 class RetrieveUpdateApplicationMembers(
