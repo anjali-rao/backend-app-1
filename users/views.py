@@ -3,13 +3,17 @@ from rest_framework import permissions, status, generics, exceptions
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
-from django.db.models import Q
+
 
 from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
     AccountSearchSerializers, User, PincodeSerializer, Pincode
 )
+from utils import constants
+
+from django.db.models import Q
+from django.db import transaction, IntegrityError
 
 
 @api_view(['POST'])
@@ -33,9 +37,14 @@ class RegisterUser(generics.CreateAPIView):
     serializer_class = CreateUserSerializer
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        try:
+            with transaction.atomic():
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+        except IntegrityError:
+            exceptions.APIException(constants.USER_ALREADY_EXISTS)
+
         return Response(serializer.response, status=status.HTTP_201_CREATED)
 
 
