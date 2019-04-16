@@ -91,9 +91,8 @@ class Lead(BaseModel):
         )
         if self.childrens <= 4:
             queryset = queryset.filter(childrens=self.childrens)
-        return [
-            query for query in queryset if self.effective_age in range(
-                query.min_age, query.max_age + 1)]
+        return queryset.filter(
+            age_range__contains=(self.effective_age + 1)) or queryset[:7]
 
     def refresh_quote_data(self):
         quotes = self.get_quotes()
@@ -165,10 +164,14 @@ class Lead(BaseModel):
     def get_recommendated_quotes(self):
         return self.get_quotes()[:5]
 
-    def update_fields(self, contact_id, **kw):
+    def update_fields(self, **kw):
+        updated = False
         for field in kw.keys():
             setattr(self, field, kw[field])
-        self.save()
+            if not updated:
+                updated = True
+        if updated:
+            self.save()
 
     @property
     def city(self):
@@ -194,9 +197,11 @@ class Lead(BaseModel):
 class Contact(BaseModel):
     user = models.ForeignKey(
         'users.User', on_delete=models.CASCADE, null=True, blank=True)
+    parent = models.ForeignKey(
+        'self', on_delete=models.CASCADE, null=True, blank=True)
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
-    phone_no = models.CharField(max_length=10)
+    phone_no = models.CharField(max_length=10, null=True, blank=True)
     first_name = models.CharField(max_length=32, null=True, blank=True)
     last_name = models.CharField(max_length=32, null=True, blank=True)
     email = models.EmailField(max_length=64, null=True, blank=True)
@@ -212,6 +217,15 @@ class Contact(BaseModel):
 
     def __str__(self):
         return '%s: %s' % (self.first_name, self.phone_no)
+
+    def update_fields(self, **kw):
+        updated = False
+        for field in kw.keys():
+            setattr(self, field, kw[field])
+            if not updated:
+                updated = True
+        if updated:
+            self.save()
 
     def is_kyc_required(self):
         try:

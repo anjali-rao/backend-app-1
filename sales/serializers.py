@@ -24,19 +24,18 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     quote_id=validated_data['quote_id'])
                 lead = instance.quote.lead
                 contact, created = Contact.objects.get_or_create(
-                    phone_no=validated_data['contact_no'],
-                    first_name=full_name[0],
-                    last_name=full_name[1] if len(full_name) == 2 else None
-                )
+                    phone_no=validated_data['contact_no'], parent=None)
                 if created:
-                    contact.user_id = lead.user.id
-                    contact.save()
+                    contact.update_fields(**dict(
+                        user_id=lead.user.id, first_name=full_name[0],
+                        last_name=full_name[1] if len(
+                            full_name) == 2 else None,
+                    ))
                 lead.update_fields(**dict(
                     contact_id=contact.id, status='inprogress', stage='cart'
                 ))
             return instance
-        except IntegrityError as e:
-            print(e)
+        except IntegrityError:
             raise exceptions.NotAcceptable(
                 constants.APPLICATION_ALREAY_EXISTS,
                 404)
