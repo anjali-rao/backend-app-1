@@ -10,6 +10,8 @@ from crm.serializers import (
     QuotesCompareSerializer, QuoteRecommendationSerializer
 )
 
+from utils.mixins import APIException
+
 from django.db import transaction, IntegrityError
 
 
@@ -73,5 +75,5 @@ class GetRecommendatedQuotes(generics.ListAPIView):
             raise exceptions.NotFound('Lead doesnot exists')
         except IntegrityError:
             pass
-        raise exceptions.APIException(
+        raise APIException(
             'Curently we are unable to suggest any quote. please try again.')

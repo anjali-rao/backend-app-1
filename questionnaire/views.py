@@ -9,6 +9,7 @@ from questionnaire.serializers import (
     QuestionnSerializers, Question, ResponseSerializer,
     QuestionnaireResponseSerializer
 )
+from utils.mixins import APIException
 from crm.serializers import QuoteRecommendationSerializer
 from django.db import transaction, IntegrityError
 
@@ -50,7 +51,7 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
                 status=status.HTTP_201_CREATED)
         except IntegrityError:
             pass
-        raise exceptions.APIException(
+        raise APIException(
             'Unable to process request currently. Please try again')
 
     def create_lead(self, category_id, family, pincode, gender):
