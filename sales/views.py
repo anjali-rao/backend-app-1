@@ -7,7 +7,7 @@ from users.decorators import UserAuthentication
 from utils import mixins
 from sales.serializers import (
     CreateApplicationSerializer, GetProposalDetailsSerializer,
-    Application, UpdateContactDetailsSerializer
+    Application, UpdateContactDetailsSerializer, Contact
 )
 
 from django.core.exceptions import ValidationError
@@ -48,16 +48,23 @@ class RetrieveUpdateProposerDetails(
             (self.__class__.__name__, lookup_url_kwarg)
         )
 
-        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
-        try:
-            obj = _get_object_or_404(queryset, **filter_kwargs)
-        except (TypeError, ValueError, ValidationError):
-            obj = Http404
-
+        if 'search' in self.request.query_params and self.request.method == 'GET':
+            obj = Contact.objects.filter(
+                phone_no=self.request.query_params.get('search')
+            ).exclude(parent=None).order_by('created').first()
+        else:
+            filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+            try:
+                application = _get_object_or_404(queryset, **filter_kwargs)
+                obj = application.quote.lead.contact.contact_set.order_by(
+                    'created').first()
+            except (TypeError, ValueError, ValidationError):
+                obj = Http404
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
-
-        return obj.quote.lead.contact
+        if not obj:
+            raise mixins.APIException('Contact not available.')
+        return obj
 
 
 class RetrieveUpdateApplicationMembers(

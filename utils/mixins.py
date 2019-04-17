@@ -1,4 +1,5 @@
-from rest_framework import exceptions
+from rest_framework import exceptions, status
+from django.utils.translation import ugettext_lazy as _
 
 
 class MethodSerializerView(object):
@@ -26,6 +27,31 @@ class MethodSerializerView(object):
 
 
 class APIException(exceptions.APIException):
-    status_code = 400
-    default_detail = 'Service temporarily unavailable, try again later.'
-    default_code = 'service_unavailable'
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = {
+        'detail': ['Service temporarily unavailable, try again later.']
+    }
+    default_code = 'invalid'
+
+    def __init__(self, detail=None, code=None):
+        if detail is None:
+            detail = self.default_detail
+        if code is None:
+            code = self.default_code
+
+        # For validation failures, we are overriding details to dict from str,
+        # so that error response should remain common across all errors.
+        if not isinstance(detail, dict):
+            detail = {'detail': [detail]}
+
+        self.detail = exceptions._get_error_details(detail, code)
+
+
+class NotAcceptable(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    default_detail = _('Could not satisfy the request Accept header.')
+    default_code = 'not_acceptable'
+
+    def __init__(self, detail=None, code=None, available_renderers=None):
+        self.available_renderers = available_renderers
+        super(NotAcceptable, self).__init__(detail, code)
