@@ -1,4 +1,5 @@
 from rest_framework import exceptions, status
+from django.utils.translation import ugettext_lazy as _
 
 
 class MethodSerializerView(object):
@@ -44,3 +45,13 @@ class APIException(exceptions.APIException):
             detail = {'detail': [detail]}
 
         self.detail = exceptions._get_error_details(detail, code)
+
+
+class NotAcceptable(APIException):
+    status_code = status.HTTP_406_NOT_ACCEPTABLE
+    default_detail = _('Could not satisfy the request Accept header.')
+    default_code = 'not_acceptable'
+
+    def __init__(self, detail=None, code=None, available_renderers=None):
+        self.available_renderers = available_renderers
+        super(NotAcceptable, self).__init__(detail, code)

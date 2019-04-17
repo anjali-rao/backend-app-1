@@ -202,8 +202,9 @@ class Contact(BaseModel):
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
     phone_no = models.CharField(max_length=10, null=True, blank=True)
-    first_name = models.CharField(max_length=32, null=True, blank=True)
-    last_name = models.CharField(max_length=32, null=True, blank=True)
+    first_name = models.CharField(max_length=32, blank=True)
+    middle_name = models.CharField(max_length=32, blank=True)
+    last_name = models.CharField(max_length=32, blank=True)
     email = models.EmailField(max_length=64, null=True, blank=True)
     dob = models.DateField(null=True, blank=True)
     occupation = models.CharField(
@@ -216,7 +217,10 @@ class Contact(BaseModel):
     is_client = models.BooleanField(default=False)
 
     def __str__(self):
-        return '%s: %s' % (self.first_name, self.phone_no)
+        full_name = self.get_full_name()
+        return '%s - %s' % ((
+            full_name if full_name else 'Parent'
+        ), self.phone_no)
 
     def update_fields(self, **kw):
         updated = False
@@ -234,6 +238,11 @@ class Contact(BaseModel):
         except Exception:
             pass
         return True
+
+    def get_full_name(self):
+        full_name = '%s %s %s' % (
+            self.first_name, self.middle_name, self.last_name)
+        return full_name.strip()
 
 
 class KYCDocument(BaseModel):
