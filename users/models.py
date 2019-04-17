@@ -372,15 +372,15 @@ class Earnings(models.Model):
 
 
 class Address(BaseModel):
-    flat_no = models.CharField(max_length=64, null=True, blank=True)
-    street = models.CharField(max_length=128, null=True, blank=True)
-    land_mark = models.CharField(max_length=128)
+    flat_no = models.CharField(max_length=64, blank=True)
+    street = models.CharField(max_length=128, blank=True)
+    land_mark = models.CharField(max_length=128, blank=True)
     pincode = models.ForeignKey('users.Pincode', on_delete=models.CASCADE)
 
     @property
     def full_address(self):
         return '%s, %s, %s - %s' % (
-            self.flat_no, self.street, self.land_mark, self.pincode)
+            self.flat_no, self.street, self.land_mark, self.pincode).strip()
 
     def __str__(self):
         return self.full_address

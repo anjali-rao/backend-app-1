@@ -91,9 +91,8 @@ class Lead(BaseModel):
         )
         if self.childrens <= 4:
             queryset = queryset.filter(childrens=self.childrens)
-        return [
-            query for query in queryset if self.effective_age in range(
-                query.min_age, query.max_age + 1)]
+        return queryset.filter(
+            age_range__contains=(self.effective_age + 1)) or queryset[:7]
 
     def refresh_quote_data(self):
         quotes = self.get_quotes()
@@ -165,10 +164,14 @@ class Lead(BaseModel):
     def get_recommendated_quotes(self):
         return self.get_quotes()[:5]
 
-    def update_fields(self, contact_id, **kw):
+    def update_fields(self, **kw):
+        updated = False
         for field in kw.keys():
             setattr(self, field, kw[field])
-        self.save()
+            if not updated:
+                updated = True
+        if updated:
+            self.save()
 
     @property
     def city(self):
@@ -194,11 +197,14 @@ class Lead(BaseModel):
 class Contact(BaseModel):
     user = models.ForeignKey(
         'users.User', on_delete=models.CASCADE, null=True, blank=True)
+    parent = models.ForeignKey(
+        'self', on_delete=models.CASCADE, null=True, blank=True)
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
-    phone_no = models.CharField(max_length=10)
-    first_name = models.CharField(max_length=32, null=True, blank=True)
-    last_name = models.CharField(max_length=32, null=True, blank=True)
+    phone_no = models.CharField(max_length=10, null=True, blank=True)
+    first_name = models.CharField(max_length=32, blank=True)
+    middle_name = models.CharField(max_length=32, blank=True)
+    last_name = models.CharField(max_length=32, blank=True)
     email = models.EmailField(max_length=64, null=True, blank=True)
     dob = models.DateField(null=True, blank=True)
     occupation = models.CharField(
@@ -211,7 +217,19 @@ class Contact(BaseModel):
     is_client = models.BooleanField(default=False)
 
     def __str__(self):
-        return '%s: %s' % (self.first_name, self.phone_no)
+        full_name = self.get_full_name()
+        return '%s - %s' % ((
+            full_name if full_name else 'Parent'
+        ), self.phone_no)
+
+    def update_fields(self, **kw):
+        updated = False
+        for field in kw.keys():
+            setattr(self, field, kw[field])
+            if not updated:
+                updated = True
+        if updated:
+            self.save()
 
     def is_kyc_required(self):
         try:
@@ -220,6 +238,11 @@ class Contact(BaseModel):
         except Exception:
             pass
         return True
+
+    def get_full_name(self):
+        full_name = '%s %s %s' % (
+            self.first_name, self.middle_name, self.last_name)
+        return full_name.strip()
 
 
 class KYCDocument(BaseModel):

@@ -92,11 +92,14 @@ def upload_feature(filename):
 
 def upload_premiums(filename):
     from product.models import Premium
+    from psycopg2.extras import NumericRange
     for row in readcsv(filename):
         instance, created = Premium.objects.get_or_create(pk=row['id'])
         instance.base_premium = row['base_premium'].replace(',', '').replace(',', '') # noqa
-        instance.max_age = int(row['max_age'])
-        instance.min_age = int(row['min_age'])
+        instance.age_rage = NumericRange(
+            lower=int(row['min_age']), upper=int(row['max_age']))
+        #   instance.max_age = int(row['max_age'])
+        #   instance.min_age = int(row['min_age'])
         instance.adults = int(row['adults'])
         instance.childrens = int(row['children'])
         instance.citytier = row['variant_city_tier']

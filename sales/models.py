@@ -49,7 +49,7 @@ class Quote(BaseModel):
                 'question': 'Company details',
                 'answer': 'Name: %s\nWebsite: %s' % (
                     company_category.company.name,
-                    company_category.company.website
+                    company_category.company.website or '-'
                 )
             }
         ]
