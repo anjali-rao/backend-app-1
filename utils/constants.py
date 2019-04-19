@@ -24,6 +24,9 @@ KYC_DOC_TYPES = ('pan', 'passport', 'voter_card')
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
+RELATION_CHOICES = (
+    'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother', 'sister'
+)
 
 FEATURE_TYPES = (
     'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',

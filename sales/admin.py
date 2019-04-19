@@ -36,6 +36,6 @@ class TravelInsuranceAdmin(admin.ModelAdmin):
 
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
-    list_display = ('application', 'full_name', 'age', 'occupation')
-    search_fields = ('application__quote__id',)
+    list_display = ('application', 'first_name', 'age', 'occupation',)
+    search_fields = ('application__quote__id', 'first_name', 'middle_name')
     list_filter = ('ignore',)

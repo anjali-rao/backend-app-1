@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from rest_framework import generics
+from rest_framework import generics, status
+from rest_framework.response import Response
 
 from users.decorators import UserAuthentication
 from utils import mixins
 from sales.serializers import (
     CreateApplicationSerializer, GetProposalDetailsSerializer,
-    Application, UpdateContactDetailsSerializer, Contact
+    Application, UpdateContactDetailsSerializer, Contact,
+    GetApplicationMembersSerializer, MemberSerializers
 )
 
 from django.core.exceptions import ValidationError
 from django.http import Http404
+from django.db import transaction, IntegrityError
 from django.shortcuts import get_object_or_404 as _get_object_or_404
 
 
@@ -68,10 +71,30 @@ class RetrieveUpdateProposerDetails(
 
 
 class RetrieveUpdateApplicationMembers(
-        mixins.MethodSerializerView, generics.RetrieveUpdateAPIView):
+        mixins.MethodSerializerView, generics.ListCreateAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = Application.objects.all()
     method_serializer_classes = {
-        ('GET', ): GetProposalDetailsSerializer,
-        ('PATCH'): UpdateContactDetailsSerializer
+        ('GET', ): GetApplicationMembersSerializer,
+        ('POST'): MemberSerializers
     }
+
+    def get(self, request, *args, **kwargs):
+        members = self.get_object().member_set.filter(ignore=False)
+        return Response(
+            self.get_serializer(members, many=True).data,
+            status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        application = self.get_object()
+        try:
+            with transaction.atomic():
+                for member in request.data:
+                    serializer = self.get_serializer_class()(data=member)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save(application_id=application.id)
+        except (IntegrityError) as e:
+            raise mixins.APIException(e)
+        members = self.get_object().member_set.filter(ignore=False)
+        return Response(
+            dict(message='Member updated successfully'), status=status.HTTP_201_CREATED)

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from sales.models import Application
+from sales.models import Application, Member
 from crm.models import Contact
 from users.models import Pincode, Address
 from utils import constants, mixins
@@ -87,9 +87,9 @@ class GetProposalDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = (
-            'contact_id', 'first_name', 'last_name', 'phone_no', 'pincode',
-            'annual_income', 'occupation', 'marital_status', 'email', 'dob',
-            'document_type', 'document_number', 'street', 'flat_no'
+            'contact_id', 'first_name', 'middle_name', 'last_name', 'phone_no',
+            'pincode', 'annual_income', 'occupation', 'marital_status', 'dob',
+            'email', 'document_type', 'document_number', 'street', 'flat_no'
         )
 
 
@@ -108,23 +108,25 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             list(self.validated_data.items()) +
             list(kwargs.items())
         )
-        contact, created = self.Meta.model.objects.get_or_create(
-            phone_no=validated_data['phone_no'], parent=None
-        )
-        if created:
-            self.instance = contact
+        with transaction.atomic():
+            contact, created = self.Meta.model.objects.get_or_create(
+                phone_no=validated_data['phone_no']
+            )
+            if created:
+                self.instance = contact
+            self.instance = super(
+                UpdateContactDetailsSerializer, self).save(**kwargs)
             self.instance.lead.update_fields(**dict(
                 contact_id=self.instance.id
             ))
-        self.instance = super(
-            UpdateContactDetailsSerializer, self).save(**kwargs)
-        self.instance.update_fields(**dict(
-            address_id=Address.objects.create(
-                pincode_id=Pincode.get_pincode(validated_data['pincode']).id
-            ).id,
-            parent_id=(None if created else contact.id),
-            is_client=True
-        ))
+            self.instance.update_fields(**dict(
+                address_id=Address.objects.create(
+                    pincode_id=Pincode.get_pincode(
+                        validated_data['pincode']).id
+                ).id,
+                parent_id=(None if created else contact.id),
+                is_client=True
+            ))
 
     @property
     def data(self):
@@ -140,11 +142,67 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
         fields = (
             'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
             'occupation', 'marital_status', 'email', 'pincode',
-            'document_type', 'document_number'
+            'document_type', 'document_number', 'middle_name'
         )
         read_only_fields = (
             'document_type', 'document_number', 'pincode')
 
 
-class GetApplicationMembers(serializers.ModelSerializer):
-    pass
+class MemberSerializers(serializers.ModelSerializer):
+    dob = serializers.DateField(format='yyyy-mm-dd', required=True)
+    height_foot = serializers.FloatField(required=True)
+    height_inches = serializers.FloatField(required=True)
+
+    def validate_height_foot(self, value):
+        return value * 30.48
+
+    def validate_height_inches(self, value):
+        return value * 2.54
+
+    def save(self, **kwargs):
+        self.validated_data['height'] = self.validated_data[
+            'height_foot'] + self.validated_data['height_inches']
+        del self.validated_data['height_inches']
+        del self.validated_data['height_foot']
+        validated_data = dict(
+            list(self.validated_data.items()) +
+            list(kwargs.items())
+        )
+        self.instance = self.Meta.model.objects.filter(
+            application_id=validated_data['application_id'],
+            relation=validated_data['relation']
+        ).first()
+        if validated_data['relation'] in ['son', 'daughter']:
+            self.Meta.model.objects.filter(
+                relation__in=['son', 'daughter'],
+                application_id=validated_data['application_id']
+            ).update(ignore=True)
+            self.instance = None
+        return super(MemberSerializers, self).save(**kwargs)
+
+    class Meta:
+        model = Member
+        fields = (
+            'gender', 'first_name', 'middle_name', 'last_name', 'dob',
+            'occupation', 'relation', 'height', 'weight', 'height_foot',
+            'height_inches')
+        read_only_fields = ('height_foot', 'height_inches')
+
+
+class GetApplicationMembersSerializer(serializers.ModelSerializer):
+    height_foot = serializers.SerializerMethodField()
+    height_inches = serializers.SerializerMethodField()
+
+    def get_height_foot(self, obj):
+        return obj.height_foot
+
+    def get_height_inches(self, obj):
+        return obj.height_inches
+
+    class Meta:
+        model = Member
+        fields = (
+            'application_id', 'gender', 'first_name', 'middle_name',
+            'last_name', 'dob', 'occupation', 'relation', 'height_inches',
+            'height_foot', 'weight'
+        )
