@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from sales.models import Application, Member
+from sales.models import Application, Member, Nominee
 from crm.models import Contact
 from users.models import Pincode, Address
 from utils import constants, mixins
@@ -165,8 +165,7 @@ class MemberSerializers(serializers.ModelSerializer):
         del self.validated_data['height_inches']
         del self.validated_data['height_foot']
         validated_data = dict(
-            list(self.validated_data.items()) +
-            list(kwargs.items())
+            list(self.validated_data.items()) + list(kwargs.items())
         )
         self.instance = self.Meta.model.objects.filter(
             application_id=validated_data['application_id'],
@@ -185,7 +184,7 @@ class MemberSerializers(serializers.ModelSerializer):
         fields = (
             'gender', 'first_name', 'middle_name', 'last_name', 'dob',
             'occupation', 'relation', 'height', 'weight', 'height_foot',
-            'height_inches')
+            'height_inches', 'id')
         read_only_fields = ('height_foot', 'height_inches')
 
 
@@ -206,3 +205,19 @@ class GetApplicationMembersSerializer(serializers.ModelSerializer):
             'last_name', 'dob', 'occupation', 'relation', 'height_inches',
             'height_foot', 'weight'
         )
+
+
+class CreateNomineeSerializer(serializers.ModelSerializer):
+
+    @property
+    def data(self):
+        # TO DOS: Remove this when app is build
+        super(CreateNomineeSerializer, self).data
+        self._data = dict(
+            message='Nominee added successfully.'
+        )
+        return self._data
+
+    class Meta:
+        model = Nominee
+        fields = ('first_name', 'middle_name', 'last_name', 'phone_no')

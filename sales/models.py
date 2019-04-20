@@ -8,7 +8,7 @@ from utils import (
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
 from django.utils.functional import cached_property
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.db import IntegrityError
 from django.dispatch import receiver
 from django.utils.timezone import now
@@ -67,10 +67,10 @@ class Application(BaseModel):
         max_length=32, choices=constants.STATUS_CHOICES, default='pending')
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
-    content_type = models.ForeignKey(
+    insurance_content_type = models.ForeignKey(
         ContentType, on_delete=models.CASCADE, null=True, blank=True)
-    insurance_id = models.PositiveIntegerField(null=True, blank=True)
-    insurance = GenericForeignKey('content_type', 'insurance_id')
+    insurance_object_id = models.PositiveIntegerField(null=True, blank=True)
+    insurance_object = GenericForeignKey('insurance_content_type', 'insurance_object_id')
     terms_and_conditions = models.BooleanField(null=True)
 
     def save(self, *args, **kwargs):
@@ -186,24 +186,65 @@ class Member(BaseModel):
 
 
 class Nominee(BaseModel):
-    application = models.OneToOneField(
+    application = models.ForeignKey(
         'sales.Application', on_delete=models.CASCADE)
     first_name = models.CharField(max_length=128)
     middle_name = models.CharField(max_length=128, blank=True)
     last_name = models.CharField(max_length=128)
     phone_no = models.CharField(max_length=10)
+    ignore = models.BooleanField(default=False)
+
+    def save(self, *ar, **kw):
+        existing_nominee = self.__class__.objects.filter(pk=self.id)
+        if existing_nominee.exists():
+            existing_nominee.update(ignore=True)
+        super(Nominee, self).save(*ar, **kw)
 
 
-class HealthInsurance(BaseModel):
+class Insurance(BaseModel):
+
+    class Meta:
+        abstract = True
+
     application = GenericRelation(
-        Application, related_query_name='health_insurance',
-        object_id_field='insurance_id')
+        'sales.Application', related_query_name='insurance',
+        object_id_field='insurance_object_id')
+    name = models.CharField(
+        max_length=128, blank=True)
 
 
-class TravelInsurance(BaseModel):
-    application = GenericRelation(
-        Application, related_query_name='travel_insurance',
-        object_id_field='insurance_id')
+class HealthInsurance(Insurance):
+
+    gastrointestinal_disease = models.BooleanField(
+        default=False, help_text=constants.GASTROINTESTINAL_DISEASE)
+    neuronal_diseases = models.BooleanField(
+        default=False, help_text=constants.NEURONAL_DISEASES)
+    alcohol_consumption = models.BooleanField(
+        default=False, help_text=constants.ALCOHOL_CONSUMPTION)
+    tabacco_consumption = models.BooleanField(
+        default=False, help_text=constants.TABBACO_CONSUMPTION)
+    cigarette_consumption = models.BooleanField(
+        default=False, help_text=constants.CIGARETTE_CONSUMPTION)
+    previous_claim = models.BooleanField(
+        default=False, help_text=constants.PREVIOUS_CLAIM)
+    proposal_terms = models.BooleanField(
+        default=False, help_text=constants.PROPOSAL_TERMS)
+    existing_policy = models.BooleanField(
+        default=False, help_text=constants.EXISTING_POLICY)
+    oncology_disease = models.BooleanField(
+        default=False, help_text=constants.ONCOLOGY_DISEASE)
+    respiratory_diseases = models.BooleanField(
+        default=False, help_text=constants.RESPIRATORY_DISEASES)
+    cardiovascular_disease = models.BooleanField(
+        default=False, help_text=constants.CARDIOVASCULAR_DISEASE)
+    ent_diseases = models.BooleanField(
+        default=False, help_text=constants.ENT_DISEASE)
+    blood_diseases = models.BooleanField(
+        default=False, help_text=constants.BLOOD_DISODER)
+
+# 
+# class TravelInsurance(BaseInsurance):
+#     
 
 
 class Policy(BaseModel):
@@ -213,14 +254,21 @@ class Policy(BaseModel):
     policy_data = JSONField()
 
 
+@receiver(pre_delete, sender=Application, dispatch_uid="action%s" % str(now()))
+def application_pre_delete(sender, instance, **kwargs):
+    pass
+    #import pdb; pdb.set_trace()
+    #instance.insurance.delete()
+
+
 @receiver(post_save, sender=Application, dispatch_uid="action%s" % str(now()))
 def application_post_save(sender, instance, created, **kwargs):
     if created:
         content_type = ContentType.objects.get(
             model=instance.application_type.replace('_', ''),
             app_label='sales')
-        instance.content_type_id = content_type.id
-        instance.insurance_id = content_type.model_class().objects.create().id
+        instance.insurance_content_type_id = content_type.id
+        instance.insurance_object_id = content_type.model_class().objects.create().id
         instance.save()
         Quote.objects.filter(lead_id=instance.quote.lead.id).exclude(
             id=instance.quote_id).update(status='rejected')

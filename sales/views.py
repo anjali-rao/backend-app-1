@@ -9,7 +9,8 @@ from utils import mixins
 from sales.serializers import (
     CreateApplicationSerializer, GetProposalDetailsSerializer,
     Application, UpdateContactDetailsSerializer, Contact,
-    GetApplicationMembersSerializer, MemberSerializers
+    GetApplicationMembersSerializer, MemberSerializers,
+    CreateNomineeSerializer
 )
 
 from django.core.exceptions import ValidationError
@@ -95,6 +96,16 @@ class RetrieveUpdateApplicationMembers(
                     serializer.save(application_id=application.id)
         except (IntegrityError) as e:
             raise mixins.APIException(e)
-        members = self.get_object().member_set.filter(ignore=False)
-        return Response(
-            dict(message='Member updated successfully'), status=status.HTTP_201_CREATED)
+        return Response(dict(
+            message='Member updated successfully'),
+            status=status.HTTP_201_CREATED)
+
+
+class CreateApplicationNominee(generics.CreateAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = CreateNomineeSerializer
+    queryset = Application.objects.all()
+
+    def perform_create(self, serializer):
+        with transaction.atomic():
+            serializer.save(application_id=self.get_object().id)
