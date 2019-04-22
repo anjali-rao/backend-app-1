@@ -97,7 +97,7 @@ class RetrieveUpdateApplicationMembers(
         except (IntegrityError) as e:
             raise mixins.APIException(e)
         return Response(MemberSerializer(
-            application.member_set.filter(ignore=False), many=True).data,
+            application.active_members, many=True).data,
             status=status.HTTP_201_CREATED)
 
 

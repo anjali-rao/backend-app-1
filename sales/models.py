@@ -115,7 +115,7 @@ class Application(BaseModel):
 
     @cached_property
     def inactive_members(self):
-        return self.member_set.filter(ignore=True)
+        return self.member_set.exclude(ignore=False)
 
     @cached_property
     def company_category(self):
@@ -123,7 +123,7 @@ class Application(BaseModel):
 
     @cached_property
     def people_listed(self):
-        return self.member_set.filter(ignore=False).count()
+        return self.active_members.count()
 
     def __str__(self):
         return '%s - %s - %s' % (
