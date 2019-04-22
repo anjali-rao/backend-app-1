@@ -70,10 +70,12 @@ class GetProposalDetailsSerializer(serializers.ModelSerializer):
     def get_document_type(self, obj):
         if hasattr(obj, 'kycdocument'):
             return obj.kycdocument.document_type
+        return ''
 
     def get_document_number(self, obj):
         if hasattr(obj, 'kycdocument'):
             return obj.kycdocument.document_number
+        return ''
 
     def get_contact_id(self, obj):
         return obj.id
@@ -117,15 +119,15 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             list(self.validated_data.items()) +
             list(kwargs.items())
         )
+        app = Application.objects.get(
+            id=validated_data['application_id'])
+        contact = app.quote.lead.contact
         with transaction.atomic():
-            contact, created = self.Meta.model.objects.get_or_create(
+            instance, created = self.Meta.model.objects.get_or_create(
                 phone_no=validated_data['phone_no']
             )
             if created:
-                self.instance = contact
-                self.instance.lead.update_fields(**dict(
-                    contact_id=self.instance.id
-                ))
+                self.instance = instance
             self.instance = super(
                 UpdateContactDetailsSerializer, self).save(**kwargs)
             self.instance.update_fields(**dict(
@@ -133,8 +135,8 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                     pincode_id=Pincode.get_pincode(
                         validated_data['pincode']).id
                 ).id,
-                parent_id=(None if created else contact.id),
-                is_client=True
+                parent_id=(contact.id if created else contact.parent),
+                user_id=contact.user.id, is_client=True
             ))
 
     @property

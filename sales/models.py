@@ -205,33 +205,32 @@ class Insurance(BaseModel):
 
 
 class HealthInsurance(Insurance):
-
-    gastrointestinal_disease = models.BooleanField(
-        default=False, help_text=constants.GASTROINTESTINAL_DISEASE)
-    neuronal_diseases = models.BooleanField(
-        default=False, help_text=constants.NEURONAL_DISEASES)
-    alcohol_consumption = models.BooleanField(
-        default=False, help_text=constants.ALCOHOL_CONSUMPTION)
-    tabacco_consumption = models.BooleanField(
-        default=False, help_text=constants.TABBACO_CONSUMPTION)
-    cigarette_consumption = models.BooleanField(
-        default=False, help_text=constants.CIGARETTE_CONSUMPTION)
+    gastrointestinal_disease = JSONField(
+        default=dict, help_text=constants.GASTROINTESTINAL_DISEASE)
+    neuronal_diseases = JSONField(
+        default=dict, help_text=constants.NEURONAL_DISEASES)
+    oncology_disease = JSONField(
+        default=dict, help_text=constants.ONCOLOGY_DISEASE)
+    respiratory_diseases = JSONField(
+        default=dict, help_text=constants.RESPIRATORY_DISEASES)
+    cardiovascular_disease = JSONField(
+        default=dict, help_text=constants.CARDIOVASCULAR_DISEASE)
+    ent_diseases = JSONField(
+        default=dict, help_text=constants.ENT_DISEASE)
+    blood_diseases = JSONField(
+        default=dict, help_text=constants.BLOOD_DISODER)
+    alcohol_consumption = JSONField(
+        default=dict, help_text=constants.ALCOHOL_CONSUMPTION)
+    tabacco_consumption = JSONField(
+        default=dict, help_text=constants.TABBACO_CONSUMPTION)
+    cigarette_consumption = JSONField(
+        default=dict, help_text=constants.CIGARETTE_CONSUMPTION)
     previous_claim = models.BooleanField(
         default=False, help_text=constants.PREVIOUS_CLAIM)
     proposal_terms = models.BooleanField(
         default=False, help_text=constants.PROPOSAL_TERMS)
-    existing_policy = models.BooleanField(
-        default=False, help_text=constants.EXISTING_POLICY)
-    oncology_disease = models.BooleanField(
-        default=False, help_text=constants.ONCOLOGY_DISEASE)
-    respiratory_diseases = models.BooleanField(
-        default=False, help_text=constants.RESPIRATORY_DISEASES)
-    cardiovascular_disease = models.BooleanField(
-        default=False, help_text=constants.CARDIOVASCULAR_DISEASE)
-    ent_diseases = models.BooleanField(
-        default=False, help_text=constants.ENT_DISEASE)
-    blood_diseases = models.BooleanField(
-        default=False, help_text=constants.BLOOD_DISODER)
+    existing_policy = JSONField(
+        default=dict, help_text=constants.EXISTING_POLICY)
 
 
 class TravelInsurance(Insurance):
