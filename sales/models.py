@@ -148,7 +148,7 @@ class Member(BaseModel):
     )
     height = models.FloatField(default=0.0)
     weight = models.FloatField(default=0.0)
-    ignore = models.BooleanField(default=None, db_index=True)
+    ignore = models.BooleanField(default=None, db_index=True, null=True)
 
     def save(self, *ar, **kw):
         try:
