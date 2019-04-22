@@ -246,7 +246,8 @@ class Contact(BaseModel):
 
 
 class KYCDocument(BaseModel):
-    contact = models.OneToOneField('crm.Contact', on_delete=models.CASCADE)
+    contact = models.OneToOneField(
+        'crm.Contact', on_delete=models.CASCADE, null=True, blank=True)
     docunent_number = models.CharField(max_length=64)
     document_type = models.CharField(
         choices=get_choices(constants.KYC_DOC_TYPES), max_length=16)

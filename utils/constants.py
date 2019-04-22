@@ -24,6 +24,9 @@ KYC_DOC_TYPES = ('pan', 'passport', 'voter_card')
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
+RELATION_CHOICES = (
+    'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother', 'sister'
+)
 
 FEATURE_TYPES = (
     'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
@@ -108,3 +111,17 @@ ENTERPRISE_UPLOAD_PATH = 'enterprise'
 CATEGORY_UPLOAD_PATH = 'category'
 
 DEBUG_HOST = 'http://localhost:8000'
+
+GASTROINTESTINAL_DISEASE = 'Disease of Kidney, Digestive tract, Liver/Gall Bladder, Pancreas, Breast, Reproductive /Urinary system, or any past complications of pregnancy/ child birth including high blood pressure or diabetes etc' # noqa
+NEURONAL_DISEASES = 'Disease of the Brain/Spine/Nervous System, Epilepsy, Paralysis, Polio, Joints/Arthritis, Congenital/ Birth defect, Physical deformity/disability, HIV/AIDS, other Sexually Transmitted Disease or Accidental injury or any other medical (other than common cold & viral fever) or surgical condition or Investigation parameter has been detected to be out of range/ not normal?' # noqa
+ALCOHOL_CONSUMPTION = 'Does any person proposed to be insured consume alcohol?' # noqa
+TABBACO_CONSUMPTION = 'Does any person proposed to be insured consume Pan Masala/Gutka ?' # noqa
+CIGARETTE_CONSUMPTION = 'Does any person proposed to be insured smoke?' # noqa
+PREVIOUS_CLAIM = 'Claim in previous policy.' # noqa
+PROPOSAL_TERMS = 'Was any proposal for life, health, hospital daily cash or critical illness insurance declined, deferred, withdrawn or accepted with modified terms' # noqa
+EXISTING_POLICY = 'Do you have Previous/ Current policy for life, health, hospital daily cash or critical illness insurance?' # noqa
+ONCOLOGY_DISEASE = 'Cancer, Tumour, lump, cyst, ulcer'
+ENT_DISEASE = 'Disease of Eye, Ear, Nose, Throat, Thyroid'
+CARDIOVASCULAR_DISEASE = 'Tuberculosis (TB), any Respiratory / Lung disease'
+RESPIRATORY_DISEASES = 'Any form of Heart Disease, Peripheral Vascular Disease, procedures like Angioplasty/PTCA/By Pass Surgery, valve replacement etc'
+BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Blood disorder (whether treated or not)'

@@ -379,8 +379,8 @@ class Address(BaseModel):
 
     @property
     def full_address(self):
-        return '%s, %s, %s - %s' % (
-            self.flat_no, self.street, self.land_mark, self.pincode).strip()
+        return '%s, %s, %s - %s'.strip() % (
+            self.flat_no, self.street, self.land_mark, self.pincode)
 
     def __str__(self):
         return self.full_address
