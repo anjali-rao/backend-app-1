@@ -79,13 +79,19 @@ class GetProposalDetailsSerializer(serializers.ModelSerializer):
         return obj.id
 
     def get_pincode(self, obj):
-        return obj.address.pincode.pincode
+        if hasattr(obj, 'address') and hasattr(obj.address, 'pincode'):
+            return obj.address.pincode.pincode
+        return ''
 
     def get_street(self, obj):
-        return obj.address.street
+        if hasattr(obj, 'address') and hasattr(obj.address, 'pincode'):
+            return obj.address.street
+        return ''
 
     def get_flat_no(self, obj):
-        return obj.address.flat_no
+        if hasattr(obj, 'address') and hasattr(obj.address, 'pincode'):
+            return obj.address.flat_no
+        return ''
 
     class Meta:
         model = Contact

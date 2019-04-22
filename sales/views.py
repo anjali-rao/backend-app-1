@@ -28,6 +28,7 @@ class RetrieveUpdateProposerDetails(
         mixins.MethodSerializerView, generics.RetrieveUpdateAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = Application.objects.all()
+
     method_serializer_classes = {
         ('GET', ): GetProposalDetailsSerializer,
         ('PATCH'): UpdateContactDetailsSerializer
@@ -37,7 +38,7 @@ class RetrieveUpdateProposerDetails(
         """
         Returns the object the view is displaying.
         You may want to override this if you need to provide non-standard
-        queryset lookups.  Eg if objects are referenced using multiple
+        queryset lookups. Eg if objects are referenced using multiple
         keyword arguments in the url conf.
         """
         queryset = self.filter_queryset(self.get_queryset())
@@ -55,7 +56,7 @@ class RetrieveUpdateProposerDetails(
         if 'search' in self.request.query_params and self.request.method == 'GET':
             obj = Contact.objects.filter(
                 phone_no=self.request.query_params.get('search')
-            ).exclude(parent=None).order_by('created').first()
+            ).order_by('created').first()
         else:
             filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
             try:
