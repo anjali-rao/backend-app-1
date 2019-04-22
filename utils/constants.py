@@ -32,7 +32,7 @@ FEATURE_TYPES = (
     'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
     'Exclusion')
 
-APPLICATION_TYPES = ('health_insurance', 'travel_insurance')
+APPLICATION_TYPES = ('healthinsurance', 'travelinsurance')
 
 DOC_TYPES = ('pan', 'license', 'photo')
 
