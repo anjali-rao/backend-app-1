@@ -201,7 +201,7 @@ class Contact(BaseModel):
         'self', on_delete=models.CASCADE, null=True, blank=True)
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
-    phone_no = models.CharField(max_length=10, null=True, blank=True)
+    phone_no = models.CharField(max_length=20, null=True, blank=True)
     first_name = models.CharField(max_length=32, blank=True)
     middle_name = models.CharField(max_length=32, blank=True)
     last_name = models.CharField(max_length=32, blank=True)
@@ -246,7 +246,8 @@ class Contact(BaseModel):
 
 
 class KYCDocument(BaseModel):
-    contact = models.OneToOneField('crm.Contact', on_delete=models.CASCADE)
+    contact = models.OneToOneField(
+        'crm.Contact', on_delete=models.CASCADE, null=True, blank=True)
     docunent_number = models.CharField(max_length=64)
     document_type = models.CharField(
         choices=get_choices(constants.KYC_DOC_TYPES), max_length=16)

@@ -213,4 +213,4 @@ class Premium(BaseModel):
         ) + self.base_premium + (self.base_premium * self.commission), 2)
 
     def __str__(self):
-        return '%s | %s-%s' % (self.sum_insured, self.min_age, self.max_age)
+        return '%s | %s' % (self.sum_insured, self.age_range)
