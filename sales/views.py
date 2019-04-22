@@ -67,7 +67,7 @@ class RetrieveUpdateProposerDetails(
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
         if not obj:
-            raise mixins.APIException('Contact not available.')
+            raise mixins.NotFound('Contact not available.')
         return obj
 
 

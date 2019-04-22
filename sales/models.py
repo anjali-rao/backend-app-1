@@ -233,9 +233,9 @@ class HealthInsurance(Insurance):
     blood_diseases = models.BooleanField(
         default=False, help_text=constants.BLOOD_DISODER)
 
-#
-# class TravelInsurance(BaseInsurance):
-#
+
+class TravelInsurance(Insurance):
+    name = models.CharField(max_length=32)
 
 
 class Policy(BaseModel):

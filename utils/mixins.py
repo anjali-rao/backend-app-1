@@ -55,3 +55,9 @@ class NotAcceptable(APIException):
     def __init__(self, detail=None, code=None, available_renderers=None):
         self.available_renderers = available_renderers
         super(NotAcceptable, self).__init__(detail, code)
+
+
+class NotFound(APIException):
+    status_code = status.HTTP_404_NOT_FOUND
+    default_detail = _('Not found.')
+    default_code = 'not_found'
