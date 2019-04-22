@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from sales.models import Application, Member, Nominee
+from sales.models import Application, Member, Nominee, Quote
 from crm.models import Contact
 from users.models import Pincode, Address
 from utils import constants, mixins
@@ -14,6 +14,13 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
     contact_no = serializers.CharField(required=True, write_only=True)
     application_id = serializers.SerializerMethodField()
     application_reference_no = serializers.SerializerMethodField()
+
+    def validate_quote_id(self, value):
+        if not Quote.objects.filter(id=value).exists():
+            raise serializers.ValidationError(
+                'Invalid Quote id provided.'
+            )
+        return value
 
     def create(self, validated_data):
         full_name = validated_data['contact_name'].split(' ')
