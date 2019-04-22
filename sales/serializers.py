@@ -61,16 +61,12 @@ class GetProposalDetailsSerializer(serializers.ModelSerializer):
     flat_no = serializers.SerializerMethodField()
 
     def get_document_type(self, obj):
-        try:
+        if hasattr(obj, 'kycdocument'):
             return obj.kycdocument.document_type
-        except Exception:
-            pass
 
     def get_document_number(self, obj):
-        try:
+        if hasattr(obj, 'kycdocument'):
             return obj.kycdocument.document_number
-        except Exception:
-            pass
 
     def get_contact_id(self, obj):
         return obj.id
@@ -114,11 +110,11 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             )
             if created:
                 self.instance = contact
+                self.instance.lead.update_fields(**dict(
+                    contact_id=self.instance.id
+                ))
             self.instance = super(
                 UpdateContactDetailsSerializer, self).save(**kwargs)
-            self.instance.lead.update_fields(**dict(
-                contact_id=self.instance.id
-            ))
             self.instance.update_fields(**dict(
                 address_id=Address.objects.create(
                     pincode_id=Pincode.get_pincode(
@@ -148,7 +144,7 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             'document_type', 'document_number', 'pincode')
 
 
-class MemberSerializers(serializers.ModelSerializer):
+class CreateMemberSerializers(serializers.ModelSerializer):
     dob = serializers.DateField(format='yyyy-mm-dd', required=True)
     height_foot = serializers.FloatField(required=True)
     height_inches = serializers.FloatField(required=True)
@@ -173,11 +169,14 @@ class MemberSerializers(serializers.ModelSerializer):
         ).first()
         if validated_data['relation'] in ['son', 'daughter']:
             self.Meta.model.objects.filter(
-                relation__in=['son', 'daughter'],
-                application_id=validated_data['application_id']
+                relation=validated_data['relation'],
+                application_id=validated_data['application_id'],
+                ignore=None
             ).update(ignore=True)
             self.instance = None
-        return super(MemberSerializers, self).save(**kwargs)
+        self.instance = super(CreateMemberSerializers, self).save(**kwargs)
+        self.instance.ignore = False
+        return self.instance.save()
 
     class Meta:
         model = Member
@@ -186,6 +185,17 @@ class MemberSerializers(serializers.ModelSerializer):
             'occupation', 'relation', 'height', 'weight', 'height_foot',
             'height_inches', 'id')
         read_only_fields = ('height_foot', 'height_inches')
+
+
+class MemberSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+
+    def get_full_name(self, obj):
+        return obj.get_full_name()
+
+    class Meta:
+        model = Member
+        fields = ('id', 'relation', 'full_name')
 
 
 class GetApplicationMembersSerializer(serializers.ModelSerializer):

@@ -11,7 +11,16 @@ from sales.models import (
 
 class HealthInsuranceInline(admin.StackedInline):
     model = HealthInsurance
-    fk_name = "insurance"
+
+
+class MemberInlineAdmin(admin.TabularInline):
+    model = Member
+    max_num = 4
+
+
+class NomineeInlineAdmin(admin.TabularInline):
+    model = Nominee
+    max_num = 2
 
 
 @admin.register(Quote)
@@ -26,27 +35,13 @@ class ApplicationAdmin(admin.ModelAdmin):
     model = Application
 
     def get_inline_instances(self, request, obj=None):
+        inlines = [NomineeInlineAdmin, MemberInlineAdmin]
         if obj is not None:
             m_name = obj.insurance_object._meta.model_name
             if m_name == "healthinsurance":
-                return [HealthInsuranceInline(self.model, self.admin_site), ]
-        return []
-
-# class ApplicationAdmin(admin.ModelAdmin):
-#     list_display = ('reference_no', 'quote', 'status')
-#     search_fields = ('reference_no',)
-#     list_filter = ('status',)
-# 
-#     def get_inline_instances(self, request, obj=None):
-#         '''
-#         Returns our Thing Config inline
-#         '''
-#         if obj is not None:
-#             m_name = obj.insurance_object._meta.model_name
-#             if m_name == "healthinsurance":
-#                 # return []
-#                 return [HealthInsuranceInline(self.model, self.admin_site), ]
-#         return []
+                inlines.append(HealthInsuranceInline(
+                    self.model, self.admin_site))
+        return inlines
 
 
 @admin.register(Member)

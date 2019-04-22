@@ -8,12 +8,10 @@ from utils import (
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
 from django.utils.functional import cached_property
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_save
 from django.db import IntegrityError
 from django.dispatch import receiver
 from django.utils.timezone import now
-from django.contrib.contenttypes.fields import (
-    GenericForeignKey, GenericRelation)
 
 
 class Quote(BaseModel):
@@ -67,10 +65,6 @@ class Application(BaseModel):
         max_length=32, choices=constants.STATUS_CHOICES, default='pending')
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
-    insurance_content_type = models.ForeignKey(
-        ContentType, on_delete=models.CASCADE, null=True, blank=True)
-    insurance_object_id = models.PositiveIntegerField(null=True, blank=True)
-    insurance_object = GenericForeignKey('insurance_content_type', 'insurance_object_id')
     terms_and_conditions = models.BooleanField(null=True)
 
     def save(self, *args, **kwargs):
@@ -154,7 +148,7 @@ class Member(BaseModel):
     )
     height = models.FloatField(default=0.0)
     weight = models.FloatField(default=0.0)
-    ignore = models.BooleanField(default=False, db_index=True)
+    ignore = models.BooleanField(default=None, db_index=True)
 
     def save(self, *ar, **kw):
         try:
@@ -206,11 +200,8 @@ class Insurance(BaseModel):
     class Meta:
         abstract = True
 
-    application = GenericRelation(
-        'sales.Application', related_query_name='insurance',
-        object_id_field='insurance_object_id')
-    name = models.CharField(
-        max_length=128, blank=True)
+    application = models.OneToOneField(
+        'sales.Application', on_delete=models.CASCADE)
 
 
 class HealthInsurance(Insurance):
@@ -242,9 +233,9 @@ class HealthInsurance(Insurance):
     blood_diseases = models.BooleanField(
         default=False, help_text=constants.BLOOD_DISODER)
 
-# 
+#
 # class TravelInsurance(BaseInsurance):
-#     
+#
 
 
 class Policy(BaseModel):
@@ -254,24 +245,13 @@ class Policy(BaseModel):
     policy_data = JSONField()
 
 
-@receiver(pre_delete, sender=Application, dispatch_uid="action%s" % str(now()))
-def application_pre_delete(sender, instance, **kwargs):
-    pass
-    #import pdb; pdb.set_trace()
-    #instance.insurance.delete()
-
-
 @receiver(post_save, sender=Application, dispatch_uid="action%s" % str(now()))
 def application_post_save(sender, instance, created, **kwargs):
     if created:
-        content_type = ContentType.objects.get(
-            model=instance.application_type.replace('_', ''),
-            app_label='sales')
-        instance.insurance_content_type_id = content_type.id
-        instance.insurance_object_id = content_type.model_class().objects.create().id
-        instance.save()
+        ContentType.objects.get(
+            model=instance.application_type.replace('_', ''), app_label='sales'
+        ).model_class().objects.create(application_id=instance.id)
         Quote.objects.filter(lead_id=instance.quote.lead.id).exclude(
             id=instance.quote_id).update(status='rejected')
         instance.quote.status = 'accepted'
-        instance.quote.save()
         instance.add_default_members()
