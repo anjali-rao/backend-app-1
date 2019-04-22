@@ -38,14 +38,13 @@ class ApplicationAdmin(admin.ModelAdmin):
     )
 
     def get_inline_instances(self, request, obj=None):
-        inlines = list()
+        inlines = [
+            NomineeInlineAdmin(self.model, self.admin_site),
+            MemberInlineAdmin(self.model, self.admin_site)]
         if obj is not None and hasattr(obj, obj.application_type):
             inline_class = self.get_inline_class(obj.application_type)
             inlines.append(inline_class(
                 self.model, self.admin_site))
-        inlines.extend([
-            NomineeInlineAdmin(self.model, self.admin_site),
-            MemberInlineAdmin(self.model, self.admin_site)])
         return inlines
 
     def get_inline_class(self, keywords):
