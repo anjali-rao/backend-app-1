@@ -201,7 +201,7 @@ class Insurance(BaseModel):
         abstract = True
 
     application = models.OneToOneField(
-        'sales.Application', on_delete=models.CASCADE)
+        'sales.Application', on_delete=models.CASCADE, null=True)
 
 
 class HealthInsurance(Insurance):
