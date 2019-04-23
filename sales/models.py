@@ -94,9 +94,11 @@ class Application(BaseModel):
                 relation=relation, gender=gender)
             if relation == 'self':
                 responses = Response.objects.filter(
-                    question__category_id=self.company_category.category.id)
+                    question__category_id=self.company_category.category.id,
+                    lead_id=lead.id)
                 instance.occupation = responses.get(
-                    question__title='Occupation').answer.answer
+                    question__title='Occupation'
+                ).answer.answer
             return instance
 
         for member, age in lead.family.items():
