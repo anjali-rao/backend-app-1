@@ -8,7 +8,7 @@ CITY_TIER = ((0, 'First'), (1, 'Second'), (2, 'Third'))
 USER_FLAG = {'blacklist': False, 'training': False, 'exam_passed': None}
 
 OCCUPATION_CHOICES = (
-    'self_employed_or_business', 'salaried', 'retired', 'unemployed')
+    'self_employed_or_business', 'salaried', 'retired', 'unemployed', 'others')
 
 LEAD_STATUS_CHOICES = (
     ('fresh', 'Fresh'), ('inprogress', 'In Progress'),
