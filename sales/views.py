@@ -47,7 +47,7 @@ class RetrieveUpdateProposerDetails(
             (self.__class__.__name__, lookup_url_kwarg)
         )
 
-        if 'search' in self.request.query_params and self.request.method == 'GET':
+        if 'search' in self.request.query_params and self.request.method == 'GET': # noqa
             self._obj = Contact.objects.filter(
                 phone_no=self.request.query_params.get('search')
             ).order_by('modified').first()
@@ -89,6 +89,9 @@ class RetrieveUpdateApplicationMembers(
                     serializer = self.get_serializer_class()(data=member)
                     serializer.is_valid(raise_exception=True)
                     serializer.save(application_id=application.id)
+                from sales.tasks import update_insurance_fields
+                # To Dos' Use Celery
+                update_insurance_fields(application_id=application.id)
         except (IntegrityError) as e:
             raise mixins.APIException(e)
         return Response(MemberSerializer(
