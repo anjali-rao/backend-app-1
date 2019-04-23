@@ -49,13 +49,13 @@ class Lead(BaseModel):
         super(Lead, self).save(*args, **kwargs)
 
     def parse_family_json(self):
+        ages = list(map(int, self.family.values()))
         if 'daughter_total' in self.family:
             self.childrens += self.family['daughter_total']
-            self.family.pop('daughter_total')
+            ages.remove(int(self.family['daughter_total']))
         if 'son_total' in self.family:
             self.childrens += self.family['son_total']
-            self.family.pop('son_total')
-        ages = self.family.values()
+            ages.remove(int(self.family['son_total']))
         self.effective_age = int(max(ages))
         self.adults = len(ages)
 
@@ -213,7 +213,7 @@ class Contact(BaseModel):
     marital_status = models.CharField(
         choices=get_choices(
             constants.MARITAL_STATUS), max_length=32, null=True, blank=True)
-    annual_income = models.FloatField(default=0.0)
+    annual_income = models.CharField(max_length=48, null=True, blank=True)
     is_client = models.BooleanField(default=False)
 
     def __str__(self):

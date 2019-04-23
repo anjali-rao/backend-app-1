@@ -13,6 +13,8 @@ from django.db import IntegrityError
 from django.dispatch import receiver
 from django.utils.timezone import now
 
+from questionnaire.models import Response
+
 
 class Quote(BaseModel):
     lead = models.ForeignKey('crm.Lead', on_delete=models.CASCADE)
@@ -70,7 +72,7 @@ class Application(BaseModel):
     def save(self, *args, **kwargs):
         if not self.__class__.objects.filter(pk=self.id).exists():
             self.generate_reference_no()
-            self.application_type = self.company_category.category.name.lower().replace(' ', '_') # noqaas
+            self.application_type = self.company_category.category.name.lower().replace(' ', '') # noqa
         super(Application, self).save(*args, **kwargs)
 
     def generate_reference_no(self):
@@ -86,11 +88,17 @@ class Application(BaseModel):
         today = now()
         members = list()
 
-        def add(gender, relation, dob):
-            return Member(
-                application_id=self.id, dob=dob, relation=relation,
-                gender=gender
-            )
+        def get_member_instance(gender, relation, dob=None):
+            instance = Member(
+                application_id=self.id, dob=dob,
+                relation=relation, gender=gender)
+            if relation == 'self':
+                responses = Response.objects.filter(
+                    question__category_id=self.company_category.category.id)
+                instance.occupation = responses.get(
+                    question__title='Occupation').answer.answer
+            return instance
+
         for member, age in lead.family.items():
             member = member.split('_')[0]
             gender = lead.gender if member == 'self' else 'male'
@@ -100,11 +108,11 @@ class Application(BaseModel):
                 gender = 'female'
             elif member in ['son', 'daughter']:
                 while age > 0:
-                    members.append(add(
-                        'male' if member == 'son' else 'female'), member)
+                    members.append(get_member_instance(
+                        ('male' if member == 'son' else 'female'), member))
                     age -= 1
                 continue
-            instance = add(gender, member, '%s-%s-%s' % (
+            instance = get_member_instance(gender, member, '%s-%s-%s' % (
                 today.year - int(age), today.month, today.day))
             members.append(instance)
         Member.objects.bulk_create(members)
@@ -140,7 +148,7 @@ class Member(BaseModel):
     first_name = models.CharField(max_length=128, blank=True)
     middle_name = models.CharField(max_length=128, blank=True)
     last_name = models.CharField(max_length=128, blank=True)
-    dob = models.DateField(blank=True)
+    dob = models.DateField(null=True)
     gender = models.CharField(
         choices=get_choices(constants.GENDER), max_length=16)
     occupation = models.CharField(
@@ -167,6 +175,8 @@ class Member(BaseModel):
 
     @property
     def age(self):
+        if not self.dob:
+            return
         return '%s Years' % int((
             now().today().date() - self.dob).days / 365.2425)
 
@@ -177,6 +187,9 @@ class Member(BaseModel):
     @property
     def height_inches(self):
         return round((self.height - self.height_foot * 30.48) / 2.54, 2)
+
+    def __str__(self):
+        return '%s | %s' % (self.relation.title(), self.application.__str__())
 
 
 class Nominee(BaseModel):
@@ -232,6 +245,16 @@ class HealthInsurance(Insurance):
     existing_policy = JSONField(
         default=dict, help_text=constants.EXISTING_POLICY)
 
+    def update_default_fields(self, kw):
+        for field in constants.HEALTHINSURANCE_FIELDS:
+            setattr(self, field, kw)
+        self.alcohol_consumption = dict(quantity=None)
+        self.tabacco_consumption = dict(packets=None)
+        self.cigarette_consumption = dict(sticks=None)
+        self.existing_policy = dict(
+            insurer=None, suminsured=0.0, deductible=0.0)
+        self.save()
+
 
 class TravelInsurance(Insurance):
     name = models.CharField(max_length=32)
@@ -247,10 +270,10 @@ class Policy(BaseModel):
 @receiver(post_save, sender=Application, dispatch_uid="action%s" % str(now()))
 def application_post_save(sender, instance, created, **kwargs):
     if created:
-        ContentType.objects.get(
-            model=instance.application_type.replace('_', ''), app_label='sales'
-        ).model_class().objects.create(application_id=instance.id)
         Quote.objects.filter(lead_id=instance.quote.lead.id).exclude(
             id=instance.quote_id).update(status='rejected')
         instance.quote.status = 'accepted'
         instance.add_default_members()
+        ContentType.objects.get(
+            model=instance.application_type, app_label='sales'
+        ).model_class().objects.create(application_id=instance.id)

@@ -25,8 +25,15 @@ QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
 RELATION_CHOICES = (
-    'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother', 'sister'
+    'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother',
+    'sister'
 )
+
+HEALTHINSURANCE_FIELDS = [
+    'gastrointestinal_disease', 'neuronal_diseases', 'oncology_disease',
+    'respiratory_diseases', 'cardiovascular_disease', 'ent_diseases',
+    'blood_diseases'
+]
 
 FEATURE_TYPES = (
     'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
