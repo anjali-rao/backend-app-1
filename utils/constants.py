@@ -7,7 +7,8 @@ CITY_TIER = ((0, 'First'), (1, 'Second'), (2, 'Third'))
 
 USER_FLAG = {'blacklist': False, 'training': False, 'exam_passed': None}
 
-OCCUPATION_CHOICES = ('student', 'service', 'self_employeed', 'others')
+OCCUPATION_CHOICES = (
+    'self_employed_or_business', 'salaried', 'retired', 'unemployed')
 
 LEAD_STATUS_CHOICES = (
     ('fresh', 'Fresh'), ('inprogress', 'In Progress'),
@@ -25,14 +26,21 @@ QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
 RELATION_CHOICES = (
-    'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother', 'sister'
+    'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother',
+    'sister'
 )
+
+HEALTHINSURANCE_FIELDS = [
+    'gastrointestinal_disease', 'neuronal_diseases', 'oncology_disease',
+    'respiratory_diseases', 'cardiovascular_disease', 'ent_diseases',
+    'blood_diseases'
+]
 
 FEATURE_TYPES = (
     'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
     'Exclusion')
 
-APPLICATION_TYPES = ('health_insurance', 'travel_insurance')
+APPLICATION_TYPES = ('healthinsurance', 'travelinsurance')
 
 DOC_TYPES = ('pan', 'license', 'photo')
 

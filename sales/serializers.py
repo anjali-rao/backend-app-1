@@ -70,22 +70,30 @@ class GetProposalDetailsSerializer(serializers.ModelSerializer):
     def get_document_type(self, obj):
         if hasattr(obj, 'kycdocument'):
             return obj.kycdocument.document_type
+        return ''
 
     def get_document_number(self, obj):
         if hasattr(obj, 'kycdocument'):
             return obj.kycdocument.document_number
+        return ''
 
     def get_contact_id(self, obj):
         return obj.id
 
     def get_pincode(self, obj):
-        return obj.address.pincode.pincode
+        if hasattr(obj, 'address') and hasattr(obj.address, 'pincode'):
+            return obj.address.pincode.pincode
+        return ''
 
     def get_street(self, obj):
-        return obj.address.street
+        if hasattr(obj, 'address') and hasattr(obj.address, 'pincode'):
+            return obj.address.street
+        return ''
 
     def get_flat_no(self, obj):
-        return obj.address.flat_no
+        if hasattr(obj, 'address') and hasattr(obj.address, 'pincode'):
+            return obj.address.flat_no
+        return ''
 
     class Meta:
         model = Contact
@@ -111,15 +119,15 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             list(self.validated_data.items()) +
             list(kwargs.items())
         )
+        app = Application.objects.get(
+            id=validated_data['application_id'])
+        contact = app.quote.lead.contact
         with transaction.atomic():
-            contact, created = self.Meta.model.objects.get_or_create(
+            instance, created = self.Meta.model.objects.get_or_create(
                 phone_no=validated_data['phone_no']
             )
             if created:
-                self.instance = contact
-                self.instance.lead.update_fields(**dict(
-                    contact_id=self.instance.id
-                ))
+                self.instance = instance
             self.instance = super(
                 UpdateContactDetailsSerializer, self).save(**kwargs)
             self.instance.update_fields(**dict(
@@ -127,8 +135,8 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                     pincode_id=Pincode.get_pincode(
                         validated_data['pincode']).id
                 ).id,
-                parent_id=(None if created else contact.id),
-                is_client=True
+                parent_id=(contact.id if created else contact.parent),
+                user_id=contact.user.id, is_client=True
             ))
 
     @property
@@ -176,9 +184,8 @@ class CreateMemberSerializers(serializers.ModelSerializer):
         ).first()
         if validated_data['relation'] in ['son', 'daughter']:
             self.Meta.model.objects.filter(
-                relation=validated_data['relation'],
+                relation=validated_data['relation'], ignore=None,
                 application_id=validated_data['application_id'],
-                ignore=None
             ).update(ignore=True)
             self.instance = None
         self.instance = super(CreateMemberSerializers, self).save(**kwargs)

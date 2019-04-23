@@ -33,15 +33,22 @@ class QuoteAdmin(admin.ModelAdmin):
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
     model = Application
+    _inlines_class_set = dict(
+        healthinsurance=HealthInsuranceInline
+    )
 
     def get_inline_instances(self, request, obj=None):
-        inlines = [NomineeInlineAdmin, MemberInlineAdmin]
-        if obj is not None:
-            m_name = obj.insurance_object._meta.model_name
-            if m_name == "healthinsurance":
-                inlines.append(HealthInsuranceInline(
-                    self.model, self.admin_site))
+        inlines = [
+            NomineeInlineAdmin(self.model, self.admin_site),
+            MemberInlineAdmin(self.model, self.admin_site)]
+        if obj is not None and hasattr(obj, obj.application_type):
+            inline_class = self.get_inline_class(obj.application_type)
+            inlines.append(inline_class(
+                self.model, self.admin_site))
         return inlines
+
+    def get_inline_class(self, keywords):
+        return self._inlines_class_set.get(keywords)
 
 
 @admin.register(Member)

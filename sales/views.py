@@ -28,21 +28,16 @@ class RetrieveUpdateProposerDetails(
         mixins.MethodSerializerView, generics.RetrieveUpdateAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = Application.objects.all()
+    _obj = None
+
     method_serializer_classes = {
         ('GET', ): GetProposalDetailsSerializer,
         ('PATCH'): UpdateContactDetailsSerializer
     }
 
     def get_object(self):
-        """
-        Returns the object the view is displaying.
-        You may want to override this if you need to provide non-standard
-        queryset lookups.  Eg if objects are referenced using multiple
-        keyword arguments in the url conf.
-        """
         queryset = self.filter_queryset(self.get_queryset())
 
-        # Perform the lookup filtering.
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
 
         assert lookup_url_kwarg in self.kwargs, (
@@ -52,23 +47,23 @@ class RetrieveUpdateProposerDetails(
             (self.__class__.__name__, lookup_url_kwarg)
         )
 
-        if 'search' in self.request.query_params and self.request.method == 'GET':
-            obj = Contact.objects.filter(
+        if 'search' in self.request.query_params and self.request.method == 'GET': # noqa
+            self._obj = Contact.objects.filter(
                 phone_no=self.request.query_params.get('search')
-            ).exclude(parent=None).order_by('created').first()
-        else:
+            ).order_by('modified').first()
+        if not self._obj:
             filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
             try:
                 application = _get_object_or_404(queryset, **filter_kwargs)
-                obj = application.quote.lead.contact.contact_set.order_by(
-                    'created').first()
+                self._obj = application.quote.lead.contact
             except (TypeError, ValueError, ValidationError):
-                obj = Http404
+                self._obj = Http404
         # May raise a permission denied
-        self.check_object_permissions(self.request, obj)
-        if not obj:
-            raise mixins.APIException('Contact not available.')
-        return obj
+        self.check_object_permissions(self.request, self._obj)
+        return self._obj
+
+    def perform_update(self, serializer):
+        serializer.save(application_id=self.kwargs['pk'])
 
 
 class RetrieveUpdateApplicationMembers(
@@ -94,6 +89,9 @@ class RetrieveUpdateApplicationMembers(
                     serializer = self.get_serializer_class()(data=member)
                     serializer.is_valid(raise_exception=True)
                     serializer.save(application_id=application.id)
+                from sales.tasks import update_insurance_fields
+                # To Dos' Use Celery
+                update_insurance_fields(application_id=application.id)
         except (IntegrityError) as e:
             raise mixins.APIException(e)
         return Response(MemberSerializer(
