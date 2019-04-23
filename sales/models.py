@@ -98,7 +98,7 @@ class Application(BaseModel):
                     lead_id=lead.id)
                 instance.occupation = responses.get(
                     question__title='Occupation'
-                ).answer.answer
+                ).answer.answer.replace(' ', '_').lower()
             return instance
 
         for member, age in lead.family.items():
