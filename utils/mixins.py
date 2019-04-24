@@ -61,3 +61,7 @@ class NotFound(APIException):
     status_code = status.HTTP_404_NOT_FOUND
     default_detail = _('Not found.')
     default_code = 'not_found'
+
+
+class RecommendationException(Exception):
+    pass

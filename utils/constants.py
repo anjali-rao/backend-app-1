@@ -8,7 +8,7 @@ CITY_TIER = ((0, 'First'), (1, 'Second'), (2, 'Third'))
 USER_FLAG = {'blacklist': False, 'training': False, 'exam_passed': None}
 
 OCCUPATION_CHOICES = (
-    'self_employed_or_business', 'salaried', 'retired', 'unemployed')
+    'self_employed_or_business', 'salaried', 'retired', 'unemployed', 'others')
 
 LEAD_STATUS_CHOICES = (
     ('fresh', 'Fresh'), ('inprogress', 'In Progress'),
@@ -105,6 +105,8 @@ INVALID_PINCODE = 'Invalid pincode provided.'
 USER_ALREADY_EXISTS = 'User already exists as subscriber.'
 FAILED_APPLICATION_CREATION = 'Failed to add contact. Please contact GoPlannr.'
 APPLICATION_ALREAY_EXISTS = 'Application already exists with quote id.'
+ANSWER_CANNOT_BE_LEFT_BLANK = 'Answers are required.'
+INVALID_FAMILY_DETAILS = 'Please provide valid family details.'
 
 # Creation Fields
 ACCOUNT_CREATION_FIELDS = (

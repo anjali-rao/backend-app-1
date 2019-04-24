@@ -56,8 +56,10 @@ class Lead(BaseModel):
         if 'son_total' in self.family:
             self.childrens += self.family['son_total']
             ages.remove(int(self.family['son_total']))
+        self._family = self.family
         self.effective_age = int(max(ages))
         self.adults = len(ages)
+        self.customer_segment_id = self.get_customer_segment().id
 
     def calculate_final_score(self):
         from questionnaire.models import Response
@@ -78,28 +80,31 @@ class Lead(BaseModel):
         else:
             self.final_score = 50
         self.final_score *= 100000
-        self.customer_segment_id = self.get_customer_segment().id
         self.save()
 
-    def get_premiums(self):
-        # product_variant__citytier=self.citytier,
-        queryset = Premium.objects.select_related(
-            'product_variant'
-        ).filter(
-            product_variant__company_category__category_id=self.category_id,
-            sum_insured=self.final_score, adults=self.adults,
-        )
-        if self.childrens <= 4:
-            queryset = queryset.filter(childrens=self.childrens)
+    def get_premiums(self, **kw):
+        queryset = Premium.objects.select_related('product_variant').filter(
+            sum_insured=kw.get('score', self.final_score),
+            adults=kw.get('adults', self.adults))
+        if 'product_variant_id' in kw:
+            queryset = queryset.filter(
+                product_variant_id=kw['product_variant_id'])
+        if 'category_id' in kw:
+            queryset = queryset.filter(
+                product_variant__company_category__category_id=kw['category_id'])
+        if kw.get('childrens', self.childrens) <= 4:
+            queryset = queryset.filter(
+                childrens=kw.get('childrens', self.childrens))
         return queryset.filter(
-            age_range__contains=(self.effective_age + 1)) or queryset[:7]
+            age_range__contains=(
+                kw.get('effective_age', self.effective_age) + 1)
+        ) or queryset[:7]
 
-    def refresh_quote_data(self):
+    def refresh_quote_data(self, **kw):
         quotes = self.get_quotes()
         if quotes.exists():
-            for quote in quotes:
-                quote.delete()
-        for premium in self.get_premiums():
+            quotes.update(ignore=True)
+        for premium in self.get_premiums(**kw):
             feature_masters = premium.product_variant.feature_set.values_list(
                 'feature_master_id', flat=True)
             quote = Quote.objects.create(
@@ -109,57 +114,61 @@ class Lead(BaseModel):
                 feature_score = FeatureCustomerSegmentScore.objects.only(
                     'score', 'feature_master_id').filter(
                         feature_master_id=feature_master_id,
-                        customer_segment_id=self.customer_segment.id).last()
+                        customer_segment_id=kw.get(
+                            'customer_segment_id', self.customer_segment.id)
+                ).last()
                 if feature_score is not None:
                     if not changed_made:
                         changed_made = False
                     quote.recommendation_score += float(Feature.objects.filter(
                         feature_master_id=feature_master_id).aggregate(
-                        s=models.Sum('rating'))['s'] * feature_score.score)
+                            s=models.Sum('rating'))['s'] * feature_score.score)
             if changed_made:
                 quote.save()
 
-    def get_customer_segment(self):
+    def get_customer_segment(self, **kw):
         from product.models import CustomerSegment
         from questionnaire.models import Response
         responses = Response.objects.select_related(
             'answer', 'question').filter(lead_id=self.id)
         segment_name = 'young_adult'
-        if 'self_age' in self.family:
-            age = int(self.family['self_age'])
+        effective_age = kw.get('effective_age', self.effective_age)
+        childrens = kw.get('childrens', self.childrens)
+        if 'self_age' in kw:
+            age = int(kw['self_age'])
             if age <= 35:
                 segment_name = 'young_adult'
-            if any(x in self.family for x in ['mother_age', 'father_age']) and age < 35: # noqa
+            if any(x in kw for x in ['mother_age', 'father_age']) and age < 35:
                 segment_name = 'young_adult_with_dependent_parents'
             if age > 50:
                 segment_name = 'senior_citizens'
-            if 'spouse_age' in self.family:
+            if 'spouse_age' in kw:
                 if age < 35:
                     segment_name = 'young_couple'
                 if age > 50:
                     segment_name = 'senior_citizens'
-                if self.family.get('kid', 0) >= 1 and age < 40:
+                if childrens >= 1 and age < 40:
                     segment_name = 'young_family'
-                if self.family.get('kid', 0) >= 1 and age < 60:
+                if childrens >= 1 and age < 60:
                     segment_name = 'middle_aged_family'
             emp_resp = responses.filter(question__title='Occupation')
             if emp_resp.exists() and emp_resp.filter(
                     answer__answer='Self Employed or Business').exists():
                 segment_name = 'self_employed'
-        if self.effective_age < 40 and self.childrens >= 1:
+        if effective_age < 40 and effective_age >= 1:
             segment_name = 'young_family'
-        elif self.effective_age <= 35 and self.adults == 1:
+        elif effective_age <= 35 and kw.get('adults', self.adults) == 1:
             segment_name = 'young_adult'
-        elif self.effective_age <= 35 and self.adults == 2:
+        elif effective_age <= 35 and kw.get('adults', self.adults) == 2:
             segment_name = 'young_couple'
-        elif self.effective_age < 60 and self.childrens >= 1:
+        elif effective_age < 60 and childrens >= 1:
             segment_name = 'middle_aged_family'
-        elif self.effective_age >= 50:
+        elif effective_age >= 50:
             segment_name = 'senior_citizens'
         return CustomerSegment.objects.only('id').get(name=segment_name)
 
     def get_quotes(self):
-        return self.quote_set.all().order_by('-recommendation_score')
+        return self.quote_set.filter(ignore=False)
 
     def get_recommendated_quotes(self):
         return self.get_quotes()[:5]

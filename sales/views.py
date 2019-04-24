@@ -17,6 +17,7 @@ from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.db import transaction, IntegrityError
 from django.shortcuts import get_object_or_404 as _get_object_or_404
+from django.utils.timezone import now
 
 
 class CreateApplication(generics.CreateAPIView):
@@ -76,13 +77,14 @@ class RetrieveUpdateApplicationMembers(
     }
 
     def get(self, request, *args, **kwargs):
-        members = self.get_object().member_set.filter(ignore=False)
+        members = self.get_object().member_set.all()
         return Response(
             self.get_serializer(members, many=True).data,
             status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         application = self.get_object()
+        lead = application.quote.lead
         try:
             with transaction.atomic():
                 for member in request.data:
@@ -92,10 +94,17 @@ class RetrieveUpdateApplicationMembers(
                 from sales.tasks import update_insurance_fields
                 # To Dos' Use Celery
                 update_insurance_fields(application_id=application.id)
-        except (IntegrityError) as e:
+                adults = application.active_members.filter(
+                    dob__year__gte=(now().year - 18)).count()
+                childrens = application.active_members.count() - adults
+                if lead.adults != adults or lead.childrens != childrens:
+                    application.switch_premium(adults, childrens)
+        except (IntegrityError, mixins.RecommendationException) as e:
             raise mixins.APIException(e)
-        return Response(MemberSerializer(
-            application.active_members, many=True).data,
+        return Response(dict(
+            premium=application.quote.premium.amount,
+            member=MemberSerializer(
+                application.active_members, many=True).data),
             status=status.HTTP_201_CREATED)
 
 
