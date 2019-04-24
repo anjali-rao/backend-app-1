@@ -55,6 +55,10 @@ class ResponseSerializer(serializers.Serializer):
         return value
 
     def validate_answers(self, value):
+        if not value or not isinstance(value, list):
+            raise serializers.ValidationError(
+                constants.ANSWER_CANNOT_BE_LEFT_BLANK
+            )
         serializer = QuestionnaireResponseSerializer(data=value, many=True)
         serializer.is_valid(raise_exception=True)
         return value
@@ -65,11 +69,18 @@ class ResponseSerializer(serializers.Serializer):
                 constants.INVALID_GENDER_PROVIDED)
         return value
 
+    def validate_family(self, value):
+        for member, age in value.items():
+            if not isinstance(age, int) and not age.isdigit():
+                raise serializers.ValidationError(
+                    constants.INVALID_FAMILY_DETAILS)
+        return value
+
 
 class QuestionnaireResponseSerializer(serializers.ModelSerializer):
-    answer_id = serializers.CharField(required=True)
-    question_id = serializers.CharField(required=True)
-    lead_id = serializers.CharField(required=False)
+    answer_id = serializers.IntegerField(required=True)
+    question_id = serializers.IntegerField(required=True)
+    lead_id = serializers.IntegerField(required=False)
 
     def validate_answer_id(self, value):
         if not Answer.objects.filter(id=value).exists():
