@@ -65,3 +65,7 @@ class NotFound(APIException):
 
 class RecommendationException(Exception):
     pass
+
+
+class InsuranceException(Exception):
+    pass

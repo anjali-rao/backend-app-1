@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from rest_framework import generics, status
+from rest_framework import generics, status, exceptions
 from rest_framework.response import Response
 
 from users.decorators import UserAuthentication
@@ -10,7 +10,8 @@ from sales.serializers import (
     CreateApplicationSerializer, GetProposalDetailsSerializer,
     Application, UpdateContactDetailsSerializer, Contact,
     GetApplicationMembersSerializer, CreateMemberSerializers,
-    CreateNomineeSerializer, MemberSerializer
+    CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
+    TravalInsuranceSerializer
 )
 
 from django.core.exceptions import ValidationError
@@ -116,3 +117,47 @@ class CreateApplicationNominee(generics.CreateAPIView):
     def perform_create(self, serializer):
         with transaction.atomic():
             serializer.save(application_id=self.get_object().id)
+
+
+class UpdateInsuranceFields(generics.UpdateAPIView):
+    authentication_classes = (UserAuthentication,)
+    queryset = Application.objects.all()
+    insurance_serializer_classes = dict(
+        healthinsurance=HealthInsuranceSerializer,
+        travelinsurance=TravalInsuranceSerializer
+    )
+    application_type = None
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+
+        assert lookup_url_kwarg in self.kwargs, (
+            'Expected view %s to be called with a URL keyword argument '
+            'named "%s". Fix your URL conf, or set the `.lookup_field` '
+            'attribute on the view correctly.' %
+            (self.__class__.__name__, lookup_url_kwarg)
+        )
+        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+        try:
+            application = _get_object_or_404(queryset, **filter_kwargs)
+            self.application_type = application.application_type
+            if not hasattr(application, application.application_type):
+                self._obj = Http404
+            else:
+                self._obj = getattr(application, application.application_type)
+        except (TypeError, ValueError, ValidationError):
+            self._obj = Http404
+        # May raise a permission denied
+        self.check_object_permissions(self.request, self._obj)
+        return self._obj
+
+    def get_serializer_class(self):
+        serializer_cls = self.insurance_serializer_classes.get(
+            self.application_type)
+        if serializer_cls:
+            return serializer_cls
+
+        raise mixins.APIException(
+            'Application not mapped to any insurance.')
