@@ -60,7 +60,7 @@ class OTPVerificationSerializer(serializers.Serializer):
 
 class CreateUserSerializer(serializers.ModelSerializer):
     pincode = serializers.CharField(
-        required=True, allow_blank=True, max_length=6)
+        required=True, allow_blank=True, min_length=6, max_length=6)
     pan_no = serializers.CharField(
         required=False, allow_blank=True, max_length=10)
     phone_no = serializers.CharField(required=True, max_length=10)
@@ -218,11 +218,7 @@ class AuthorizationSerializer(serializers.Serializer):
     def validate_password(self, value):
         accounts = Account.objects.filter(
             phone_no=self.initial_data.get('phone_no'))
-        if not accounts.exists():
-            raise serializers.ValidationError(
-                constants.INVALID_PHONE_NO)
-        account = accounts.get()
-        if not account.check_password(value):
+        if not accounts.exists() or accounts.get().check_password(value):
             raise serializers.ValidationError(
                 constants.INVALID_PASSWORD)
         return value
