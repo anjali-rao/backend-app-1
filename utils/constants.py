@@ -107,6 +107,10 @@ FAILED_APPLICATION_CREATION = 'Failed to add contact. Please contact GoPlannr.'
 APPLICATION_ALREAY_EXISTS = 'Application already exists with quote id.'
 ANSWER_CANNOT_BE_LEFT_BLANK = 'Answers are required.'
 INVALID_FAMILY_DETAILS = 'Please provide valid family details.'
+LEAD_ERROR = 'Lead not provided or invalid lead id provided.'
+NO_QUOTES_FOUND = 'No Quotes found for given suminsured.'
+INVALID_INPUT = 'Invalid input provided.'
+COMPARISION_ERROR = 'Atleast two quotes are required for comparision'
 
 # Creation Fields
 ACCOUNT_CREATION_FIELDS = (
