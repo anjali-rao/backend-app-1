@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
-from sales.models import Application, Member, Nominee, Quote
+from sales.models import (
+    Application, Member, Nominee, Quote, HealthInsurance,
+    TravelInsurance
+)
 from crm.models import Contact
 from users.models import Pincode, Address
 from utils import constants, mixins
@@ -245,3 +248,22 @@ class CreateNomineeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Nominee
         fields = ('first_name', 'middle_name', 'last_name', 'phone_no')
+
+
+class HealthInsuranceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = HealthInsurance
+        fields = (
+            "gastrointestinal_disease", "neuronal_diseases", "existing_policy",
+            "respiratory_diseases", "cardiovascular_disease", "ent_diseases",
+            "blood_diseases", "alcohol_consumption", "tabacco_consumption",
+            "cigarette_consumption", "previous_claim", "proposal_terms",
+            "oncology_disease")
+
+
+class TravalInsuranceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = TravelInsurance
+        fields = '__all__'

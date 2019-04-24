@@ -56,7 +56,6 @@ class Lead(BaseModel):
         if 'son_total' in self.family:
             self.childrens += self.family['son_total']
             ages.remove(int(self.family['son_total']))
-        self._family = self.family
         self.effective_age = int(max(ages))
         self.adults = len(ages)
         self.customer_segment_id = self.get_customer_segment().id
