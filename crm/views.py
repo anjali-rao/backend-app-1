@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from rest_framework import generics, exceptions
+from utils import mixins
 
 from users.decorators import UserAuthentication
 from crm.models import Lead
@@ -20,17 +21,19 @@ class GetQuotes(generics.ListAPIView):
     serializer_class = QuoteSerializer
 
     def get_queryset(self):
+        if 'lead' not in self.request.query_params:
+            raise mixins.APIException('Lead is required in query params.')
         try:
             lead = Lead.objects.get(id=self.request.query_params.get('lead'))
-        except Lead.DoesNotExist:
-            raise exceptions.NotFound('Lead doesnot exists')
+        except (Lead.DoesNotExist, ValueError):
+            raise mixins.NotFound('Lead doesnot exists')
         if 'suminsured' in self.request.query_params:
             lead.final_score = self.request.query_params['suminsured']
             lead.save()
         queryset = lead.get_quotes()
         if queryset.exists():
             return queryset.order_by('premium')
-        raise exceptions.NotFound("No Quotes found for given lead.")
+        raise mixins.NotFound("No Quotes found for given lead.")
 
 
 class QuoteDetails(generics.RetrieveAPIView):
