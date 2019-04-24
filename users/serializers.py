@@ -218,7 +218,7 @@ class AuthorizationSerializer(serializers.Serializer):
     def validate_password(self, value):
         accounts = Account.objects.filter(
             phone_no=self.initial_data.get('phone_no'))
-        if not accounts.exists() or accounts.get().check_password(value):
+        if not accounts.exists() or not accounts.get().check_password(value):
             raise serializers.ValidationError(
                 constants.INVALID_PASSWORD)
         return value
