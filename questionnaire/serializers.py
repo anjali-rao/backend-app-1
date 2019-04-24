@@ -70,6 +70,9 @@ class ResponseSerializer(serializers.Serializer):
         return value
 
     def validate_family(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                constants.INVALID_FAMILY_DETAILS)
         for member, age in value.items():
             if not isinstance(age, int) and not age.isdigit():
                 raise serializers.ValidationError(
