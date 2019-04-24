@@ -14,6 +14,7 @@ from django.dispatch import receiver
 from django.utils.timezone import now
 
 from questionnaire.models import Response
+from utils.mixins import RecommendationException
 
 
 class Quote(BaseModel):
@@ -24,14 +25,21 @@ class Quote(BaseModel):
     premium = models.ForeignKey(
         'product.Premium', null=True, blank=True, on_delete=models.CASCADE)
     recommendation_score = models.FloatField(default=0.0)
+    ignore = models.BooleanField(default=False)
 
-    class Meta:
-        unique_together = ('lead', 'premium',)
+    def save(self, *args, **kwargs):
+        self.__class__.objects.filter(
+            lead_id=self.lead_id, premium_id=self.premium_id
+        ).update(ignore=True)
+        super(Quote, self).save(*args, **kwargs)
 
     def __str__(self):
         return '%s - %s' % (
             self.premium.amount,
             self.premium.product_variant.company_category.company.name)
+
+    class Meta:
+        ordering = ['-recommendation_score', 'premium__base_premium']
 
     def get_feature_details(self):
         return self.premium.product_variant.feature_set.values(
@@ -60,9 +68,9 @@ class Application(BaseModel):
     reference_no = models.CharField(max_length=10, unique=True, db_index=True)
     application_type = models.CharField(
         max_length=32, choices=get_choices(constants.APPLICATION_TYPES))
-    quote = models.OneToOneField('sales.Quote', on_delete=models.CASCADE)
+    quote = models.OneToOneField('sales.Quote', on_delete=models.PROTECT)
     address = models.ForeignKey(
-        'users.Address', on_delete=models.CASCADE, null=True, blank=True)
+        'users.Address', on_delete=models.PROTECT, null=True, blank=True)
     status = models.CharField(
         max_length=32, choices=constants.STATUS_CHOICES, default='pending')
     previous_policy = models.BooleanField(default=False)
@@ -82,6 +90,26 @@ class Application(BaseModel):
             while self.__class__.objects.filter(
                     reference_no=self.reference_no).exists():
                 self.reference_no = genrate_random_string(10)
+
+    def switch_premium(self, adults, childrens):
+        lead = self.quote.lead
+        data = dict(
+            effective_age=now().year - self.active_members.aggregate(
+                s=models.Max('dob'))['s'].year, adults=adults,
+            product_variant_id=self.quote.premium.product_variant_id,
+            childrens=childrens
+        )
+        for member in constants.RELATION_CHOICES:
+            members = self.active_members.filter(relation=member)
+            if members.exists():
+                data['%s_age' % (member)] = members.get().age
+        data['customer_segment_id'] = lead.get_customer_segment(**data).id
+        self.quote.lead.refresh_quote_data(**data)
+        quote = lead.get_quotes().first()
+        if not quote:
+            raise RecommendationException('No quote found for this creteria')
+        self.quote_id = lead.get_quotes().first()
+        self.save()
 
     def add_default_members(self):
         lead = self.quote.lead
@@ -179,7 +207,7 @@ class Member(BaseModel):
     def age(self):
         if not self.dob:
             return
-        return '%s Years' % int((
+        return int((
             now().today().date() - self.dob).days / 365.2425)
 
     @property
