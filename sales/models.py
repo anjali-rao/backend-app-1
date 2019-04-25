@@ -169,6 +169,14 @@ class Application(BaseModel):
             self.company_category.company.name)
 
 
+class ExistingPolicies(BaseModel):
+    application = models.ForeignKey(
+        'sales.Application', on_delete=models.CASCADE)
+    insurer = models.CharField(max_length=128)
+    suminsured = models.FloatField(default=0)
+    deductible = models.FloatField(default=0)
+
+
 class Member(BaseModel):
     application = models.ForeignKey(
         'sales.Application', on_delete=models.CASCADE)
@@ -225,8 +233,10 @@ class Member(BaseModel):
 class Nominee(BaseModel):
     application = models.ForeignKey(
         'sales.Application', on_delete=models.CASCADE)
+    relation = models.CharField(
+        max_length=128, choices=get_choices(constants.RELATION_CHOICES),
+        db_index=True)
     first_name = models.CharField(max_length=128)
-    middle_name = models.CharField(max_length=128, blank=True)
     last_name = models.CharField(max_length=128)
     phone_no = models.CharField(max_length=10)
     ignore = models.BooleanField(default=False)
@@ -236,6 +246,11 @@ class Nominee(BaseModel):
         if existing_nominee.exists():
             existing_nominee.update(ignore=True)
         super(Nominee, self).save(*ar, **kw)
+
+    def get_full_name(self):
+        name = '%s %s %s' % (
+            self.first_name, self.last_name)
+        return name.strip()
 
 
 class Insurance(BaseModel):
