@@ -4,7 +4,7 @@ from sales.models import (
     Application, Member, Nominee, Quote, HealthInsurance,
     TravelInsurance
 )
-from crm.models import Contact
+from crm.models import Contact, KYCDocument
 from users.models import Pincode, Address
 from utils import constants, mixins
 
@@ -133,6 +133,11 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                 self.instance = instance
             self.instance = super(
                 UpdateContactDetailsSerializer, self).save(**kwargs)
+            kycdocument, created = KYCDocument.objects.get_or_create(
+                document_type=validated_data['document_type'],
+                docunent_number=validated_data['document_number'],
+                contact_id=self.instance.id
+            )
             self.instance.update_fields(**dict(
                 address_id=Address.objects.create(
                     pincode_id=Pincode.get_pincode(
