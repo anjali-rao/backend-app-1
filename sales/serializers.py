@@ -247,7 +247,18 @@ class CreateNomineeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Nominee
-        fields = ('first_name', 'middle_name', 'last_name', 'phone_no')
+        fields = ('first_name', 'last_name', 'relation', 'phone_no')
+
+
+class NomineeSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+
+    def get_full_name(self, obj):
+        return obj.get_full_name()
+
+    class Meta:
+        model = Nominee
+        fields = ('full_name', 'phone_no', 'relation')
 
 
 class HealthInsuranceSerializer(serializers.ModelSerializer):
@@ -267,3 +278,50 @@ class TravalInsuranceSerializer(serializers.ModelSerializer):
     class Meta:
         model = TravelInsurance
         fields = '__all__'
+
+
+class TermsSerializer(serializers.ModelSerializer):
+    terms_and_conditions = serializers.BooleanField(required=True)
+
+    class Meta:
+        model = Application
+        fields = ('terms_and_conditions',)
+
+
+class SummarySerializer(serializers.ModelSerializer):
+    proposer_details = serializers.SerializerMethodField()
+    insured_members = serializers.SerializerMethodField()
+    nominee_details = serializers.SerializerMethodField()
+    insurance_fields = serializers.SerializerMethodField()
+
+    def get_proposer_details(self, obj):
+        return GetProposalDetailsSerializer(obj.quote.lead.contact).data
+
+    def get_insured_members(self, obj):
+        return GetApplicationMembersSerializer(
+            obj.active_members, many=True).data
+
+    def get_nominee_details(self, obj):
+        return NomineeSerializer(obj.nominee_set.first()).data
+
+    def get_insurance_fields(self, obj):
+        return INSURANCE_SERIALIZER_MAPPING[obj.application_type](
+            getattr(obj, obj.application_type)
+        ).data
+
+    class Meta:
+        model = Application
+        fields = (
+            'proposer_details', 'insured_members', 'nominee_details',
+            'insurance_fields'
+        )
+
+
+INSURANCE_SERIALIZER_MAPPING = {
+    'healthinsurance': HealthInsuranceSerializer,
+    'travelinsurance': TravalInsuranceSerializer
+}
+
+
+def get_insurance_serializer(application_type):
+    return INSURANCE_SERIALIZER_MAPPING.get(application_type)
