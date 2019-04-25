@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from sales.models import (
     Application, Member, Nominee, Quote, HealthInsurance,
-    TravelInsurance
+    TravelInsurance, ExistingPolicies
 )
 from crm.models import Contact, KYCDocument
 from users.models import Pincode, Address
@@ -42,7 +42,7 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     contact_id=contact.id, status='inprogress', stage='cart'
                 ))
             return instance
-        except IntegrityError:
+        except IntegrityError as e:
             raise mixins.NotAcceptable(
                 constants.APPLICATION_ALREAY_EXISTS)
         raise mixins.NotAcceptable(
@@ -277,11 +277,10 @@ class HealthInsuranceSerializer(serializers.ModelSerializer):
     class Meta:
         model = HealthInsurance
         fields = (
-            "gastrointestinal_disease", "neuronal_diseases", "existing_policy",
-            "respiratory_diseases", "cardiovascular_disease", "ent_diseases",
-            "blood_diseases", "alcohol_consumption", "tabacco_consumption",
-            "cigarette_consumption", "previous_claim", "proposal_terms",
-            "oncology_disease")
+            "gastrointestinal_disease", "neuronal_diseases", "ent_diseases",
+            "respiratory_diseases", "cardiovascular_disease", "blood_diseases"
+            "alcohol_consumption", "tabacco_consumption", "previous_claim",
+            "proposal_terms", "oncology_disease", "cigarette_consumption")
 
 
 class TravalInsuranceSerializer(serializers.ModelSerializer):
@@ -336,3 +335,10 @@ INSURANCE_SERIALIZER_MAPPING = {
 
 def get_insurance_serializer(application_type):
     return INSURANCE_SERIALIZER_MAPPING.get(application_type)
+
+
+class ExistingPolicySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ExistingPolicies
+        fields = ('insurer', 'suminsured', 'deductible')
