@@ -12,7 +12,7 @@ from sales.serializers import (
     GetApplicationMembersSerializer, CreateMemberSerializers,
     CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
     TravalInsuranceSerializer, TermsSerializer, NomineeSerializer,
-    get_insurance_serializer
+    get_insurance_serializer, ExistingPolicySerializer
 )
 
 from django.core.exceptions import ValidationError
@@ -117,6 +117,16 @@ class CreateApplicationNominee(generics.CreateAPIView):
             serializer.save(application_id=self.get_object().id)
 
 
+class CreateExistingPolicies(generics.CreateAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = ExistingPolicySerializer
+    queryset = Application.objects.all()
+
+    def perform_create(self, serializer):
+        with transaction.atomic():
+            serializer.save(application_id=self.get_object().id)
+
+
 class UpdateInsuranceFields(generics.UpdateAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = Application.objects.all()
@@ -184,6 +194,10 @@ class ApplicationSummary(generics.RetrieveUpdateAPIView):
         }, {
             'name': '%s_fields' % instance.application_type,
             'value': get_insurance_serializer(instance.application_type)
+        }, {
+            'name': 'existing_policies',
+            'value': ExistingPolicySerializer(
+                instance.existingpolicies_set.all())
         }]
 
         return Response(data)
