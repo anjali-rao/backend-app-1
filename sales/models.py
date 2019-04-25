@@ -184,7 +184,6 @@ class Member(BaseModel):
         max_length=128, choices=get_choices(constants.RELATION_CHOICES),
         db_index=True)
     first_name = models.CharField(max_length=128, blank=True)
-    middle_name = models.CharField(max_length=128, blank=True)
     last_name = models.CharField(max_length=128, blank=True)
     dob = models.DateField(null=True)
     gender = models.CharField(
@@ -209,7 +208,7 @@ class Member(BaseModel):
         super(Member, self).save(*ar, **kw)
 
     def get_full_name(self):
-        name = '%s %s %s' % (self.first_name, self.middle_name, self.last_name)
+        name = '%s %s' % (self.first_name, self.last_name)
         return name.strip()
 
     @property

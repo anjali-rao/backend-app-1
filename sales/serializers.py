@@ -198,8 +198,10 @@ class CreateMemberSerializers(serializers.ModelSerializer):
         ).first()
         if validated_data['relation'] in ['son', 'daughter']:
             self.Meta.model.objects.filter(
-                relation=validated_data['relation'], ignore=None,
+                relation=validated_data['relation'],
                 application_id=validated_data['application_id'],
+                first_name=validated_data['first_name'],
+                last_name=validated_data['last_name']
             ).update(ignore=True)
             self.instance = None
         self.instance = super(CreateMemberSerializers, self).save(**kwargs)
@@ -209,9 +211,8 @@ class CreateMemberSerializers(serializers.ModelSerializer):
     class Meta:
         model = Member
         fields = (
-            'gender', 'first_name', 'middle_name', 'last_name', 'dob',
-            'occupation', 'relation', 'height', 'weight', 'height_foot',
-            'height_inches', 'id')
+            'gender', 'first_name', 'last_name', 'dob', 'relation',
+            'height', 'weight', 'height_foot', 'height_inches', 'id')
         read_only_fields = ('height_foot', 'height_inches')
 
 
