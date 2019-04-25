@@ -94,7 +94,7 @@ class RetrieveUpdateApplicationMembers(
                 # To Dos' Use Celery
                 update_insurance_fields(application_id=application.id)
                 adults = application.active_members.filter(
-                    dob__year__gte=(now().year - 18)).count()
+                    dob__year__lte=(now().year - 18)).count()
                 childrens = application.active_members.count() - adults
                 if lead.adults != adults or lead.childrens != childrens:
                     application.switch_premium(adults, childrens)
