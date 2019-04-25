@@ -28,7 +28,7 @@ class CreateApplication(generics.CreateAPIView):
 
 
 class RetrieveUpdateProposerDetails(
-        generics.RetrieveUpdateAPIView, mixins.MethodSerializerView):
+        mixins.MethodSerializerView, generics.RetrieveUpdateAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = Application.objects.all()
     _obj = None

@@ -22,7 +22,7 @@ LEAD_STAGE_CHOICES = (
 
 STATUS_CHOICES = (('pending','Pending'),('accepted','Accepted'),('rejected','Rejected')) # noqa
 KYC_DOC_TYPES = (
-    'cancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
+    'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
     'ration_card', 'passport', 'birth_certificate'
 )
 QUESTION_COICES = ('mcq', 'single')
