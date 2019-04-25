@@ -21,7 +21,10 @@ LEAD_STAGE_CHOICES = (
     ('submitted', 'Submitted'), ('issued', 'Issued'))
 
 STATUS_CHOICES = (('pending','Pending'),('accepted','Accepted'),('rejected','Rejected')) # noqa
-KYC_DOC_TYPES = ('pan', 'passport', 'voter_card')
+KYC_DOC_TYPES = (
+    'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
+    'ration_card', 'passport', 'birth_certificate'
+)
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
@@ -107,6 +110,17 @@ FAILED_APPLICATION_CREATION = 'Failed to add contact. Please contact GoPlannr.'
 APPLICATION_ALREAY_EXISTS = 'Application already exists with quote id.'
 ANSWER_CANNOT_BE_LEFT_BLANK = 'Answers are required.'
 INVALID_FAMILY_DETAILS = 'Please provide valid family details.'
+LEAD_ERROR = 'Lead not provided or invalid lead id provided.'
+NO_QUOTES_FOUND = 'No Quotes found for given suminsured.'
+INVALID_INPUT = 'Invalid input provided.'
+COMPARISION_ERROR = 'Atleast two quotes are required for comparision'
+INCOMPLETE_APPLICATION = 'Application not completed, please fill %s'
+LOOKUP_ERROR = 'Expected view %s to be called with a URL keyword argument '
+'named "%s". Fix your URL conf, or set the `.lookup_field` '
+'attribute on the view correctly.'
+APPLICATION_UNMAPPED = 'Application not mapped to any insurance or inproper application type'
+INVALID_QUOTE_ID = 'Invalid Quote id provided.'
+
 
 # Creation Fields
 ACCOUNT_CREATION_FIELDS = (

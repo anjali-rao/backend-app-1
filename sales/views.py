@@ -5,12 +5,14 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 
 from users.decorators import UserAuthentication
-from utils import mixins
+from utils import mixins, constants
 from sales.serializers import (
     CreateApplicationSerializer, GetProposalDetailsSerializer,
     Application, UpdateContactDetailsSerializer, Contact,
     GetApplicationMembersSerializer, CreateMemberSerializers,
-    CreateNomineeSerializer, MemberSerializer
+    CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
+    TravalInsuranceSerializer, TermsSerializer, NomineeSerializer,
+    get_insurance_serializer, ExistingPolicySerializer
 )
 
 from django.core.exceptions import ValidationError
@@ -41,11 +43,8 @@ class RetrieveUpdateProposerDetails(
 
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
 
-        assert lookup_url_kwarg in self.kwargs, (
-            'Expected view %s to be called with a URL keyword argument '
-            'named "%s". Fix your URL conf, or set the `.lookup_field` '
-            'attribute on the view correctly.' %
-            (self.__class__.__name__, lookup_url_kwarg)
+        assert lookup_url_kwarg in self.kwargs, (constants.LOOKUP_ERROR % (
+            self.__class__.__name__, lookup_url_kwarg)
         )
 
         if 'search' in self.request.query_params and self.request.method == 'GET': # noqa
@@ -95,7 +94,7 @@ class RetrieveUpdateApplicationMembers(
                 # To Dos' Use Celery
                 update_insurance_fields(application_id=application.id)
                 adults = application.active_members.filter(
-                    dob__year__gte=(now().year - 18)).count()
+                    dob__year__lte=(now().year - 18)).count()
                 childrens = application.active_members.count() - adults
                 if lead.adults != adults or lead.childrens != childrens:
                     application.switch_premium(adults, childrens)
@@ -116,3 +115,89 @@ class CreateApplicationNominee(generics.CreateAPIView):
     def perform_create(self, serializer):
         with transaction.atomic():
             serializer.save(application_id=self.get_object().id)
+
+
+class CreateExistingPolicies(generics.CreateAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = ExistingPolicySerializer
+    queryset = Application.objects.all()
+
+    def perform_create(self, serializer):
+        with transaction.atomic():
+            serializer.save(application_id=self.get_object().id)
+
+
+class UpdateInsuranceFields(generics.UpdateAPIView):
+    authentication_classes = (UserAuthentication,)
+    queryset = Application.objects.all()
+    insurance_serializer_classes = dict(
+        healthinsurance=HealthInsuranceSerializer,
+        travelinsurance=TravalInsuranceSerializer
+    )
+    application_type = None
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        assert lookup_url_kwarg in self.kwargs, (constants.LOOKUP_ERROR % (
+            self.__class__.__name__, lookup_url_kwarg)
+        )
+        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+        try:
+            application = _get_object_or_404(queryset, **filter_kwargs)
+            self.application_type = application.application_type
+            if not hasattr(application, application.application_type):
+                self._obj = Http404
+            else:
+                self._obj = getattr(application, application.application_type)
+        except (TypeError, ValueError, ValidationError):
+            self._obj = Http404
+        # May raise a permission denied
+        self.check_object_permissions(self.request, self._obj)
+        return self._obj
+
+    def get_serializer_class(self):
+        serializer_cls = self.insurance_serializer_classes.get(
+            self.application_type)
+        if serializer_cls:
+            return serializer_cls
+
+        raise mixins.APIException(constants.APPLICATION_UNMAPPED)
+
+
+class ApplicationSummary(generics.RetrieveUpdateAPIView):
+    authentication_classes = (UserAuthentication,)
+    queryset = Application.objects.all()
+    serializer_classes = TermsSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        nominee = instance.nominee_set.first()
+        if not nominee:
+            raise mixins.APIException(
+                constants.INCOMPLETE_APPLICATION % 'nominee details')
+        if not hasattr(instance, instance.application_type):
+            raise mixins.APIException(constants.APPLICATION_UNMAPPED)
+        data = [{
+            'name': 'proposer_details',
+            'value': GetProposalDetailsSerializer(
+                instance.quote.lead.contact).data
+        }, {
+            'name': 'insured_members',
+            'value': GetApplicationMembersSerializer(
+                instance.active_members, many=True).data
+        }, {
+            'name': 'nominee_details',
+            'value': NomineeSerializer(nominee)
+        }, {
+            'name': '%s_fields' % instance.application_type,
+            'value': get_insurance_serializer(instance.application_type)
+        }, {
+            'name': 'existing_policies',
+            'value': ExistingPolicySerializer(
+                instance.existingpolicies_set.all())
+        }]
+
+        return Response(data)
