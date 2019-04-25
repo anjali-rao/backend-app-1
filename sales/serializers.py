@@ -16,13 +16,10 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
     contact_name = serializers.CharField(required=True, write_only=True)
     contact_no = serializers.CharField(required=True, write_only=True)
     application_id = serializers.SerializerMethodField()
-    application_reference_no = serializers.SerializerMethodField()
 
     def validate_quote_id(self, value):
         if not Quote.objects.filter(id=value).exists():
-            raise serializers.ValidationError(
-                'Invalid Quote id provided.'
-            )
+            raise serializers.ValidationError(constants.INVALID_QUOTE_ID)
         return value
 
     def create(self, validated_data):
@@ -36,11 +33,9 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     phone_no=validated_data['contact_no'], parent=None)
                 if created:
                     contact.update_fields(**dict(
-                        user_id=lead.user.id, first_name=full_name[0]
-                    ))
+                        user_id=lead.user.id, first_name=full_name[0]))
                 lead.update_fields(**dict(
-                    contact_id=contact.id, status='inprogress', stage='cart'
-                ))
+                    contact_id=contact.id, status='inprogress', stage='cart'))
             return instance
         except IntegrityError as e:
             raise mixins.NotAcceptable(
@@ -51,14 +46,10 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
     def get_application_id(self, obj):
         return obj.id
 
-    def get_application_reference_no(self, obj):
-        return obj.reference_no
-
     class Meta:
         model = Application
         fields = (
-            'quote_id', 'application_id', 'application_reference_no',
-            'contact_name', 'contact_no',)
+            'quote_id', 'application_id', 'contact_name', 'contact_no',)
         read_only_fields = ('reference_no',)
 
 
@@ -137,8 +128,7 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                 UpdateContactDetailsSerializer, self).save(**kwargs)
             kycdocument, created = KYCDocument.objects.get_or_create(
                 document_type=validated_data['document_type'],
-                contact_id=self.instance.id
-            )
+                contact_id=self.instance.id)
             kycdocument.document_number = validated_data['document_number']
             kycdocument.save()
             self.instance.update_fields(**dict(
@@ -299,35 +289,6 @@ class TermsSerializer(serializers.ModelSerializer):
         fields = ('terms_and_conditions',)
 
 
-class SummarySerializer(serializers.ModelSerializer):
-    proposer_details = serializers.SerializerMethodField()
-    insured_members = serializers.SerializerMethodField()
-    nominee_details = serializers.SerializerMethodField()
-    insurance_fields = serializers.SerializerMethodField()
-
-    def get_proposer_details(self, obj):
-        return GetProposalDetailsSerializer(obj.quote.lead.contact).data
-
-    def get_insured_members(self, obj):
-        return GetApplicationMembersSerializer(
-            obj.active_members, many=True).data
-
-    def get_nominee_details(self, obj):
-        return NomineeSerializer(obj.nominee_set.first()).data
-
-    def get_insurance_fields(self, obj):
-        return INSURANCE_SERIALIZER_MAPPING[obj.application_type](
-            getattr(obj, obj.application_type)
-        ).data
-
-    class Meta:
-        model = Application
-        fields = (
-            'proposer_details', 'insured_members', 'nominee_details',
-            'insurance_fields'
-        )
-
-
 INSURANCE_SERIALIZER_MAPPING = {
     'healthinsurance': HealthInsuranceSerializer,
     'travelinsurance': TravalInsuranceSerializer
@@ -343,3 +304,11 @@ class ExistingPolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = ExistingPolicies
         fields = ('insurer', 'suminsured', 'deductible')
+
+    @property
+    def data(self):
+        # TO DOS: Remove this when app is build
+        self._data = dict(
+            message='Existing policies added successfully.'
+        )
+        return self._data

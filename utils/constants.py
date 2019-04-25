@@ -119,6 +119,7 @@ LOOKUP_ERROR = 'Expected view %s to be called with a URL keyword argument '
 'named "%s". Fix your URL conf, or set the `.lookup_field` '
 'attribute on the view correctly.'
 APPLICATION_UNMAPPED = 'Application not mapped to any insurance or inproper application type'
+INVALID_QUOTE_ID = 'Invalid Quote id provided.'
 
 
 # Creation Fields

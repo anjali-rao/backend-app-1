@@ -248,7 +248,7 @@ class Nominee(BaseModel):
         super(Nominee, self).save(*ar, **kw)
 
     def get_full_name(self):
-        name = '%s %s %s' % (
+        name = '%s %s' % (
             self.first_name, self.last_name)
         return name.strip()
 
