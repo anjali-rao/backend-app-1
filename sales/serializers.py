@@ -139,7 +139,7 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                 document_type=validated_data['document_type'],
                 contact_id=self.instance.id
             )
-            kycdocument.docunent_number = validated_data['document_number']
+            kycdocument.document_number = validated_data['document_number']
             kycdocument.save()
             self.instance.update_fields(**dict(
                 address_id=Address.objects.create(
