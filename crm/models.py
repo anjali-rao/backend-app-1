@@ -256,7 +256,7 @@ class Contact(BaseModel):
 class KYCDocument(BaseModel):
     contact = models.ForeignKey(
         'crm.Contact', on_delete=models.CASCADE, null=True, blank=True)
-    docunent_number = models.CharField(max_length=64)
+    document_number = models.CharField(max_length=64)
     document_type = models.CharField(
         choices=get_choices(constants.KYC_DOC_TYPES), max_length=16)
     file = models.FileField(upload_to=get_kyc_upload_path)
