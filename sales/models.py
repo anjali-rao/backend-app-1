@@ -68,7 +68,7 @@ class Application(BaseModel):
     reference_no = models.CharField(max_length=10, unique=True, db_index=True)
     application_type = models.CharField(
         max_length=32, choices=get_choices(constants.APPLICATION_TYPES))
-    quote = models.OneToOneField('sales.Quote', on_delete=models.PROTECT)
+    quote = models.OneToOneField('sales.Quote', on_delete=models.CASCADE)
     address = models.ForeignKey(
         'users.Address', on_delete=models.PROTECT, null=True, blank=True)
     status = models.CharField(
@@ -101,14 +101,14 @@ class Application(BaseModel):
         )
         for member in constants.RELATION_CHOICES:
             members = self.active_members.filter(relation=member)
-            if members.exists():
+            if members.exists() and member not in ['son', 'daughter']:
                 data['%s_age' % (member)] = members.get().age
         data['customer_segment_id'] = lead.get_customer_segment(**data).id
         self.quote.lead.refresh_quote_data(**data)
         quote = lead.get_quotes().first()
         if not quote:
             raise RecommendationException('No quote found for this creteria')
-        self.quote_id = lead.get_quotes().first()
+        self.quote_id = lead.get_quotes().first().id
         self.save()
 
     def add_default_members(self):
@@ -169,6 +169,14 @@ class Application(BaseModel):
             self.company_category.company.name)
 
 
+class ExistingPolicies(BaseModel):
+    application = models.ForeignKey(
+        'sales.Application', on_delete=models.CASCADE, null=True, blank=True)
+    insurer = models.CharField(max_length=128)
+    suminsured = models.FloatField(default=0)
+    deductible = models.FloatField(default=0)
+
+
 class Member(BaseModel):
     application = models.ForeignKey(
         'sales.Application', on_delete=models.CASCADE)
@@ -182,7 +190,8 @@ class Member(BaseModel):
     gender = models.CharField(
         choices=get_choices(constants.GENDER), max_length=16)
     occupation = models.CharField(
-        choices=get_choices(constants.OCCUPATION_CHOICES), max_length=32
+        choices=get_choices(constants.OCCUPATION_CHOICES), max_length=32,
+        null=True, blank=True
     )
     height = models.FloatField(default=0.0)
     weight = models.FloatField(default=0.0)
@@ -225,8 +234,10 @@ class Member(BaseModel):
 class Nominee(BaseModel):
     application = models.ForeignKey(
         'sales.Application', on_delete=models.CASCADE)
+    relation = models.CharField(
+        max_length=128, choices=get_choices(constants.RELATION_CHOICES),
+        db_index=True)
     first_name = models.CharField(max_length=128)
-    middle_name = models.CharField(max_length=128, blank=True)
     last_name = models.CharField(max_length=128)
     phone_no = models.CharField(max_length=10)
     ignore = models.BooleanField(default=False)
@@ -236,6 +247,11 @@ class Nominee(BaseModel):
         if existing_nominee.exists():
             existing_nominee.update(ignore=True)
         super(Nominee, self).save(*ar, **kw)
+
+    def get_full_name(self):
+        name = '%s %s %s' % (
+            self.first_name, self.last_name)
+        return name.strip()
 
 
 class Insurance(BaseModel):
@@ -272,8 +288,6 @@ class HealthInsurance(Insurance):
         default=False, help_text=constants.PREVIOUS_CLAIM)
     proposal_terms = models.BooleanField(
         default=False, help_text=constants.PROPOSAL_TERMS)
-    existing_policy = JSONField(
-        default=dict, help_text=constants.EXISTING_POLICY)
 
     def update_default_fields(self, kw):
         for field in constants.HEALTHINSURANCE_FIELDS:
@@ -281,8 +295,6 @@ class HealthInsurance(Insurance):
         self.alcohol_consumption = dict(quantity=None)
         self.tabacco_consumption = dict(packets=None)
         self.cigarette_consumption = dict(sticks=None)
-        self.existing_policy = dict(
-            insurer=None, suminsured=0.0, deductible=0.0)
         self.save()
 
 

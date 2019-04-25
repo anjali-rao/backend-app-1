@@ -23,7 +23,7 @@ class ContactAdmin(admin.ModelAdmin):
 
 @admin.register(KYCDocument)
 class KYCDocumentAdmin(admin.ModelAdmin):
-    list_display = ('contact', 'document_type', 'docunent_number')
+    list_display = ('contact', 'document_type', 'document_number')
     raw_id_fields = ('contact',)
     list_filter = ('document_type',)
     search_fields = ('docunent_number', 'contact__phone_no')

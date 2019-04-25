@@ -1,7 +1,10 @@
 from rest_framework import serializers
 
-from sales.models import Application, Member, Nominee, Quote
-from crm.models import Contact
+from sales.models import (
+    Application, Member, Nominee, Quote, HealthInsurance,
+    TravelInsurance, ExistingPolicies
+)
+from crm.models import Contact, KYCDocument
 from users.models import Pincode, Address
 from utils import constants, mixins
 
@@ -39,7 +42,7 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     contact_id=contact.id, status='inprogress', stage='cart'
                 ))
             return instance
-        except IntegrityError:
+        except IntegrityError as e:
             raise mixins.NotAcceptable(
                 constants.APPLICATION_ALREAY_EXISTS)
         raise mixins.NotAcceptable(
@@ -68,13 +71,15 @@ class GetProposalDetailsSerializer(serializers.ModelSerializer):
     flat_no = serializers.SerializerMethodField()
 
     def get_document_type(self, obj):
-        if hasattr(obj, 'kycdocument'):
-            return obj.kycdocument.document_type
+        kyc_docs = obj.kycdocument_set.all()
+        if kyc_docs.exists():
+            return kyc_docs.latest('modified').document_type
         return ''
 
     def get_document_number(self, obj):
-        if hasattr(obj, 'kycdocument'):
-            return obj.kycdocument.document_number
+        kyc_docs = obj.kycdocument_set.all()
+        if kyc_docs.exists():
+            return kyc_docs.latest('modified').document_number
         return ''
 
     def get_contact_id(self, obj):
@@ -108,6 +113,8 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
     document_type = serializers.CharField(required=True)
     document_number = serializers.CharField(required=True)
     pincode = serializers.CharField(required=True)
+    street = serializers.CharField(required=True)
+    flat_no = serializers.CharField(required=True)
 
     def validate_pincode(self, value):
         if not Pincode.get_pincode(value):
@@ -119,21 +126,27 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             list(self.validated_data.items()) +
             list(kwargs.items())
         )
-        app = Application.objects.get(
-            id=validated_data['application_id'])
+        app = Application.objects.get(id=validated_data['application_id'])
         contact = app.quote.lead.contact
         with transaction.atomic():
             instance, created = self.Meta.model.objects.get_or_create(
-                phone_no=validated_data['phone_no']
-            )
+                phone_no=validated_data['phone_no'])
             if created:
                 self.instance = instance
             self.instance = super(
                 UpdateContactDetailsSerializer, self).save(**kwargs)
+            kycdocument, created = KYCDocument.objects.get_or_create(
+                document_type=validated_data['document_type'],
+                contact_id=self.instance.id
+            )
+            kycdocument.document_number = validated_data['document_number']
+            kycdocument.save()
             self.instance.update_fields(**dict(
                 address_id=Address.objects.create(
                     pincode_id=Pincode.get_pincode(
-                        validated_data['pincode']).id
+                        validated_data['pincode']).id,
+                    flat_no=validated_data['flat_no'],
+                    street=validated_data['street']
                 ).id,
                 parent_id=(contact.id if created else contact.parent),
                 user_id=contact.user.id, is_client=True
@@ -153,10 +166,11 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
         fields = (
             'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
             'occupation', 'marital_status', 'email', 'pincode',
-            'document_type', 'document_number', 'middle_name'
+            'document_type', 'document_number', 'middle_name',
+            'flat_no', 'street'
         )
         read_only_fields = (
-            'document_type', 'document_number', 'pincode')
+            'document_type', 'document_number', 'pincode', 'flat_no', 'street')
 
 
 class CreateMemberSerializers(serializers.ModelSerializer):
@@ -244,4 +258,87 @@ class CreateNomineeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Nominee
-        fields = ('first_name', 'middle_name', 'last_name', 'phone_no')
+        fields = ('first_name', 'last_name', 'relation', 'phone_no')
+
+
+class NomineeSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+
+    def get_full_name(self, obj):
+        return obj.get_full_name()
+
+    class Meta:
+        model = Nominee
+        fields = ('full_name', 'phone_no', 'relation')
+
+
+class HealthInsuranceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = HealthInsurance
+        fields = (
+            "gastrointestinal_disease", "neuronal_diseases", "ent_diseases",
+            "respiratory_diseases", "cardiovascular_disease", "blood_diseases"
+            "alcohol_consumption", "tabacco_consumption", "previous_claim",
+            "proposal_terms", "oncology_disease", "cigarette_consumption")
+
+
+class TravalInsuranceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = TravelInsurance
+        fields = '__all__'
+
+
+class TermsSerializer(serializers.ModelSerializer):
+    terms_and_conditions = serializers.BooleanField(required=True)
+
+    class Meta:
+        model = Application
+        fields = ('terms_and_conditions',)
+
+
+class SummarySerializer(serializers.ModelSerializer):
+    proposer_details = serializers.SerializerMethodField()
+    insured_members = serializers.SerializerMethodField()
+    nominee_details = serializers.SerializerMethodField()
+    insurance_fields = serializers.SerializerMethodField()
+
+    def get_proposer_details(self, obj):
+        return GetProposalDetailsSerializer(obj.quote.lead.contact).data
+
+    def get_insured_members(self, obj):
+        return GetApplicationMembersSerializer(
+            obj.active_members, many=True).data
+
+    def get_nominee_details(self, obj):
+        return NomineeSerializer(obj.nominee_set.first()).data
+
+    def get_insurance_fields(self, obj):
+        return INSURANCE_SERIALIZER_MAPPING[obj.application_type](
+            getattr(obj, obj.application_type)
+        ).data
+
+    class Meta:
+        model = Application
+        fields = (
+            'proposer_details', 'insured_members', 'nominee_details',
+            'insurance_fields'
+        )
+
+
+INSURANCE_SERIALIZER_MAPPING = {
+    'healthinsurance': HealthInsuranceSerializer,
+    'travelinsurance': TravalInsuranceSerializer
+}
+
+
+def get_insurance_serializer(application_type):
+    return INSURANCE_SERIALIZER_MAPPING.get(application_type)
+
+
+class ExistingPolicySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ExistingPolicies
+        fields = ('insurer', 'suminsured', 'deductible')
