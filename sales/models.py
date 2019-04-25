@@ -190,7 +190,8 @@ class Member(BaseModel):
     gender = models.CharField(
         choices=get_choices(constants.GENDER), max_length=16)
     occupation = models.CharField(
-        choices=get_choices(constants.OCCUPATION_CHOICES), max_length=32
+        choices=get_choices(constants.OCCUPATION_CHOICES), max_length=32,
+        null=True, blank=True
     )
     height = models.FloatField(default=0.0)
     weight = models.FloatField(default=0.0)
