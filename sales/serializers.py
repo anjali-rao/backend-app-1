@@ -71,13 +71,15 @@ class GetProposalDetailsSerializer(serializers.ModelSerializer):
     flat_no = serializers.SerializerMethodField()
 
     def get_document_type(self, obj):
-        if hasattr(obj, 'kycdocument'):
-            return obj.kycdocument.document_type
+        kyc_docs = obj.kycdocument_set.all()
+        if kyc_docs.exists():
+            return kyc_docs.latest('modified').document_type
         return ''
 
     def get_document_number(self, obj):
-        if hasattr(obj, 'kycdocument'):
-            return obj.kycdocument.document_number
+        kyc_docs = obj.kycdocument_set.all()
+        if kyc_docs.exists():
+            return kyc_docs.latest('modified').document_number
         return ''
 
     def get_contact_id(self, obj):
@@ -111,6 +113,8 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
     document_type = serializers.CharField(required=True)
     document_number = serializers.CharField(required=True)
     pincode = serializers.CharField(required=True)
+    street = serializers.CharField(required=True)
+    flat_no = serializers.CharField(required=True)
 
     def validate_pincode(self, value):
         if not Pincode.get_pincode(value):
@@ -122,26 +126,27 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             list(self.validated_data.items()) +
             list(kwargs.items())
         )
-        app = Application.objects.get(
-            id=validated_data['application_id'])
+        app = Application.objects.get(id=validated_data['application_id'])
         contact = app.quote.lead.contact
         with transaction.atomic():
             instance, created = self.Meta.model.objects.get_or_create(
-                phone_no=validated_data['phone_no']
-            )
+                phone_no=validated_data['phone_no'])
             if created:
                 self.instance = instance
             self.instance = super(
                 UpdateContactDetailsSerializer, self).save(**kwargs)
             kycdocument, created = KYCDocument.objects.get_or_create(
                 document_type=validated_data['document_type'],
-                docunent_number=validated_data['document_number'],
                 contact_id=self.instance.id
             )
+            kycdocument.docunent_number = validated_data['document_number']
+            kycdocument.save()
             self.instance.update_fields(**dict(
                 address_id=Address.objects.create(
                     pincode_id=Pincode.get_pincode(
-                        validated_data['pincode']).id
+                        validated_data['pincode']).id,
+                    flat_no=validated_data['flat_no'],
+                    street=validated_data['street']
                 ).id,
                 parent_id=(contact.id if created else contact.parent),
                 user_id=contact.user.id, is_client=True
@@ -161,10 +166,11 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
         fields = (
             'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
             'occupation', 'marital_status', 'email', 'pincode',
-            'document_type', 'document_number', 'middle_name'
+            'document_type', 'document_number', 'middle_name',
+            'flat_no', 'street'
         )
         read_only_fields = (
-            'document_type', 'document_number', 'pincode')
+            'document_type', 'document_number', 'pincode', 'flat_no', 'street')
 
 
 class CreateMemberSerializers(serializers.ModelSerializer):
