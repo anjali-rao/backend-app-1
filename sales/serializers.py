@@ -187,12 +187,6 @@ class CreateMemberSerializers(serializers.ModelSerializer):
             relation=validated_data['relation']
         ).first()
         if validated_data['relation'] in ['son', 'daughter']:
-            self.Meta.model.objects.filter(
-                relation=validated_data['relation'],
-                application_id=validated_data['application_id'],
-                first_name=validated_data['first_name'],
-                last_name=validated_data['last_name']
-            ).update(ignore=True)
             self.instance = None
         self.instance = super(CreateMemberSerializers, self).save(**kwargs)
         self.instance.ignore = False
