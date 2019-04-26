@@ -30,10 +30,12 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     quote_id=validated_data['quote_id'])
                 lead = instance.quote.lead
                 contact, created = Contact.objects.get_or_create(
-                    phone_no=validated_data['contact_no'], parent=None)
+                    phone_no=validated_data['contact_no'])
                 if created:
                     contact.update_fields(**dict(
-                        user_id=lead.user.id, first_name=full_name[0]))
+                        user_id=lead.user.id, first_name=full_name[0]),
+                        parent=None
+                    )
                 lead.update_fields(**dict(
                     contact_id=contact.id, status='inprogress', stage='cart'))
             return instance
@@ -187,12 +189,6 @@ class CreateMemberSerializers(serializers.ModelSerializer):
             relation=validated_data['relation']
         ).first()
         if validated_data['relation'] in ['son', 'daughter']:
-            self.Meta.model.objects.filter(
-                relation=validated_data['relation'],
-                application_id=validated_data['application_id'],
-                first_name=validated_data['first_name'],
-                last_name=validated_data['last_name']
-            ).update(ignore=True)
             self.instance = None
         self.instance = super(CreateMemberSerializers, self).save(**kwargs)
         self.instance.ignore = False
@@ -230,9 +226,8 @@ class GetApplicationMembersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Member
         fields = (
-            'application_id', 'gender', 'first_name', 'middle_name',
-            'last_name', 'dob', 'occupation', 'relation', 'height_inches',
-            'height_foot', 'weight'
+            'application_id', 'gender', 'first_name', 'last_name', 'dob',
+            'occupation', 'relation', 'height_inches', 'height_foot', 'weight'
         )
 
 
