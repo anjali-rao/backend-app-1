@@ -120,6 +120,7 @@ LOOKUP_ERROR = 'Expected view %s to be called with a URL keyword argument '
 'attribute on the view correctly.'
 APPLICATION_UNMAPPED = 'Application not mapped to any insurance or inproper application type'
 INVALID_QUOTE_ID = 'Invalid Quote id provided.'
+INVALID_QUESTION_ANSWER_COMBINATION = 'Invalid question and answer combination provided'
 
 
 # Creation Fields
@@ -149,3 +150,5 @@ ENT_DISEASE = 'Disease of Eye, Ear, Nose, Throat, Thyroid'
 CARDIOVASCULAR_DISEASE = 'Tuberculosis (TB), any Respiratory / Lung disease'
 RESPIRATORY_DISEASES = 'Any form of Heart Disease, Peripheral Vascular Disease, procedures like Angioplasty/PTCA/By Pass Surgery, valve replacement etc'
 BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Blood disorder (whether treated or not)'
+
+INSURANCE_EXCLUDE_FIELDS = ['id', 'created', 'modified', 'application']

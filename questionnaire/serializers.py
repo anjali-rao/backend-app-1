@@ -60,8 +60,10 @@ class ResponseSerializer(serializers.Serializer):
                 constants.ANSWER_CANNOT_BE_LEFT_BLANK
             )
         serializer = QuestionnaireResponseSerializer(data=value, many=True)
-        serializer.is_valid(raise_exception=True)
-        return value
+        if serializer.is_valid():
+            return value
+        raise serializers.ValidationError(
+            constants.INVALID_QUESTION_ANSWER_COMBINATION)
 
     def validate_gender(self, value):
         if value.lower() not in constants.GENDER:
