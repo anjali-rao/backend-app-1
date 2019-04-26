@@ -60,10 +60,14 @@ class ResponseSerializer(serializers.Serializer):
                 constants.ANSWER_CANNOT_BE_LEFT_BLANK
             )
         serializer = QuestionnaireResponseSerializer(data=value, many=True)
-        if serializer.is_valid():
-            return value
-        raise serializers.ValidationError(
-            constants.INVALID_QUESTION_ANSWER_COMBINATION)
+        if not serializer.is_valid():
+            error_list = []
+            for errors in serializer.errors:
+                if not errors:
+                    continue
+                error_list.extend([j for i in errors.values() for j in i])
+            raise serializers.ValidationError(error_list)
+        return value
 
     def validate_gender(self, value):
         if value.lower() not in constants.GENDER:
@@ -90,13 +94,13 @@ class QuestionnaireResponseSerializer(serializers.ModelSerializer):
     def validate_answer_id(self, value):
         if not Answer.objects.filter(id=value).exists():
             raise serializers.ValidationError(
-                constants.INVALID_ANSWER_ID)
+                constants.INVALID_ANSWER_ID % value)
         return value
 
     def validate_question_id(self, value):
         if not Question.objects.filter(id=value).exists():
             raise serializers.ValidationError(
-                constants.INVALID_QUESTION_ID)
+                constants.INVALID_QUESTION_ID % value)
         return value
 
     class Meta:
