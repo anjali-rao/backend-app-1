@@ -264,7 +264,7 @@ class HealthInsuranceSerializer(serializers.ModelSerializer):
         model = HealthInsurance
         fields = (
             "gastrointestinal_disease", "neuronal_diseases", "ent_diseases",
-            "respiratory_diseases", "cardiovascular_disease", "blood_diseases"
+            "respiratory_diseases", "cardiovascular_disease", "blood_diseases",
             "alcohol_consumption", "tabacco_consumption", "previous_claim",
             "proposal_terms", "oncology_disease", "cigarette_consumption")
 
@@ -307,3 +307,9 @@ class ExistingPolicySerializer(serializers.ModelSerializer):
             message='Existing policies added successfully.'
         )
         return self._data
+
+
+class GetInsuranceFieldsSerializer(serializers.Serializer):
+    text = serializers.CharField(required=True)
+    field_name = serializers.CharField(required=True)
+    field_requirements = serializers.JSONField(required=True)
