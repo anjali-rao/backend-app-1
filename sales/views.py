@@ -86,6 +86,8 @@ class RetrieveUpdateApplicationMembers(
         lead = application.quote.lead
         try:
             with transaction.atomic():
+                application.active_members.filter(
+                    relation__in=['son', 'daughter']).update(ignore=True)
                 for member in request.data:
                     serializer = self.get_serializer_class()(data=member)
                     serializer.is_valid(raise_exception=True)
