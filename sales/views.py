@@ -12,7 +12,8 @@ from sales.serializers import (
     GetApplicationMembersSerializer, CreateMemberSerializers,
     CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
     TravalInsuranceSerializer, TermsSerializer, NomineeSerializer,
-    get_insurance_serializer, ExistingPolicySerializer
+    get_insurance_serializer, ExistingPolicySerializer,
+    GetInsuranceFieldsSerializer
 )
 
 from django.core.exceptions import ValidationError
@@ -166,6 +167,31 @@ class UpdateInsuranceFields(generics.UpdateAPIView):
             return serializer_cls
 
         raise mixins.APIException(constants.APPLICATION_UNMAPPED)
+
+
+class GetInsuranceFields(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
+    queryset = Application.objects.all()
+    serializer_class = GetInsuranceFieldsSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if not hasattr(instance, instance.application_type):
+            raise mixins.APIException(constants.APPLICATION_UNMAPPED)
+        insurance = getattr(instance, instance.application_type)
+        data = list()
+        members = MemberSerializer(instance.active_members, many=True).data
+        for field in insurance._meta.fields:
+            if field.name in constants.INSURANCE_EXCLUDE_FIELDS:
+                continue
+            serializer = self.get_serializer(data=dict(
+                text=field.help_text,
+                field_name=field.name,
+                field_requirements=list() if field.__class__.__name__ == 'BooleanField' else members # noqa
+            ))
+            serializer.is_valid(raise_exception=True)
+            data.append(serializer.data)
+        return Response(data)
 
 
 class ApplicationSummary(generics.RetrieveUpdateAPIView):

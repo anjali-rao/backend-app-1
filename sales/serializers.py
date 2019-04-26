@@ -307,3 +307,9 @@ class ExistingPolicySerializer(serializers.ModelSerializer):
             message='Existing policies added successfully.'
         )
         return self._data
+
+
+class GetInsuranceFieldsSerializer(serializers.Serializer):
+    text = serializers.CharField(required=True)
+    field_name = serializers.CharField(required=True)
+    field_requirements = serializers.JSONField(required=True)
