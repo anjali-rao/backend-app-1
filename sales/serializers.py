@@ -30,10 +30,12 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     quote_id=validated_data['quote_id'])
                 lead = instance.quote.lead
                 contact, created = Contact.objects.get_or_create(
-                    phone_no=validated_data['contact_no'], parent=None)
+                    phone_no=validated_data['contact_no'])
                 if created:
                     contact.update_fields(**dict(
-                        user_id=lead.user.id, first_name=full_name[0]))
+                        user_id=lead.user.id, first_name=full_name[0]),
+                        parent=None
+                    )
                 lead.update_fields(**dict(
                     contact_id=contact.id, status='inprogress', stage='cart'))
             return instance
@@ -224,9 +226,8 @@ class GetApplicationMembersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Member
         fields = (
-            'application_id', 'gender', 'first_name', 'middle_name',
-            'last_name', 'dob', 'occupation', 'relation', 'height_inches',
-            'height_foot', 'weight'
+            'application_id', 'gender', 'first_name', 'last_name', 'dob',
+            'occupation', 'relation', 'height_inches', 'height_foot', 'weight'
         )
 
 
