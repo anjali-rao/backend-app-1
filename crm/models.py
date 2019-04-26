@@ -205,8 +205,6 @@ class Lead(BaseModel):
 class Contact(BaseModel):
     user = models.ForeignKey(
         'users.User', on_delete=models.CASCADE, null=True, blank=True)
-    parent = models.ForeignKey(
-        'self', on_delete=models.CASCADE, null=True, blank=True)
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
     phone_no = models.CharField(max_length=20, null=True, blank=True)
@@ -222,7 +220,6 @@ class Contact(BaseModel):
         choices=get_choices(
             constants.MARITAL_STATUS), max_length=32, null=True, blank=True)
     annual_income = models.CharField(max_length=48, null=True, blank=True)
-    is_client = models.BooleanField(default=False)
 
     def __str__(self):
         full_name = self.get_full_name()
@@ -240,12 +237,10 @@ class Contact(BaseModel):
             self.save()
 
     def is_kyc_required(self):
-        try:
-            if not self.kycdocument.file:
-                return False
-        except Exception:
-            pass
-        return True
+        kyc_docs = self.kycdocument_set.all()
+        if kyc_docs.exists():
+            return kyc_docs.latest('modified').file is not None
+        return False
 
     def get_full_name(self):
         full_name = '%s %s %s' % (

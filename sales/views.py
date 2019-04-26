@@ -218,14 +218,15 @@ class ApplicationSummary(generics.RetrieveUpdateAPIView):
                 instance.active_members, many=True).data
         }, {
             'name': 'nominee_details',
-            'value': NomineeSerializer(nominee)
+            'value': NomineeSerializer(nominee).data
         }, {
             'name': '%s_fields' % instance.application_type,
-            'value': get_insurance_serializer(instance.application_type)
+            'value': get_insurance_serializer(instance.application_type)(
+                getattr(instance, instance.application_type)).data
         }, {
             'name': 'existing_policies',
             'value': ExistingPolicySerializer(
-                instance.existingpolicies_set.all())
+                instance.existingpolicies_set.all(), many=True).data
         }]
 
         return Response(data)

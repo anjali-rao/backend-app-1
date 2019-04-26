@@ -66,6 +66,8 @@ class Quote(BaseModel):
 
 class Application(BaseModel):
     reference_no = models.CharField(max_length=10, unique=True, db_index=True)
+    client = models.ForeignKey(
+        'crm.Contact', null=True, on_delete=models.PROTECT)
     application_type = models.CharField(
         max_length=32, choices=get_choices(constants.APPLICATION_TYPES))
     quote = models.OneToOneField('sales.Quote', on_delete=models.CASCADE)
@@ -251,6 +253,27 @@ class Nominee(BaseModel):
         name = '%s %s' % (
             self.first_name, self.last_name)
         return name.strip()
+
+
+class Earnings(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    quote = models.ForeignKey(
+        'sales.Quote', on_delete=models.CASCADE, null=True, blank=True)
+    amount = models.FloatField(default=0.0)
+    earning_type = models.CharField(
+        choices=get_choices(constants.EARNING_TYPES), max_length=16)
+    sub_type = models.CharField(max_length=32)
+    paid = models.BooleanField(default=False)
+
+    @classmethod
+    def get_user_earnings(cls, user_id, earning_type=None, sub_type=None):
+        query = dict(user_id=user_id)
+        if earning_type:
+            query['earning_type'] = earning_type
+        if sub_type:
+            query['sub_type'] = sub_type
+        return cls.objects.filter(**query).annotate(
+            s=models.Sum('amount'))['s']
 
 
 class Insurance(BaseModel):
