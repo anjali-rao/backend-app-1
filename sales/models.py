@@ -126,7 +126,7 @@ class Application(BaseModel):
                     lead_id=lead.id)
                 occupation_res = responses.filter(question__title='Occupation')
                 if occupation_res.exists():
-                    instance.occupation = responses.get().answer.answer.replace(' ', '_').lower() # noqa
+                    instance.occupation = responses.latest('created').answer.answer.replace(' ', '_').lower() # noqa
             return instance
 
         for member, age in lead.family.items():
