@@ -71,8 +71,6 @@ class Application(BaseModel):
     application_type = models.CharField(
         max_length=32, choices=get_choices(constants.APPLICATION_TYPES))
     quote = models.OneToOneField('sales.Quote', on_delete=models.CASCADE)
-    address = models.ForeignKey(
-        'users.Address', on_delete=models.PROTECT, null=True, blank=True)
     status = models.CharField(
         max_length=32, choices=constants.STATUS_CHOICES, default='pending')
     previous_policy = models.BooleanField(default=False)
@@ -126,9 +124,9 @@ class Application(BaseModel):
                 responses = Response.objects.filter(
                     question__category_id=self.company_category.category.id,
                     lead_id=lead.id)
-                instance.occupation = responses.get(
-                    question__title='Occupation'
-                ).answer.answer.replace(' ', '_').lower()
+                occupation_res = responses.filter(question__title='Occupation')
+                if occupation_res.exists():
+                    instance.occupation = responses.get().answer.answer.replace(' ', '_').lower() # noqa
             return instance
 
         for member, age in lead.family.items():
