@@ -12,7 +12,8 @@ from sales.serializers import (
     GetApplicationMembersSerializer, CreateMemberSerializers,
     CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
     TravalInsuranceSerializer, TermsSerializer, NomineeSerializer,
-    get_insurance_serializer, ExistingPolicySerializer
+    get_insurance_serializer, ExistingPolicySerializer,
+    GetInsuranceFieldsSerializer
 )
 
 from django.core.exceptions import ValidationError
@@ -86,6 +87,8 @@ class RetrieveUpdateApplicationMembers(
         lead = application.quote.lead
         try:
             with transaction.atomic():
+                application.active_members.filter(
+                    relation__in=['son', 'daughter']).update(ignore=True)
                 for member in request.data:
                     serializer = self.get_serializer_class()(data=member)
                     serializer.is_valid(raise_exception=True)
@@ -166,6 +169,31 @@ class UpdateInsuranceFields(generics.UpdateAPIView):
         raise mixins.APIException(constants.APPLICATION_UNMAPPED)
 
 
+class GetInsuranceFields(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
+    queryset = Application.objects.all()
+    serializer_class = GetInsuranceFieldsSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if not hasattr(instance, instance.application_type):
+            raise mixins.APIException(constants.APPLICATION_UNMAPPED)
+        insurance = getattr(instance, instance.application_type)
+        data = list()
+        members = MemberSerializer(instance.active_members, many=True).data
+        for field in insurance._meta.fields:
+            if field.name in constants.INSURANCE_EXCLUDE_FIELDS:
+                continue
+            serializer = self.get_serializer(data=dict(
+                text=field.help_text,
+                field_name=field.name,
+                field_requirements=list() if field.__class__.__name__ == 'BooleanField' else members # noqa
+            ))
+            serializer.is_valid(raise_exception=True)
+            data.append(serializer.data)
+        return Response(data)
+
+
 class ApplicationSummary(generics.RetrieveUpdateAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = Application.objects.all()
@@ -190,14 +218,15 @@ class ApplicationSummary(generics.RetrieveUpdateAPIView):
                 instance.active_members, many=True).data
         }, {
             'name': 'nominee_details',
-            'value': NomineeSerializer(nominee)
+            'value': NomineeSerializer(nominee).data
         }, {
             'name': '%s_fields' % instance.application_type,
-            'value': get_insurance_serializer(instance.application_type)
+            'value': get_insurance_serializer(instance.application_type)(
+                getattr(instance, instance.application_type)).data
         }, {
             'name': 'existing_policies',
             'value': ExistingPolicySerializer(
-                instance.existingpolicies_set.all())
+                instance.existingpolicies_set.all(), many=True).data
         }]
 
         return Response(data)

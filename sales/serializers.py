@@ -30,7 +30,7 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     quote_id=validated_data['quote_id'])
                 lead = instance.quote.lead
                 contact, created = Contact.objects.get_or_create(
-                    phone_no=validated_data['contact_no'], parent=None)
+                    phone_no=validated_data['contact_no'])
                 if created:
                     contact.update_fields(**dict(
                         user_id=lead.user.id, first_name=full_name[0]))
@@ -115,15 +115,25 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
     def save(self, **kwargs):
         validated_data = dict(
             list(self.validated_data.items()) +
-            list(kwargs.items())
-        )
+            list(kwargs.items()))
         app = Application.objects.get(id=validated_data['application_id'])
-        contact = app.quote.lead.contact
         with transaction.atomic():
-            instance, created = self.Meta.model.objects.get_or_create(
-                phone_no=validated_data['phone_no'])
-            if created:
-                self.instance = instance
+            update_fields = dict(
+                address_id=Address.objects.create(
+                    pincode_id=Pincode.get_pincode(
+                        validated_data['pincode']).id,
+                    flat_no=validated_data['flat_no'],
+                    street=validated_data['street']
+                ).id
+            )
+            if self.instance.phone_no != validated_data['phone_no']:
+                instances = self.Meta.model.objects.filter(
+                    phone_no=validated_data['phone_no'])
+                if instances.exists():
+                    self.instance = instances.latest('modified')
+                else:
+                    self.instance = None
+                    update_fields['user_id'] = app.quote.lead.user.id
             self.instance = super(
                 UpdateContactDetailsSerializer, self).save(**kwargs)
             kycdocument, created = KYCDocument.objects.get_or_create(
@@ -131,16 +141,9 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                 contact_id=self.instance.id)
             kycdocument.document_number = validated_data['document_number']
             kycdocument.save()
-            self.instance.update_fields(**dict(
-                address_id=Address.objects.create(
-                    pincode_id=Pincode.get_pincode(
-                        validated_data['pincode']).id,
-                    flat_no=validated_data['flat_no'],
-                    street=validated_data['street']
-                ).id,
-                parent_id=(contact.id if created else contact.parent),
-                user_id=contact.user.id, is_client=True
-            ))
+            self.instance.update_fields(**update_fields)
+            app.client_id = self.instance.id
+            app.save()
 
     @property
     def data(self):
@@ -187,12 +190,6 @@ class CreateMemberSerializers(serializers.ModelSerializer):
             relation=validated_data['relation']
         ).first()
         if validated_data['relation'] in ['son', 'daughter']:
-            self.Meta.model.objects.filter(
-                relation=validated_data['relation'],
-                application_id=validated_data['application_id'],
-                first_name=validated_data['first_name'],
-                last_name=validated_data['last_name']
-            ).update(ignore=True)
             self.instance = None
         self.instance = super(CreateMemberSerializers, self).save(**kwargs)
         self.instance.ignore = False
@@ -230,9 +227,8 @@ class GetApplicationMembersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Member
         fields = (
-            'application_id', 'gender', 'first_name', 'middle_name',
-            'last_name', 'dob', 'occupation', 'relation', 'height_inches',
-            'height_foot', 'weight'
+            'application_id', 'gender', 'first_name', 'last_name', 'dob',
+            'occupation', 'relation', 'height_inches', 'height_foot', 'weight'
         )
 
 
@@ -269,7 +265,7 @@ class HealthInsuranceSerializer(serializers.ModelSerializer):
         model = HealthInsurance
         fields = (
             "gastrointestinal_disease", "neuronal_diseases", "ent_diseases",
-            "respiratory_diseases", "cardiovascular_disease", "blood_diseases"
+            "respiratory_diseases", "cardiovascular_disease", "blood_diseases",
             "alcohol_consumption", "tabacco_consumption", "previous_claim",
             "proposal_terms", "oncology_disease", "cigarette_consumption")
 
@@ -312,3 +308,9 @@ class ExistingPolicySerializer(serializers.ModelSerializer):
             message='Existing policies added successfully.'
         )
         return self._data
+
+
+class GetInsuranceFieldsSerializer(serializers.Serializer):
+    text = serializers.CharField(required=True)
+    field_name = serializers.CharField(required=True)
+    field_requirements = serializers.JSONField(required=True)
