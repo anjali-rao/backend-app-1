@@ -33,9 +33,7 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     phone_no=validated_data['contact_no'])
                 if created:
                     contact.update_fields(**dict(
-                        user_id=lead.user.id, first_name=full_name[0]),
-                        parent=None
-                    )
+                        user_id=lead.user.id, first_name=full_name[0]))
                 lead.update_fields(**dict(
                     contact_id=contact.id, status='inprogress', stage='cart'))
             return instance
@@ -117,15 +115,25 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
     def save(self, **kwargs):
         validated_data = dict(
             list(self.validated_data.items()) +
-            list(kwargs.items())
-        )
+            list(kwargs.items()))
         app = Application.objects.get(id=validated_data['application_id'])
-        contact = app.quote.lead.contact
         with transaction.atomic():
-            instance, created = self.Meta.model.objects.get_or_create(
-                phone_no=validated_data['phone_no'])
-            if created:
-                self.instance = instance
+            update_fields = dict(
+                address_id=Address.objects.create(
+                    pincode_id=Pincode.get_pincode(
+                        validated_data['pincode']).id,
+                    flat_no=validated_data['flat_no'],
+                    street=validated_data['street']
+                ).id
+            )
+            if self.instance.phone_no != validated_data['phone_no']:
+                instances = self.Meta.model.objects.filter(
+                    phone_no=validated_data['phone_no'])
+                if instances.exists():
+                    self.instance = instances.latest('modified')
+                else:
+                    self.instance = None
+                    update_fields['user_id'] = app.quote.lead.user.id
             self.instance = super(
                 UpdateContactDetailsSerializer, self).save(**kwargs)
             kycdocument, created = KYCDocument.objects.get_or_create(
@@ -133,16 +141,9 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                 contact_id=self.instance.id)
             kycdocument.document_number = validated_data['document_number']
             kycdocument.save()
-            self.instance.update_fields(**dict(
-                address_id=Address.objects.create(
-                    pincode_id=Pincode.get_pincode(
-                        validated_data['pincode']).id,
-                    flat_no=validated_data['flat_no'],
-                    street=validated_data['street']
-                ).id,
-                parent_id=(contact.id if created else contact.parent),
-                user_id=contact.user.id, is_client=True
-            ))
+            self.instance.update_fields(**update_fields)
+            app.client_id = self.instance.id
+            app.save()
 
     @property
     def data(self):
