@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
 
-from users.models import User, Account, Enterprise, AccountDetails, Pincode
+from users.models import User, Account, Enterprise, AccountDetail, Pincode
 
 from utils import constants, genrate_random_string
 
@@ -287,7 +287,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 class AccountDetailsSerializers(serializers.ModelSerializer):
 
     class Meta:
-        model = AccountDetails
+        model = AccountDetail
         fields = '__all__'
 
 

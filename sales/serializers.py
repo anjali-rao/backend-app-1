@@ -142,8 +142,8 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             kycdocument.document_number = validated_data['document_number']
             kycdocument.save()
             self.instance.update_fields(**update_fields)
-            app.client_id = self.instance.id
-            app.save()
+            app.update_fields(**dict(
+                status='pending', client_id=self.instance.id))
 
     @property
     def data(self):
