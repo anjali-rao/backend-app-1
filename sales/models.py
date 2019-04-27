@@ -72,16 +72,30 @@ class Application(BaseModel):
         max_length=32, choices=get_choices(constants.APPLICATION_TYPES))
     quote = models.OneToOneField('sales.Quote', on_delete=models.CASCADE)
     status = models.CharField(
-        max_length=32, choices=constants.STATUS_CHOICES, default='pending')
+        max_length=32, choices=constants.APPLICATION_STATUS, default='fresh')
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
     terms_and_conditions = models.BooleanField(null=True)
 
     def save(self, *args, **kwargs):
-        if not self.__class__.objects.filter(pk=self.id).exists():
+        try:
+            current = self.__class__.objects.get(pk=self.id)
+            if current.terms_and_conditions != self.terms_and_conditions and self.terms_and_conditions: # noqa
+                self.status = 'submitted'
+        except self.__class__.DoesNotExist:
             self.generate_reference_no()
-            self.application_type = self.company_category.category.name.lower().replace(' ', '') # noqa
+            self.application_type = self.company_category.category.name.lower(
+            ).replace(' ', '')
         super(Application, self).save(*args, **kwargs)
+
+    def update_fields(self, **kw):
+        updated = False
+        for field in kw.keys():
+            setattr(self, field, kw[field])
+            if not updated:
+                updated = True
+        if updated:
+            self.save()
 
     def generate_reference_no(self):
         self.reference_no = genrate_random_string(10)
@@ -335,6 +349,7 @@ def application_post_save(sender, instance, created, **kwargs):
         Quote.objects.filter(lead_id=instance.quote.lead.id).exclude(
             id=instance.quote_id).update(status='rejected')
         instance.quote.status = 'accepted'
+        instance.quote.save()
         instance.add_default_members()
         ContentType.objects.get(
             model=instance.application_type, app_label='sales'

@@ -101,6 +101,7 @@ class RetrieveUpdateApplicationMembers(
                 childrens = application.active_members.count() - adults
                 if lead.adults != adults or lead.childrens != childrens:
                     application.switch_premium(adults, childrens)
+                application.member_set.filter(ignore=None).update(ignore=True)
         except (IntegrityError, mixins.RecommendationException) as e:
             raise mixins.APIException(e)
         return Response(dict(
@@ -197,7 +198,6 @@ class GetInsuranceFields(generics.RetrieveAPIView):
 class ApplicationSummary(generics.RetrieveUpdateAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = Application.objects.all()
-    serializer_classes = TermsSerializer
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -230,3 +230,9 @@ class ApplicationSummary(generics.RetrieveUpdateAPIView):
         }]
 
         return Response(data)
+
+
+class SubmitApplication(generics.UpdateAPIView):
+    authentication_classes = (UserAuthentication,)
+    queryset = Application.objects.all()
+    serializer_class = TermsSerializer

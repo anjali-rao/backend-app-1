@@ -251,7 +251,7 @@ class SubcriberEnterprise(BaseModel):
         pass
 
 
-class AccountDetails(BaseModel):
+class AccountDetail(BaseModel):
     account = models.OneToOneField('users.Account', on_delete=models.CASCADE)
     agent_code = models.CharField(max_length=16)
     branch_code = models.CharField(max_length=16)
@@ -277,7 +277,7 @@ class Referral(BaseModel):
         'users.User', null=True, blank=True, on_delete=models.CASCADE)
 
 
-class Documents(BaseModel):
+class Document(BaseModel):
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
     doc_type = models.CharField(
         choices=get_choices(constants.DOC_TYPES), max_length=16)

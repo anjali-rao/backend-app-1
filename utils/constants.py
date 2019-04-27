@@ -20,7 +20,11 @@ LEAD_STAGE_CHOICES = (
     ('proposal', 'Proposal'), ('payment', 'Payment'),
     ('submitted', 'Submitted'), ('issued', 'Issued'))
 
-STATUS_CHOICES = (('pending','Pending'),('accepted','Accepted'),('rejected','Rejected')) # noqa
+STATUS_CHOICES = (
+    ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'))
+APPLICATION_STATUS = (
+    ('fresh', 'Fresh'), ('pending', 'Pending'), ('submitted', 'Submitted'),
+    ('approved', 'Approved'), ('cancelled', 'Cancelled'), ('completed', 'Completed'))
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
     'ration_card', 'passport', 'birth_certificate'
