@@ -284,6 +284,17 @@ class TermsSerializer(serializers.ModelSerializer):
         model = Application
         fields = ('terms_and_conditions',)
 
+    @property
+    def data(self):
+        # TO DOS: Remove this when app is build
+        super(TermsSerializer, self).data
+        self._data = dict(
+            message='Application updated successfully.',
+            status=self.instance.get_status_display(),
+            reference_no=self.instance.reference_no
+        )
+        return self._data
+
 
 INSURANCE_SERIALIZER_MAPPING = {
     'healthinsurance': HealthInsuranceSerializer,
