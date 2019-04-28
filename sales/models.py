@@ -216,7 +216,8 @@ class Member(BaseModel):
         except self.__class__.DoesNotExist:
             if self.relation not in [
                 'son', 'daughter'] and self.__class__.objects.filter(
-                    relation=self.relation).exists():
+                    relation=self.relation, application_id=self.application_id
+            ).exists():
                 raise IntegrityError(
                     '%s relation already exists.' % self.relation)
         super(Member, self).save(*ar, **kw)
