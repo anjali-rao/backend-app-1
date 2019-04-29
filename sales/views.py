@@ -11,9 +11,9 @@ from sales.serializers import (
     Application, UpdateContactDetailsSerializer, Contact,
     GetApplicationMembersSerializer, CreateMemberSerializers,
     CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
-    TravalInsuranceSerializer, TermsSerializer, NomineeSerializer,
-    get_insurance_serializer, ExistingPolicySerializer,
-    GetInsuranceFieldsSerializer
+    TravalInsuranceSerializer, TermsSerializer, get_insurance_serializer,
+    ExistingPolicySerializer, GetInsuranceFieldsSerializer,
+    ApplicationSummarySerializer
 )
 
 from django.core.exceptions import ValidationError
@@ -198,6 +198,7 @@ class GetInsuranceFields(generics.RetrieveAPIView):
 class ApplicationSummary(generics.RetrieveUpdateAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = Application.objects.all()
+    serializer_class = ApplicationSummarySerializer
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -208,27 +209,13 @@ class ApplicationSummary(generics.RetrieveUpdateAPIView):
                 constants.INCOMPLETE_APPLICATION % 'nominee details')
         if not hasattr(instance, instance.application_type):
             raise mixins.APIException(constants.APPLICATION_UNMAPPED)
-        data = [{
-            'name': 'proposer_details',
-            'value': GetProposalDetailsSerializer(
-                instance.quote.lead.contact).data
-        }, {
-            'name': 'insured_members',
-            'value': GetApplicationMembersSerializer(
-                instance.active_members, many=True).data
-        }, {
-            'name': 'nominee_details',
-            'value': NomineeSerializer(nominee).data
-        }, {
-            'name': '%s_fields' % instance.application_type,
-            'value': get_insurance_serializer(instance.application_type)(
-                getattr(instance, instance.application_type)).data
-        }, {
-            'name': 'existing_policies',
-            'value': ExistingPolicySerializer(
-                instance.existingpolicies_set.all(), many=True).data
-        }]
 
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        data['%s_fields' % (
+            instance.application_type)] = get_insurance_serializer(
+            instance.application_type)(
+            getattr(instance, instance.application_type)).data
         return Response(data)
 
 
