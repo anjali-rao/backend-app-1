@@ -300,36 +300,33 @@ class Insurance(BaseModel):
 
 class HealthInsurance(Insurance):
     gastrointestinal_disease = JSONField(
-        default=dict, help_text=constants.GASTROINTESTINAL_DISEASE)
+        default=list, help_text=constants.GASTROINTESTINAL_DISEASE)
     neuronal_diseases = JSONField(
-        default=dict, help_text=constants.NEURONAL_DISEASES)
+        default=list, help_text=constants.NEURONAL_DISEASES)
     oncology_disease = JSONField(
-        default=dict, help_text=constants.ONCOLOGY_DISEASE)
+        default=list, help_text=constants.ONCOLOGY_DISEASE)
     respiratory_diseases = JSONField(
-        default=dict, help_text=constants.RESPIRATORY_DISEASES)
+        default=list, help_text=constants.RESPIRATORY_DISEASES)
     cardiovascular_disease = JSONField(
-        default=dict, help_text=constants.CARDIOVASCULAR_DISEASE)
+        default=list, help_text=constants.CARDIOVASCULAR_DISEASE)
     ent_diseases = JSONField(
-        default=dict, help_text=constants.ENT_DISEASE)
+        default=list, help_text=constants.ENT_DISEASE)
     blood_diseases = JSONField(
-        default=dict, help_text=constants.BLOOD_DISODER)
-    alcohol_consumption = JSONField(
-        default=dict, help_text=constants.ALCOHOL_CONSUMPTION)
-    tabacco_consumption = JSONField(
-        default=dict, help_text=constants.TABBACO_CONSUMPTION)
-    cigarette_consumption = JSONField(
-        default=dict, help_text=constants.CIGARETTE_CONSUMPTION)
+        default=list, help_text=constants.BLOOD_DISODER)
+    alcohol_consumption = models.IntegerField(
+        default=0.0, help_text=constants.ALCOHOL_CONSUMPTION, null=True, blank=True)
+    tobacco_consumption = models.IntegerField(
+        default=0.0, help_text=constants.TABBACO_CONSUMPTION, null=True, blank=True)
+    cigarette_consumption = models.IntegerField(
+        default=0.0, help_text=constants.CIGARETTE_CONSUMPTION, null=True, blank=True)
     previous_claim = models.BooleanField(
-        default=False, help_text=constants.PREVIOUS_CLAIM)
+        default=False, help_text=constants.PREVIOUS_CLAIM, null=True, blank=True)
     proposal_terms = models.BooleanField(
-        default=False, help_text=constants.PROPOSAL_TERMS)
+        default=False, help_text=constants.PROPOSAL_TERMS, null=True, blank=True)
 
     def update_default_fields(self, kw):
         for field in constants.HEALTHINSURANCE_FIELDS:
             setattr(self, field, kw)
-        self.alcohol_consumption = dict(quantity=None)
-        self.tabacco_consumption = dict(packets=None)
-        self.cigarette_consumption = dict(sticks=None)
         self.save()
 
 
