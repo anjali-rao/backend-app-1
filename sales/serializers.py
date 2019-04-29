@@ -325,3 +325,31 @@ class GetInsuranceFieldsSerializer(serializers.Serializer):
     text = serializers.CharField(required=True)
     field_name = serializers.CharField(required=True)
     field_requirements = serializers.JSONField(required=True)
+
+
+class ApplicationSummarySerializer(serializers.ModelSerializer):
+    proposer_details = serializers.SerializerMethodField()
+    insured_memebers = serializers.SerializerMethodField()
+    nominee_details = serializers.SerializerMethodField()
+    existing_policies = serializers.SerializerMethodField()
+
+    def get_proposer_details(self, obj):
+        return GetProposalDetailsSerializer(self.instance.client).data
+
+    def get_insured_memebers(self, obj):
+        return GetApplicationMembersSerializer(
+            self.instance.active_members, many=True).data
+
+    def get_nominee_details(self, obj):
+        return NomineeSerializer(self.instance.nominee_set.first()).data
+
+    def get_existing_policies(self, obj):
+        return ExistingPolicySerializer(
+            self.instance.existingpolicies_set.all(), many=True).data
+
+    class Meta:
+        model = Application
+        fields = (
+            'proposer_details', 'insured_memebers', 'nominee_details',
+            'existing_policies'
+        )
