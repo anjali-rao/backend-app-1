@@ -11,6 +11,21 @@ def readcsv(filename):
     return data
 
 
+def update_pincode(filename):
+    from users.models import Pincode, State
+    data = readcsv(filename)
+    for row in data:
+        pincode, created = Pincode.objects.get_or_create(
+            pincode=row['pincode'])
+        pincode.city = row['taluk']
+        if pincode.city.lower() == 'na':
+            pincode.city = row['regionname']
+        state, created = State.objects.get_or_create(
+            name=row['statename'].title())
+        pincode.state_id = state.id
+        pincode.save()
+
+
 def upload_suminsurred(filename):
     from product.models import SumInsuredMaster
     data = readcsv(filename)
