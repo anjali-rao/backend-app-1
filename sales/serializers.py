@@ -266,7 +266,7 @@ class HealthInsuranceSerializer(serializers.ModelSerializer):
         fields = (
             "gastrointestinal_disease", "neuronal_diseases", "ent_diseases",
             "respiratory_diseases", "cardiovascular_disease", "blood_diseases",
-            "alcohol_consumption", "tabacco_consumption", "previous_claim",
+            "alcohol_consumption", "tobacco_consumption", "previous_claim",
             "proposal_terms", "oncology_disease", "cigarette_consumption")
 
 

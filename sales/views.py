@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from rest_framework import generics, status
+from rest_framework import generics, status, exceptions
 from rest_framework.response import Response
 
 from users.decorators import UserAuthentication
@@ -188,7 +188,10 @@ class GetInsuranceFields(generics.RetrieveAPIView):
             serializer = self.get_serializer(data=dict(
                 text=field.help_text,
                 field_name=field.name,
-                field_requirements=list() if field.__class__.__name__ == 'BooleanField' else members # noqa
+                field_requirements=[{
+                    'relation': "None"
+                }] if field.__class__.__name__ in [
+                    'BooleanField', 'IntegerField'] else members
             ))
             serializer.is_valid(raise_exception=True)
             data.append(serializer.data)
