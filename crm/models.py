@@ -82,22 +82,22 @@ class Lead(BaseModel):
         self.save()
 
     def get_premiums(self, **kw):
+        query = dict()
+        print(self.citytier)
         queryset = Premium.objects.select_related('product_variant').filter(
             sum_insured=kw.get('score', self.final_score),
-            adults=kw.get('adults', self.adults))
+            adults=kw.get('adults', self.adults),
+            citytier__in=kw.get('citytier', self.citytier)
+        )
         if 'product_variant_id' in kw:
-            queryset = queryset.filter(
-                product_variant_id=kw['product_variant_id'])
+            query['product_variant_id'] = kw['product_variant_id']
         if 'category_id' in kw:
-            queryset = queryset.filter(
-                product_variant__company_category__category_id=kw['category_id'])
+            query['product_variant__company_category__category_id'] = kw['category_id'] # noqa
         if kw.get('childrens', self.childrens) <= 4:
-            queryset = queryset.filter(
-                childrens=kw.get('childrens', self.childrens))
-        return queryset.filter(
-            age_range__contains=(
-                kw.get('effective_age', self.effective_age) + 1)
-        ) or queryset[:7]
+            query['childrens'] = kw.get('childrens', self.childrens)
+        query['age_range__contains'] = (
+            kw.get('effective_age', self.effective_age) + 1)
+        return queryset.filter(**query) or queryset[:7]
 
     def refresh_quote_data(self, **kw):
         quotes = self.get_quotes()
@@ -190,15 +190,13 @@ class Lead(BaseModel):
 
     @property
     def citytier(self):
-        if self.city in constants.TIER_1_CITIES:
-            return 1
-        elif self.city in constants.TIER_2_CITIES:
-            return 2
-        return 3
+        if self.pincode in constants.NCR_PINCODES or self.city in constants.MUMBAI_AREA_TIER: # noqa
+            return constants.MUMBAI_NCR_TIER
+        return constants.ALL_INDIA_TIER
 
     def __str__(self):
         return "%s - %s" % (
-            self.contact.first_name if self.contact else 'Contact',
+            self.contact.first_name if self.contact else 'Contact Pending',
             self.category.name)
 
 

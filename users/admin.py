@@ -104,9 +104,9 @@ class StateAdmin(admin.ModelAdmin):
 
 @admin.register(Pincode)
 class PincodeAdmin(admin.ModelAdmin):
-    list_display = ('pincode', 'city', 'state', 'city_type')
+    list_display = ('pincode', 'city', 'state',)
     search_fields = ('pincode', 'state__name', 'city')
-    list_filter = ('state__name', 'city_type')
+    list_filter = ('state__name',)
     raw_id_fields = ('state',)
 
 

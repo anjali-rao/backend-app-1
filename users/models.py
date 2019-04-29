@@ -336,8 +336,6 @@ class Pincode(models.Model):
     city = models.CharField(max_length=64, db_index=True)
     state = models.ForeignKey(
         'users.State', null=True, blank=True, on_delete=models.CASCADE)
-    city_type = models.IntegerField(
-        choices=constants.CITY_TIER, default=3)
 
     def __str__(self):
         return '%s - %s(%s)' % (self.city, self.pincode, self.state.name)
