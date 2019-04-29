@@ -314,15 +314,20 @@ class HealthInsurance(Insurance):
     blood_diseases = JSONField(
         default=list, help_text=constants.BLOOD_DISODER)
     alcohol_consumption = models.IntegerField(
-        default=0.0, help_text=constants.ALCOHOL_CONSUMPTION, null=True, blank=True)
+        default=0.0, help_text=constants.ALCOHOL_CONSUMPTION,
+        null=True, blank=True)
     tobacco_consumption = models.IntegerField(
-        default=0.0, help_text=constants.TABBACO_CONSUMPTION, null=True, blank=True)
+        default=0.0, help_text=constants.TABBACO_CONSUMPTION,
+        null=True, blank=True)
     cigarette_consumption = models.IntegerField(
-        default=0.0, help_text=constants.CIGARETTE_CONSUMPTION, null=True, blank=True)
+        default=0.0, help_text=constants.CIGARETTE_CONSUMPTION,
+        null=True, blank=True)
     previous_claim = models.BooleanField(
-        default=False, help_text=constants.PREVIOUS_CLAIM, null=True, blank=True)
+        default=False, help_text=constants.PREVIOUS_CLAIM,
+        null=True, blank=True)
     proposal_terms = models.BooleanField(
-        default=False, help_text=constants.PROPOSAL_TERMS, null=True, blank=True)
+        default=False, help_text=constants.PROPOSAL_TERMS,
+        null=True, blank=True)
 
     def update_default_fields(self, kw):
         for field in constants.HEALTHINSURANCE_FIELDS:
