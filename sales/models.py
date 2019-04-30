@@ -66,22 +66,38 @@ class Quote(BaseModel):
 
 class Application(BaseModel):
     reference_no = models.CharField(max_length=10, unique=True, db_index=True)
+    premium = models.FloatField(default=0.0)
+    suminsured = models.FloatField(default=0.0)
     client = models.ForeignKey(
         'crm.Contact', null=True, on_delete=models.PROTECT)
     application_type = models.CharField(
         max_length=32, choices=get_choices(constants.APPLICATION_TYPES))
     quote = models.OneToOneField('sales.Quote', on_delete=models.CASCADE)
     status = models.CharField(
-        max_length=32, choices=constants.STATUS_CHOICES, default='pending')
+        max_length=32, choices=constants.APPLICATION_STATUS, default='fresh')
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
     terms_and_conditions = models.BooleanField(null=True)
 
     def save(self, *args, **kwargs):
-        if not self.__class__.objects.filter(pk=self.id).exists():
+        try:
+            current = self.__class__.objects.get(pk=self.id)
+            if current.terms_and_conditions != self.terms_and_conditions and self.terms_and_conditions: # noqa
+                self.status = 'submitted'
+        except self.__class__.DoesNotExist:
             self.generate_reference_no()
-            self.application_type = self.company_category.category.name.lower().replace(' ', '') # noqa
+            self.application_type = self.company_category.category.name.lower(
+            ).replace(' ', '')
         super(Application, self).save(*args, **kwargs)
+
+    def update_fields(self, **kw):
+        updated = False
+        for field in kw.keys():
+            setattr(self, field, kw[field])
+            if not updated:
+                updated = True
+        if updated:
+            self.save()
 
     def generate_reference_no(self):
         self.reference_no = genrate_random_string(10)
@@ -108,7 +124,9 @@ class Application(BaseModel):
         quote = lead.get_quotes().first()
         if not quote:
             raise RecommendationException('No quote found for this creteria')
-        self.quote_id = lead.get_quotes().first().id
+        self.quote_id = quote.id
+        self.premium = quote.premium.amount
+        self.suminsured = quote.premium.sum_insured
         self.save()
 
     def add_default_members(self):
@@ -126,7 +144,7 @@ class Application(BaseModel):
                     lead_id=lead.id)
                 occupation_res = responses.filter(question__title='Occupation')
                 if occupation_res.exists():
-                    instance.occupation = responses.get().answer.answer.replace(' ', '_').lower() # noqa
+                    instance.occupation = responses.latest('created').answer.answer.replace(' ', '_').lower() # noqa
             return instance
 
         for member, age in lead.family.items():
@@ -202,7 +220,8 @@ class Member(BaseModel):
         except self.__class__.DoesNotExist:
             if self.relation not in [
                 'son', 'daughter'] and self.__class__.objects.filter(
-                    relation=self.relation).exists():
+                    relation=self.relation, application_id=self.application_id
+            ).exists():
                 raise IntegrityError(
                     '%s relation already exists.' % self.relation)
         super(Member, self).save(*ar, **kw)
@@ -285,36 +304,38 @@ class Insurance(BaseModel):
 
 class HealthInsurance(Insurance):
     gastrointestinal_disease = JSONField(
-        default=dict, help_text=constants.GASTROINTESTINAL_DISEASE)
+        default=list, help_text=constants.GASTROINTESTINAL_DISEASE)
     neuronal_diseases = JSONField(
-        default=dict, help_text=constants.NEURONAL_DISEASES)
+        default=list, help_text=constants.NEURONAL_DISEASES)
     oncology_disease = JSONField(
-        default=dict, help_text=constants.ONCOLOGY_DISEASE)
+        default=list, help_text=constants.ONCOLOGY_DISEASE)
     respiratory_diseases = JSONField(
-        default=dict, help_text=constants.RESPIRATORY_DISEASES)
+        default=list, help_text=constants.RESPIRATORY_DISEASES)
     cardiovascular_disease = JSONField(
-        default=dict, help_text=constants.CARDIOVASCULAR_DISEASE)
+        default=list, help_text=constants.CARDIOVASCULAR_DISEASE)
     ent_diseases = JSONField(
-        default=dict, help_text=constants.ENT_DISEASE)
+        default=list, help_text=constants.ENT_DISEASE)
     blood_diseases = JSONField(
-        default=dict, help_text=constants.BLOOD_DISODER)
-    alcohol_consumption = JSONField(
-        default=dict, help_text=constants.ALCOHOL_CONSUMPTION)
-    tabacco_consumption = JSONField(
-        default=dict, help_text=constants.TABBACO_CONSUMPTION)
-    cigarette_consumption = JSONField(
-        default=dict, help_text=constants.CIGARETTE_CONSUMPTION)
+        default=list, help_text=constants.BLOOD_DISODER)
+    alcohol_consumption = models.IntegerField(
+        default=0.0, help_text=constants.ALCOHOL_CONSUMPTION,
+        null=True, blank=True)
+    tobacco_consumption = models.IntegerField(
+        default=0.0, help_text=constants.TABBACO_CONSUMPTION,
+        null=True, blank=True)
+    cigarette_consumption = models.IntegerField(
+        default=0.0, help_text=constants.CIGARETTE_CONSUMPTION,
+        null=True, blank=True)
     previous_claim = models.BooleanField(
-        default=False, help_text=constants.PREVIOUS_CLAIM)
+        default=False, help_text=constants.PREVIOUS_CLAIM,
+        null=True, blank=True)
     proposal_terms = models.BooleanField(
-        default=False, help_text=constants.PROPOSAL_TERMS)
+        default=False, help_text=constants.PROPOSAL_TERMS,
+        null=True, blank=True)
 
     def update_default_fields(self, kw):
         for field in constants.HEALTHINSURANCE_FIELDS:
             setattr(self, field, kw)
-        self.alcohol_consumption = dict(quantity=None)
-        self.tabacco_consumption = dict(packets=None)
-        self.cigarette_consumption = dict(sticks=None)
         self.save()
 
 
@@ -335,6 +356,9 @@ def application_post_save(sender, instance, created, **kwargs):
         Quote.objects.filter(lead_id=instance.quote.lead.id).exclude(
             id=instance.quote_id).update(status='rejected')
         instance.quote.status = 'accepted'
+        instance.quote.save()
+        instance.premium = instance.quote.premium.amount
+        instance.suminsured = instance.quote.premium.sum_insured
         instance.add_default_members()
         ContentType.objects.get(
             model=instance.application_type, app_label='sales'

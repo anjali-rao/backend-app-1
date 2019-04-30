@@ -1,9 +1,14 @@
 from rest_framework import serializers
+from django.db.models import CharField, Value
 
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
+from django.utils.timezone import now
 
-from users.models import User, Account, Enterprise, AccountDetails, Pincode
+from dateutil.relativedelta import relativedelta
+
+from users.models import User, Account, Enterprise, AccountDetail, Pincode
+from sales.serializers import SalesApplicationSerializer
 
 from utils import constants, genrate_random_string
 
@@ -287,7 +292,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 class AccountDetailsSerializers(serializers.ModelSerializer):
 
     class Meta:
-        model = AccountDetails
+        model = AccountDetail
         fields = '__all__'
 
 
@@ -314,3 +319,43 @@ class PincodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pincode
         fields = ('pincode', 'city', 'state')
+
+
+class SalesSerializer(serializers.ModelSerializer):
+    all_applications = serializers.SerializerMethodField()
+    pending_applications = serializers.SerializerMethodField()
+    submitted_applications = serializers.SerializerMethodField()
+    _current_week = [now() - relativedelta(days=6), now()]
+    _current_month = [
+        now() - relativedelta(days=30), now() - relativedelta(days=6)]
+    _past_months = now() - relativedelta(days=30)
+
+    def get_data(self, apps):
+        data = SalesApplicationSerializer(
+            apps.filter(created__range=self._current_week), many=True,
+            context=dict(section='current_week')).data
+        data.extend(SalesApplicationSerializer(
+            apps.filter(created__range=self._current_month), many=True,
+            context=dict(section='current_month')).data),
+        data.extend(SalesApplicationSerializer(
+            apps.filter(created__gte=self._past_months), many=True,
+            context=dict(section='past_months')).data),
+        return data
+
+    def get_all_applications(self, obj):
+        apps = obj.get_applications()
+        return self.get_data(apps)
+
+    def get_pending_applications(self, obj):
+        apps = obj.get_applications(status='pending')
+        return self.get_data(apps)
+
+    def get_submitted_applications(self, obj):
+        apps = obj.get_applications(status='submitted')
+        return self.get_data(apps)
+
+    class Meta:
+        model = User
+        fields = (
+            'all_applications', 'pending_applications',
+            'submitted_applications')

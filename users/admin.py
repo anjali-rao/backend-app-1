@@ -6,7 +6,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from users.models import (
-    Account, User, Campaign, AccountDetails, Documents, Bank, BankAccount,
+    Account, User, Campaign, AccountDetail, Document, Bank, BankAccount,
     BankBranch, Enterprise, SubcriberEnterprise, State, Pincode, Address)
 
 
@@ -41,7 +41,7 @@ class UserAdmin(admin.ModelAdmin):
     raw_id_fields = ('account', 'campaign')
 
 
-@admin.register(AccountDetails)
+@admin.register(AccountDetail)
 class AccountDetailsAdmin(admin.ModelAdmin):
     list_display = ('account', 'agent_code', 'channel', 'status')
     list_filter = ('channel', 'status')
@@ -49,7 +49,7 @@ class AccountDetailsAdmin(admin.ModelAdmin):
     raw_id_fields = ('account',)
 
 
-@admin.register(Documents)
+@admin.register(Document)
 class DocumentsAdmin(admin.ModelAdmin):
     list_display = ('user', 'doc_type', 'file')
     search_fields = ('user__username', 'user__account__phone_no')
@@ -104,9 +104,9 @@ class StateAdmin(admin.ModelAdmin):
 
 @admin.register(Pincode)
 class PincodeAdmin(admin.ModelAdmin):
-    list_display = ('pincode', 'city', 'state', 'city_type')
+    list_display = ('pincode', 'city', 'state',)
     search_fields = ('pincode', 'state__name', 'city')
-    list_filter = ('state__name', 'city_type')
+    list_filter = ('state__name',)
     raw_id_fields = ('state',)
 
 

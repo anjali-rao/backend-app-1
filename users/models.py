@@ -206,6 +206,13 @@ class User(BaseModel):
             })
         return categories
 
+    def get_applications(self, status=None):
+        from sales.models import Application
+        query = dict(quote__lead__user_id=self.id)
+        if status:
+            query['status'] = status
+        return Application.objects.filter(**query)
+
 
 class Campaign(BaseModel):
     description = models.CharField(max_length=32)
@@ -251,7 +258,7 @@ class SubcriberEnterprise(BaseModel):
         pass
 
 
-class AccountDetails(BaseModel):
+class AccountDetail(BaseModel):
     account = models.OneToOneField('users.Account', on_delete=models.CASCADE)
     agent_code = models.CharField(max_length=16)
     branch_code = models.CharField(max_length=16)
@@ -277,7 +284,7 @@ class Referral(BaseModel):
         'users.User', null=True, blank=True, on_delete=models.CASCADE)
 
 
-class Documents(BaseModel):
+class Document(BaseModel):
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
     doc_type = models.CharField(
         choices=get_choices(constants.DOC_TYPES), max_length=16)
@@ -336,8 +343,6 @@ class Pincode(models.Model):
     city = models.CharField(max_length=64, db_index=True)
     state = models.ForeignKey(
         'users.State', null=True, blank=True, on_delete=models.CASCADE)
-    city_type = models.IntegerField(
-        choices=constants.CITY_TIER, default=3)
 
     def __str__(self):
         return '%s - %s(%s)' % (self.city, self.pincode, self.state.name)

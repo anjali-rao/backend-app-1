@@ -47,6 +47,12 @@ class ResponseSerializer(serializers.Serializer):
                 constants.INVALID_CATEGORY_ID)
         return value
 
+#    def validate_pincode(self, value):
+#        from users.models import Pincode
+#        if not Pincode.get_pincode(value):
+#            raise serializers.ValidationError(constants.INVALID_PINCODE)
+#        return value
+
     def validate_customer_segment_id(self, value):
         from product.models import CustomerSegment
         if not CustomerSegment.objects.filter(id=value).exists():

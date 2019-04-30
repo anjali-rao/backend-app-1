@@ -142,8 +142,8 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             kycdocument.document_number = validated_data['document_number']
             kycdocument.save()
             self.instance.update_fields(**update_fields)
-            app.client_id = self.instance.id
-            app.save()
+            app.update_fields(**dict(
+                status='pending', client_id=self.instance.id))
 
     @property
     def data(self):
@@ -266,7 +266,7 @@ class HealthInsuranceSerializer(serializers.ModelSerializer):
         fields = (
             "gastrointestinal_disease", "neuronal_diseases", "ent_diseases",
             "respiratory_diseases", "cardiovascular_disease", "blood_diseases",
-            "alcohol_consumption", "tabacco_consumption", "previous_claim",
+            "alcohol_consumption", "tobacco_consumption", "previous_claim",
             "proposal_terms", "oncology_disease", "cigarette_consumption")
 
 
@@ -283,6 +283,17 @@ class TermsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Application
         fields = ('terms_and_conditions',)
+
+    @property
+    def data(self):
+        # TO DOS: Remove this when app is build
+        super(TermsSerializer, self).data
+        self._data = dict(
+            message='Application updated successfully.',
+            status=self.instance.get_status_display(),
+            reference_no=self.instance.reference_no
+        )
+        return self._data
 
 
 INSURANCE_SERIALIZER_MAPPING = {
@@ -314,3 +325,57 @@ class GetInsuranceFieldsSerializer(serializers.Serializer):
     text = serializers.CharField(required=True)
     field_name = serializers.CharField(required=True)
     field_requirements = serializers.JSONField(required=True)
+
+
+class ApplicationSummarySerializer(serializers.ModelSerializer):
+    proposer_details = serializers.SerializerMethodField()
+    insured_memebers = serializers.SerializerMethodField()
+    nominee_details = serializers.SerializerMethodField()
+    existing_policies = serializers.SerializerMethodField()
+
+    def get_proposer_details(self, obj):
+        return GetProposalDetailsSerializer(self.instance.client).data
+
+    def get_insured_memebers(self, obj):
+        return GetApplicationMembersSerializer(
+            self.instance.active_members, many=True).data
+
+    def get_nominee_details(self, obj):
+        return NomineeSerializer(self.instance.nominee_set.first()).data
+
+    def get_existing_policies(self, obj):
+        return ExistingPolicySerializer(
+            self.instance.existingpolicies_set.all(), many=True).data
+
+    class Meta:
+        model = Application
+        fields = (
+            'proposer_details', 'insured_memebers', 'nominee_details',
+            'existing_policies'
+        )
+
+
+class SalesApplicationSerializer(serializers.ModelSerializer):
+    section = serializers.SerializerMethodField()
+    earning = serializers.SerializerMethodField()
+    last_updated = serializers.SerializerMethodField()
+    logo = serializers.SerializerMethodField()
+
+    def get_earning(self, obj):
+        return ''
+
+    def get_last_updated(self, obj):
+        return obj.modified
+
+    def get_logo(self, obj):
+        return obj.quote.premium.product_variant.logo
+
+    def get_section(self, obj):
+        return self.context['section']
+
+    class Meta:
+        model = Application
+        fields = (
+            'id', 'reference_no', 'premium', 'suminsured', 'earning',
+            'last_updated', 'logo', 'section'
+        )
