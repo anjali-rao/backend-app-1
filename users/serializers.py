@@ -338,9 +338,9 @@ class SalesSerializer(serializers.ModelSerializer):
             apps.filter(created__range=self._current_month), many=True,
             context=dict(section='current_month')).data),
         data.extend(SalesApplicationSerializer(
-            apps.filter(created__gte=self._past_months), many=True,
+            apps.filter(created__lte=self._past_months), many=True,
             context=dict(section='past_months')).data),
-        return data
+        return sorted(data, key=lambda i: i['created'], reverse=True)
 
     def get_all_applications(self, obj):
         apps = obj.get_applications()
