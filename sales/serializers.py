@@ -353,3 +353,29 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
             'proposer_details', 'insured_memebers', 'nominee_details',
             'existing_policies'
         )
+
+
+class SalesApplicationSerializer(serializers.ModelSerializer):
+    section = serializers.SerializerMethodField()
+    earning = serializers.SerializerMethodField()
+    last_updated = serializers.SerializerMethodField()
+    logo = serializers.SerializerMethodField()
+
+    def get_earning(self, obj):
+        return ''
+
+    def get_last_updated(self, obj):
+        return obj.modified
+
+    def get_logo(self, obj):
+        return obj.quote.premium.product_variant.logo
+
+    def get_section(self, obj):
+        return self.context['section']
+
+    class Meta:
+        model = Application
+        fields = (
+            'id', 'reference_no', 'premium', 'suminsured', 'earning',
+            'last_updated', 'logo', 'section'
+        )

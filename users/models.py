@@ -206,6 +206,13 @@ class User(BaseModel):
             })
         return categories
 
+    def get_applications(self, status=None):
+        from sales.models import Application
+        query = dict(quote__lead__user_id=self.id)
+        if status:
+            query['status'] = status
+        return Application.objects.filter(**query)
+
 
 class Campaign(BaseModel):
     description = models.CharField(max_length=32)

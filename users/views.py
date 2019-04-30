@@ -8,8 +8,10 @@ from rest_framework.views import APIView
 from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
-    AccountSearchSerializers, User, PincodeSerializer, Pincode
+    AccountSearchSerializers, User, PincodeSerializer, Pincode,
+    SalesSerializer
 )
+from users.decorators import UserAuthentication
 from utils import constants
 from utils.mixins import APIException
 
@@ -157,3 +159,9 @@ class PincodeSearch(APIView):
                 cleaned_list.append(loc)
 
         return cleaned_list
+
+
+class GetSales(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
+    queryset = User.objects.all()
+    serializer_class = SalesSerializer
