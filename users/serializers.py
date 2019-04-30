@@ -332,15 +332,15 @@ class SalesSerializer(serializers.ModelSerializer):
 
     def get_data(self, apps):
         data = SalesApplicationSerializer(
-            apps.filter(created__range=self._current_week), many=True,
+            apps.filter(modified__range=self._current_week), many=True,
             context=dict(section='current_week')).data
         data.extend(SalesApplicationSerializer(
-            apps.filter(created__range=self._current_month), many=True,
-            context=dict(section='current_month')).data),
+            apps.filter(modified__range=self._current_month), many=True,
+            context=dict(section='current_month')).data)
         data.extend(SalesApplicationSerializer(
-            apps.filter(created__lte=self._past_months), many=True,
-            context=dict(section='past_months')).data),
-        return sorted(data, key=lambda i: i['created'], reverse=True)
+            apps.filter(modified__lte=self._past_months), many=True,
+            context=dict(section='past_months')).data)
+        return sorted(data, key=lambda i: i['last_updated'], reverse=True)
 
     def get_all_applications(self, obj):
         apps = obj.get_applications()
