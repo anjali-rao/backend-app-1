@@ -66,6 +66,8 @@ class Quote(BaseModel):
 
 class Application(BaseModel):
     reference_no = models.CharField(max_length=10, unique=True, db_index=True)
+    premium = models.FloatField(default=0.0)
+    suminsured = models.FloatField(default=0.0)
     client = models.ForeignKey(
         'crm.Contact', null=True, on_delete=models.PROTECT)
     application_type = models.CharField(
@@ -122,7 +124,9 @@ class Application(BaseModel):
         quote = lead.get_quotes().first()
         if not quote:
             raise RecommendationException('No quote found for this creteria')
-        self.quote_id = lead.get_quotes().first().id
+        self.quote_id = quote.id
+        self.premium = quote.premium.amount
+        self.suminsured = quote.premium.sum_insured
         self.save()
 
     def add_default_members(self):
@@ -314,15 +318,20 @@ class HealthInsurance(Insurance):
     blood_diseases = JSONField(
         default=list, help_text=constants.BLOOD_DISODER)
     alcohol_consumption = models.IntegerField(
-        default=0.0, help_text=constants.ALCOHOL_CONSUMPTION, null=True, blank=True)
+        default=0.0, help_text=constants.ALCOHOL_CONSUMPTION,
+        null=True, blank=True)
     tobacco_consumption = models.IntegerField(
-        default=0.0, help_text=constants.TABBACO_CONSUMPTION, null=True, blank=True)
+        default=0.0, help_text=constants.TABBACO_CONSUMPTION,
+        null=True, blank=True)
     cigarette_consumption = models.IntegerField(
-        default=0.0, help_text=constants.CIGARETTE_CONSUMPTION, null=True, blank=True)
+        default=0.0, help_text=constants.CIGARETTE_CONSUMPTION,
+        null=True, blank=True)
     previous_claim = models.BooleanField(
-        default=False, help_text=constants.PREVIOUS_CLAIM, null=True, blank=True)
+        default=False, help_text=constants.PREVIOUS_CLAIM,
+        null=True, blank=True)
     proposal_terms = models.BooleanField(
-        default=False, help_text=constants.PROPOSAL_TERMS, null=True, blank=True)
+        default=False, help_text=constants.PROPOSAL_TERMS,
+        null=True, blank=True)
 
     def update_default_fields(self, kw):
         for field in constants.HEALTHINSURANCE_FIELDS:
@@ -348,6 +357,8 @@ def application_post_save(sender, instance, created, **kwargs):
             id=instance.quote_id).update(status='rejected')
         instance.quote.status = 'accepted'
         instance.quote.save()
+        instance.premium = instance.quote.premium.amount
+        instance.suminsured = instance.quote.premium.sum_insured
         instance.add_default_members()
         ContentType.objects.get(
             model=instance.application_type, app_label='sales'
