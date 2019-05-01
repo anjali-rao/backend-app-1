@@ -61,6 +61,7 @@ def generate_authorization(request, version):
 
 @api_view(['POST'])
 def update_password(request, version):
+    # To Dos: Add Authentication
     serializer = ChangePasswordSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     return Response(
