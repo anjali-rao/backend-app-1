@@ -338,6 +338,26 @@ class HealthInsurance(Insurance):
             setattr(self, field, kw)
         self.save()
 
+    def get_summary(self):
+        response = dict()
+        for field in self._meta.fields:
+            if field.name in constants.INSURANCE_EXCLUDE_FIELDS:
+                continue
+            field_value = getattr(self, field.name)
+            if not field_value:
+                continue
+            if isinstance(field_value, list):
+                values = list()
+                for row in field_value:
+                    if not row['value']:
+                        continue
+                    values.append(Member.objects.get(id=row['id']).relation)
+                if values:
+                    field_value = ", ".join(values)
+
+            response[field.name] = field_value
+        return response
+
 
 class TravelInsurance(Insurance):
     name = models.CharField(max_length=32)
