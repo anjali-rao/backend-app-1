@@ -269,6 +269,15 @@ class HealthInsuranceSerializer(serializers.ModelSerializer):
             "alcohol_consumption", "tobacco_consumption", "previous_claim",
             "proposal_terms", "oncology_disease", "cigarette_consumption")
 
+    @property
+    def data(self):
+        # TO DOS: Remove this when app is build
+        super(HealthInsuranceSerializer, self).data
+        self._data = dict(
+            message='Contact updated successfully'
+        )
+        return self._data
+
 
 class TravalInsuranceSerializer(serializers.ModelSerializer):
 
