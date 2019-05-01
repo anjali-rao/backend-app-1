@@ -365,6 +365,8 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
 
 
 class SalesApplicationSerializer(serializers.ModelSerializer):
+    proposer_name = serializers.SerializerMethodField()
+    product_name = serializers.SerializerMethodField()
     section = serializers.SerializerMethodField()
     earning = serializers.SerializerMethodField()
     last_updated = serializers.SerializerMethodField()
@@ -374,7 +376,7 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         return ''
 
     def get_last_updated(self, obj):
-        return obj.modified
+        return obj.modified.strftime("%d/%m/%Y")
 
     def get_logo(self, obj):
         return obj.quote.premium.product_variant.logo
@@ -382,9 +384,15 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
     def get_section(self, obj):
         return self.context['section']
 
+    def get_product_name(self, obj):
+        return obj.quote.premium.product_variant.product_short_name
+
+    def get_proposer_name(self, obj):
+        return obj.client.get_full_name()
+
     class Meta:
         model = Application
         fields = (
             'id', 'reference_no', 'premium', 'suminsured', 'earning',
-            'last_updated', 'logo', 'section'
+            'last_updated', 'logo', 'section', 'product_name', 'proposer_name'
         )
