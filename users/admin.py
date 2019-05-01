@@ -7,7 +7,8 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from users.models import (
     Account, User, Campaign, AccountDetail, Document, Bank, BankAccount,
-    BankBranch, Enterprise, SubcriberEnterprise, State, Pincode, Address)
+    BankBranch, Enterprise, SubcriberEnterprise, State, Pincode, Address,
+    IPAddress)
 
 
 @admin.register(Account)
@@ -116,3 +117,13 @@ class AddressAdmin(admin.ModelAdmin):
     search_fields = ('pincode__pincode', 'pincode__state', 'pincode__city')
     raw_id_fields = ('pincode',)
     list_filter = ('pincode__state',)
+
+
+@admin.register(IPAddress)
+class IPAddressAdmin(admin.ModelAdmin):
+    list_display = (
+        'ip_address', 'port', 'company_name', 'authentication_required',
+        'blocked')
+    raw_id_fields = ('account',)
+    search_fields = ('ip_address',)
+    list_filter = ('port', 'authentication_required', 'blocked')
