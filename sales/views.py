@@ -215,10 +215,10 @@ class ApplicationSummary(generics.RetrieveUpdateAPIView):
 
         serializer = self.get_serializer(instance)
         data = serializer.data
+
         data['%s_fields' % (
-            instance.application_type)] = get_insurance_serializer(
-            instance.application_type)(
-            getattr(instance, instance.application_type)).data
+            instance.application_type)] = getattr(
+                instance, instance.application_type).get_summary()
         return Response(data)
 
 
