@@ -344,17 +344,17 @@ class HealthInsurance(Insurance):
             if field.name in constants.INSURANCE_EXCLUDE_FIELDS:
                 continue
             field_value = getattr(self, field.name)
-            if not field_value:
-                continue
             if isinstance(field_value, list):
                 values = list()
                 for row in field_value:
                     if not row['value']:
                         continue
                     values.append(Member.objects.get(id=row['id']).relation)
+                field_value = None
                 if values:
                     field_value = ", ".join(values)
-
+            if not field_value:
+                continue
             response[field.name] = field_value
         return response
 
