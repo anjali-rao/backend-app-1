@@ -373,7 +373,6 @@ class Address(BaseModel):
 class IPAddress(BaseModel):
     account = models.ForeignKey('users.Account', on_delete=models.PROTECT)
     ip_address = models.CharField(max_length=16)
-    port = models.CharField(max_length=8)
     company_name = models.CharField(max_length=128)
     authentication_required = models.BooleanField(default=True)
     blocked = models.BooleanField(default=False)
