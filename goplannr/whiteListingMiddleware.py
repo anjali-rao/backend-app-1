@@ -18,7 +18,7 @@ class AuthIPWhitelistMiddleware:
         if self._is_ip_whitelisted(request):
             auth_needed['is_authentication_required'] = False
         if self._is_blocked(request):
-            return PermissionDenied
+            raise PermissionDenied
         request.META.update(auth_needed)
         return
 
