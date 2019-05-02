@@ -377,8 +377,6 @@ def application_post_save(sender, instance, created, **kwargs):
             id=instance.quote_id).update(status='rejected')
         instance.quote.status = 'accepted'
         instance.quote.save()
-        instance.premium = instance.quote.premium.amount
-        instance.suminsured = instance.quote.premium.sum_insured
         instance.add_default_members()
         ContentType.objects.get(
             model=instance.application_type, app_label='sales'
