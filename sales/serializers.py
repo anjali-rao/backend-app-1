@@ -338,14 +338,14 @@ class GetInsuranceFieldsSerializer(serializers.Serializer):
 
 class ApplicationSummarySerializer(serializers.ModelSerializer):
     proposer_details = serializers.SerializerMethodField()
-    insured_memebers = serializers.SerializerMethodField()
+    insured_members = serializers.SerializerMethodField()
     nominee_details = serializers.SerializerMethodField()
     existing_policies = serializers.SerializerMethodField()
 
     def get_proposer_details(self, obj):
         return GetProposalDetailsSerializer(self.instance.client).data
 
-    def get_insured_memebers(self, obj):
+    def get_insured_members(self, obj):
         return GetApplicationMembersSerializer(
             self.instance.active_members, many=True).data
 
@@ -359,7 +359,7 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = Application
         fields = (
-            'proposer_details', 'insured_memebers', 'nominee_details',
+            'proposer_details', 'insured_members', 'nominee_details',
             'existing_policies'
         )
 

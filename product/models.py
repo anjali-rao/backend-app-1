@@ -76,8 +76,7 @@ class ProductVariant(BaseModel):
         return {
             'name': self.parent_product,
             'company': self.company_category.company.name,
-            'logo': self.logo,
-            'variant_name': self.product_short_name
+            'logo': self.logo, 'variant_name': self.product_short_name
         }
 
     @cached_property
