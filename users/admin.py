@@ -122,8 +122,8 @@ class AddressAdmin(admin.ModelAdmin):
 @admin.register(IPAddress)
 class IPAddressAdmin(admin.ModelAdmin):
     list_display = (
-        'ip_address', 'port', 'company_name', 'authentication_required',
+        'ip_address', 'company_name', 'authentication_required',
         'blocked')
     raw_id_fields = ('account',)
     search_fields = ('ip_address',)
-    list_filter = ('port', 'authentication_required', 'blocked')
+    list_filter = ('authentication_required', 'blocked')
