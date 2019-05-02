@@ -381,7 +381,7 @@ class IPAddress(BaseModel):
     @classmethod
     def _get_whitelisted_networks(cls):
         return cls.objects.filter(
-            blocked=False).values_list('ip_address', flat_no=True)
+            blocked=False).values_list('ip_address', flat=True)
 
 
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))

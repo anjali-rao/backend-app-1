@@ -1,110 +1,40 @@
-import ipaddress
 
-from django.conf import settings
-from django.core.exceptions import PermissionDenied
-from django.utils.module_loading import import_string
-
-from .exceptions import Unauthorized
-from .response import HttpUnauthorizedResponse
-from .utils import authorize, get_client_ip
-
-
-class BasicAuthIPWhitelistMiddleware:
+class AuthIPWhitelistMiddleware:
     def __init__(self, get_response=None):
         self.get_response = get_response
 
     def __call__(self, request):
         response = None
         response = self.process_request(request)
-        response = response or self.get_response(request)
+        response = self.get_response(request)
         return response
 
     def process_request(self, request):
-        if self._is_http_host_whitelisted(request):
-            return
+        auth_needed = dict(is_authentication_required=True)
         # Check if IP is whitelisted
         if self._is_ip_whitelisted(request):
-            return
-        # Fallback to basic auth if configured.
-        if self._is_basic_auth_configured():
-            return self._basic_auth_response(request)
-
-        raise PermissionDenied
-
-    @property
-    def basic_auth_login(self):
-        return getattr(settings, 'BASIC_AUTH_LOGIN', None)
-
-    @property
-    def basic_auth_password(self):
-        return getattr(settings, 'BASIC_AUTH_PASSWORD', None)
-
-    def get_response_class(self):
-        try:
-            return import_string(settings.BASIC_AUTH_RESPONSE_CLASS)
-        except AttributeError:
-            return HttpUnauthorizedResponse
-
-    def _basic_auth_response(self, request):
-        try:
-            authorize(request, self.basic_auth_login, self.basic_auth_password)
-        except Unauthorized:
-            return self.get_response_class()(request=request)
+            auth_needed['is_authentication_required'] = False
+        request.META.update(auth_needed)
+        return
 
     def _get_client_ip(self, request):
-        function_path = getattr(
-            settings, 'BASIC_AUTH_GET_CLIENT_IP_FUNCTION', None
-        )
-        func = get_client_ip
-        if function_path is not None:
-            func = import_string(function_path)
-        return func(request)
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if not x_forwarded_for:
+            return request.META.get('REMOTE_ADDR')
+        # If there is a list of IPs provided, use the last one.
+        return x_forwarded_for.split(',')[-1].strip()
 
     def _get_whitelisted_networks(self):
-        networks = getattr(settings, 'BASIC_AUTH_WHITELISTED_IP_NETWORKS', [])
-        # If we get a list, users probably passed a list of strings in
-        #  the settings, probably from the environment.
-        if isinstance(networks, str):
-            networks = networks.split(',')
-        # Otherwise assume that the list is iterable.
-        for network in networks:
-            network = network.strip()
-            if not network:
-                continue
-            yield ipaddress.ip_network(network)
-
-    def _get_whitelisted_http_hosts(self):
-        http_hosts = getattr(settings, 'BASIC_AUTH_WHITELISTED_HTTP_HOSTS', [])
-        # If we get a list, users probably passed a list of strings in
-        #  the settings, probably from the environment.
-        if isinstance(http_hosts, str):
-            http_hosts = http_hosts.split(',')
-        # Otherwise assume that the list is iterable.
-        for http_host in http_hosts:
-            http_host = http_host.strip()
-            if not http_host:
-                continue
-            yield http_host
-
-    def _is_http_host_whitelisted(self, request):
-        request_host = request.get_host()
-        if not request_host:
-            return False
-        return request_host in self._get_whitelisted_http_hosts()
+        from users.models import IPAddress
+        return IPAddress._get_whitelisted_networks()
 
     def _is_ip_whitelisted(self, request):
         """
-        Check if IP is on the whitelisted network.
+            Check if IP is on the whitelisted network.
         """
-        ip_address = ipaddress.ip_address(self._get_client_ip(request))
-        for network in self._get_whitelisted_networks():
-            if ip_address in network:
-                return True
+        from users.models import IPAddress
+        client_ip = self._get_client_ip(request)
+        if client_ip in self._get_whitelisted_networks():
+            self._ip = IPAddress.objects.get(ip_address=client_ip)
+            return not self._ip.authentication_required
         return False
-
-    def _is_basic_auth_configured(self):
-        """
-        Check basic authentication username and password are
-        configured.
-        """
-        return self.basic_auth_login and self.basic_auth_password
