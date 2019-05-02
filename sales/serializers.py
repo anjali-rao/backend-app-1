@@ -33,9 +33,7 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     phone_no=validated_data['contact_no'])
                 if created:
                     contact.update_fields(**dict(
-                        user_id=lead.user.id, first_name=full_name[0]),
-                        parent=None
-                    )
+                        user_id=lead.user.id, first_name=full_name[0]))
                 lead.update_fields(**dict(
                     contact_id=contact.id, status='inprogress', stage='cart'))
             return instance
@@ -117,15 +115,25 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
     def save(self, **kwargs):
         validated_data = dict(
             list(self.validated_data.items()) +
-            list(kwargs.items())
-        )
+            list(kwargs.items()))
         app = Application.objects.get(id=validated_data['application_id'])
-        contact = app.quote.lead.contact
         with transaction.atomic():
-            instance, created = self.Meta.model.objects.get_or_create(
-                phone_no=validated_data['phone_no'])
-            if created:
-                self.instance = instance
+            update_fields = dict(
+                address_id=Address.objects.create(
+                    pincode_id=Pincode.get_pincode(
+                        validated_data['pincode']).id,
+                    flat_no=validated_data['flat_no'],
+                    street=validated_data['street']
+                ).id
+            )
+            if self.instance.phone_no != validated_data['phone_no']:
+                instances = self.Meta.model.objects.filter(
+                    phone_no=validated_data['phone_no'])
+                if instances.exists():
+                    self.instance = instances.latest('modified')
+                else:
+                    self.instance = None
+                    update_fields['user_id'] = app.quote.lead.user.id
             self.instance = super(
                 UpdateContactDetailsSerializer, self).save(**kwargs)
             kycdocument, created = KYCDocument.objects.get_or_create(
@@ -133,16 +141,9 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                 contact_id=self.instance.id)
             kycdocument.document_number = validated_data['document_number']
             kycdocument.save()
-            self.instance.update_fields(**dict(
-                address_id=Address.objects.create(
-                    pincode_id=Pincode.get_pincode(
-                        validated_data['pincode']).id,
-                    flat_no=validated_data['flat_no'],
-                    street=validated_data['street']
-                ).id,
-                parent_id=(contact.id if created else contact.parent),
-                user_id=contact.user.id, is_client=True
-            ))
+            self.instance.update_fields(**update_fields)
+            app.update_fields(**dict(
+                status='pending', client_id=self.instance.id))
 
     @property
     def data(self):
@@ -265,8 +266,17 @@ class HealthInsuranceSerializer(serializers.ModelSerializer):
         fields = (
             "gastrointestinal_disease", "neuronal_diseases", "ent_diseases",
             "respiratory_diseases", "cardiovascular_disease", "blood_diseases",
-            "alcohol_consumption", "tabacco_consumption", "previous_claim",
+            "alcohol_consumption", "tobacco_consumption", "previous_claim",
             "proposal_terms", "oncology_disease", "cigarette_consumption")
+
+    @property
+    def data(self):
+        # TO DOS: Remove this when app is build
+        super(HealthInsuranceSerializer, self).data
+        self._data = dict(
+            message='Contact updated successfully'
+        )
+        return self._data
 
 
 class TravalInsuranceSerializer(serializers.ModelSerializer):
@@ -282,6 +292,17 @@ class TermsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Application
         fields = ('terms_and_conditions',)
+
+    @property
+    def data(self):
+        # TO DOS: Remove this when app is build
+        super(TermsSerializer, self).data
+        self._data = dict(
+            message='Application updated successfully.',
+            status=self.instance.get_status_display(),
+            reference_no=self.instance.reference_no
+        )
+        return self._data
 
 
 INSURANCE_SERIALIZER_MAPPING = {
@@ -313,3 +334,65 @@ class GetInsuranceFieldsSerializer(serializers.Serializer):
     text = serializers.CharField(required=True)
     field_name = serializers.CharField(required=True)
     field_requirements = serializers.JSONField(required=True)
+
+
+class ApplicationSummarySerializer(serializers.ModelSerializer):
+    proposer_details = serializers.SerializerMethodField()
+    insured_members = serializers.SerializerMethodField()
+    nominee_details = serializers.SerializerMethodField()
+    existing_policies = serializers.SerializerMethodField()
+
+    def get_proposer_details(self, obj):
+        return GetProposalDetailsSerializer(self.instance.client).data
+
+    def get_insured_members(self, obj):
+        return GetApplicationMembersSerializer(
+            self.instance.active_members, many=True).data
+
+    def get_nominee_details(self, obj):
+        return NomineeSerializer(self.instance.nominee_set.first()).data
+
+    def get_existing_policies(self, obj):
+        return ExistingPolicySerializer(
+            self.instance.existingpolicies_set.all(), many=True).data
+
+    class Meta:
+        model = Application
+        fields = (
+            'proposer_details', 'insured_members', 'nominee_details',
+            'existing_policies'
+        )
+
+
+class SalesApplicationSerializer(serializers.ModelSerializer):
+    proposer_name = serializers.SerializerMethodField()
+    product_name = serializers.SerializerMethodField()
+    section = serializers.SerializerMethodField()
+    earning = serializers.SerializerMethodField()
+    last_updated = serializers.SerializerMethodField()
+    logo = serializers.SerializerMethodField()
+
+    def get_earning(self, obj):
+        return ''
+
+    def get_last_updated(self, obj):
+        return obj.modified.strftime("%d/%m/%Y")
+
+    def get_logo(self, obj):
+        return obj.quote.premium.product_variant.logo
+
+    def get_section(self, obj):
+        return self.context['section']
+
+    def get_product_name(self, obj):
+        return obj.quote.premium.product_variant.product_short_name
+
+    def get_proposer_name(self, obj):
+        return obj.client.get_full_name()
+
+    class Meta:
+        model = Application
+        fields = (
+            'id', 'reference_no', 'premium', 'suminsured', 'earning',
+            'last_updated', 'logo', 'section', 'product_name', 'proposer_name'
+        )

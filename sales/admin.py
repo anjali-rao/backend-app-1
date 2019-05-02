@@ -32,7 +32,14 @@ class QuoteAdmin(admin.ModelAdmin):
 
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
-    model = Application
+    list_display = (
+        'reference_no', 'application_type', 'status', 'terms_and_conditions')
+    list_filter = ('application_type', 'terms_and_conditions', 'status')
+    raw_id_fields = ('client', 'quote')
+    search_fields = (
+        'reference_no', 'quote__id', 'quote__lead__id', 'id',
+        'client__phone_no', 'client__address__pincode',
+        'client__address__city')
     _inlines_class_set = dict(
         healthinsurance=HealthInsuranceInline
     )

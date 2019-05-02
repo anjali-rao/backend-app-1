@@ -82,22 +82,22 @@ class Lead(BaseModel):
         self.save()
 
     def get_premiums(self, **kw):
+        query = dict()
+        print(self.citytier)
         queryset = Premium.objects.select_related('product_variant').filter(
             sum_insured=kw.get('score', self.final_score),
-            adults=kw.get('adults', self.adults))
+            adults=kw.get('adults', self.adults),
+            citytier__in=kw.get('citytier', self.citytier)
+        )
         if 'product_variant_id' in kw:
-            queryset = queryset.filter(
-                product_variant_id=kw['product_variant_id'])
+            query['product_variant_id'] = kw['product_variant_id']
         if 'category_id' in kw:
-            queryset = queryset.filter(
-                product_variant__company_category__category_id=kw['category_id'])
+            query['product_variant__company_category__category_id'] = kw['category_id'] # noqa
         if kw.get('childrens', self.childrens) <= 4:
-            queryset = queryset.filter(
-                childrens=kw.get('childrens', self.childrens))
-        return queryset.filter(
-            age_range__contains=(
-                kw.get('effective_age', self.effective_age) + 1)
-        ) or queryset[:7]
+            query['childrens'] = kw.get('childrens', self.childrens)
+        query['age_range__contains'] = (
+            kw.get('effective_age', self.effective_age) + 1)
+        return queryset.filter(**query) or queryset[:7]
 
     def refresh_quote_data(self, **kw):
         quotes = self.get_quotes()
@@ -190,23 +190,19 @@ class Lead(BaseModel):
 
     @property
     def citytier(self):
-        if self.city in constants.TIER_1_CITIES:
-            return 1
-        elif self.city in constants.TIER_2_CITIES:
-            return 2
-        return 3
+        if self.pincode in constants.NCR_PINCODES or self.city in constants.MUMBAI_AREA_TIER: # noqa
+            return constants.MUMBAI_NCR_TIER
+        return constants.ALL_INDIA_TIER
 
     def __str__(self):
         return "%s - %s" % (
-            self.contact.first_name if self.contact else 'Contact',
+            self.contact.first_name if self.contact else 'Contact Pending',
             self.category.name)
 
 
 class Contact(BaseModel):
     user = models.ForeignKey(
         'users.User', on_delete=models.CASCADE, null=True, blank=True)
-    parent = models.ForeignKey(
-        'self', on_delete=models.CASCADE, null=True, blank=True)
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
     phone_no = models.CharField(max_length=20, null=True, blank=True)
@@ -222,7 +218,6 @@ class Contact(BaseModel):
         choices=get_choices(
             constants.MARITAL_STATUS), max_length=32, null=True, blank=True)
     annual_income = models.CharField(max_length=48, null=True, blank=True)
-    is_client = models.BooleanField(default=False)
 
     def __str__(self):
         full_name = self.get_full_name()
@@ -240,12 +235,10 @@ class Contact(BaseModel):
             self.save()
 
     def is_kyc_required(self):
-        try:
-            if not self.kycdocument.file:
-                return False
-        except Exception:
-            pass
-        return True
+        kyc_docs = self.kycdocument_set.all()
+        if kyc_docs.exists():
+            return kyc_docs.latest('modified').file is not None
+        return False
 
     def get_full_name(self):
         full_name = '%s %s %s' % (

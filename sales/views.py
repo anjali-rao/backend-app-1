@@ -11,9 +11,9 @@ from sales.serializers import (
     Application, UpdateContactDetailsSerializer, Contact,
     GetApplicationMembersSerializer, CreateMemberSerializers,
     CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
-    TravalInsuranceSerializer, TermsSerializer, NomineeSerializer,
-    get_insurance_serializer, ExistingPolicySerializer,
-    GetInsuranceFieldsSerializer
+    TravalInsuranceSerializer, TermsSerializer, get_insurance_serializer,
+    ExistingPolicySerializer, GetInsuranceFieldsSerializer,
+    ApplicationSummarySerializer
 )
 
 from django.core.exceptions import ValidationError
@@ -101,6 +101,7 @@ class RetrieveUpdateApplicationMembers(
                 childrens = application.active_members.count() - adults
                 if lead.adults != adults or lead.childrens != childrens:
                     application.switch_premium(adults, childrens)
+                application.member_set.filter(ignore=None).update(ignore=True)
         except (IntegrityError, mixins.RecommendationException) as e:
             raise mixins.APIException(e)
         return Response(dict(
@@ -187,7 +188,10 @@ class GetInsuranceFields(generics.RetrieveAPIView):
             serializer = self.get_serializer(data=dict(
                 text=field.help_text,
                 field_name=field.name,
-                field_requirements=list() if field.__class__.__name__ == 'BooleanField' else members # noqa
+                field_requirements=[{
+                    'relation': "None"
+                }] if field.__class__.__name__ in [
+                    'BooleanField', 'IntegerField'] else members
             ))
             serializer.is_valid(raise_exception=True)
             data.append(serializer.data)
@@ -197,7 +201,7 @@ class GetInsuranceFields(generics.RetrieveAPIView):
 class ApplicationSummary(generics.RetrieveUpdateAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = Application.objects.all()
-    serializer_classes = TermsSerializer
+    serializer_class = ApplicationSummarySerializer
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -208,24 +212,17 @@ class ApplicationSummary(generics.RetrieveUpdateAPIView):
                 constants.INCOMPLETE_APPLICATION % 'nominee details')
         if not hasattr(instance, instance.application_type):
             raise mixins.APIException(constants.APPLICATION_UNMAPPED)
-        data = [{
-            'name': 'proposer_details',
-            'value': GetProposalDetailsSerializer(
-                instance.quote.lead.contact).data
-        }, {
-            'name': 'insured_members',
-            'value': GetApplicationMembersSerializer(
-                instance.active_members, many=True).data
-        }, {
-            'name': 'nominee_details',
-            'value': NomineeSerializer(nominee)
-        }, {
-            'name': '%s_fields' % instance.application_type,
-            'value': get_insurance_serializer(instance.application_type)
-        }, {
-            'name': 'existing_policies',
-            'value': ExistingPolicySerializer(
-                instance.existingpolicies_set.all())
-        }]
 
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+
+        data['%s_fields' % (
+            instance.application_type)] = getattr(
+                instance, instance.application_type).get_summary()
         return Response(data)
+
+
+class SubmitApplication(generics.UpdateAPIView):
+    authentication_classes = (UserAuthentication,)
+    queryset = Application.objects.all()
+    serializer_class = TermsSerializer

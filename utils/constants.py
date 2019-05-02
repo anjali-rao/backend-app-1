@@ -3,7 +3,23 @@ GENDER = ('male', 'female', 'transgender')
 
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
 
-CITY_TIER = ((0, 'First'), (1, 'Second'), (2, 'Third'))
+NCR_PINCODES = [
+    110001, 110002, 110003, 110004, 110005, 110006, 110007, 110008, 110009,
+    110010, 110011, 110012, 110013, 110014, 110015, 110016, 110017, 110018,
+    110019, 110020, 110021, 110022, 110023, 110024, 110025, 110026, 110027,
+    110028, 110029, 110030, 110031, 110032, 110033, 110034, 110035, 110036,
+    110037, 110038, 110039, 110040, 110041, 110042, 110043, 110044, 110045,
+    110046, 110047, 110048, 110049, 110051, 110052, 110053, 110054, 110055,
+    110056, 110057, 110058, 110059, 110060, 110061, 110062, 110063, 110064,
+    110065, 110066, 110067, 110068, 110070, 110071, 110073, 110074, 110075,
+    110076, 110078, 110081, 110082, 110083, 110084, 110085, 110086, 110087,
+    110088, 110091, 110092, 110093, 110094, 110095, 110096, 201301, 122001,
+    201001, 201009, 121001, 121002, 124507
+]
+
+MUMBAI_NCR_TIER = ['Mumbai & NCR', 'All India']
+MUMBAI_AREA_TIER = ['Mumabi', 'Navi Mumbai']
+ALL_INDIA_TIER = CITY_TIER = ['All India', 'All India except Mumbai & NCR']
 
 USER_FLAG = {'blacklist': False, 'training': False, 'exam_passed': None}
 
@@ -20,7 +36,14 @@ LEAD_STAGE_CHOICES = (
     ('proposal', 'Proposal'), ('payment', 'Payment'),
     ('submitted', 'Submitted'), ('issued', 'Issued'))
 
-STATUS_CHOICES = (('pending','Pending'),('accepted','Accepted'),('rejected','Rejected')) # noqa
+STATUS_CHOICES = (
+    ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'))
+
+APPLICATION_STATUS = (
+    ('fresh', 'Fresh'), ('pending', 'Pending'), ('submitted', 'Submitted'),
+    ('approved', 'Approved'), ('cancelled', 'Cancelled'),
+    ('completed', 'Completed'))
+
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
     'ration_card', 'passport', 'birth_certificate'
@@ -128,7 +151,6 @@ ACCOUNT_CREATION_FIELDS = (
     'password', 'first_name', 'last_name', 'email',
     'pincode_id', 'pan_no'
 )
-
 
 # Upload paths
 COMPANY_UPLOAD_PATH = 'company'
