@@ -371,7 +371,8 @@ class Address(BaseModel):
 
 
 class IPAddress(BaseModel):
-    account = models.ForeignKey('users.Account', on_delete=models.PROTECT)
+    account = models.ForeignKey(
+        'users.Account', on_delete=models.PROTECT, null=True, blank=True)
     ip_address = models.CharField(max_length=16)
     company_name = models.CharField(max_length=128)
     authentication_required = models.BooleanField(default=True)
