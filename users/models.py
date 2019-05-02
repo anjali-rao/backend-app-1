@@ -370,6 +370,19 @@ class Address(BaseModel):
         return self.full_address
 
 
+class IPAddress(BaseModel):
+    account = models.ForeignKey('users.Account', on_delete=models.PROTECT)
+    ip_address = models.CharField(max_length=16)
+    company_name = models.CharField(max_length=128)
+    authentication_required = models.BooleanField(default=True)
+    blocked = models.BooleanField(default=False)
+
+    @classmethod
+    def _get_whitelisted_networks(cls):
+        return cls.objects.filter(
+            blocked=False).values_list('ip_address', flat=True)
+
+
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))
 def user_post_save(sender, instance, created, **kwargs):
     if created:
