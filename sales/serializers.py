@@ -26,9 +26,12 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
         full_name = validated_data['contact_name'].split(' ')
         try:
             with transaction.atomic():
+                quote = Quote.objects.get(id=validated_data['quote_id'])
                 instance = Application.objects.create(
-                    quote_id=validated_data['quote_id'])
-                lead = instance.quote.lead
+                    quote_id=validated_data['quote_id'],
+                    premium=quote.premium.amount,
+                    suminsured=quote.premium.sum_insured)
+                lead = quote.lead
                 contact, created = Contact.objects.get_or_create(
                     phone_no=validated_data['contact_no'])
                 if created:
