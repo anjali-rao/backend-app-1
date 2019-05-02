@@ -388,7 +388,8 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         return obj.quote.premium.product_variant.product_short_name
 
     def get_proposer_name(self, obj):
-        return obj.client.get_full_name()
+        instance = obj.client or obj.quote.lead.contact
+        return instance.get_full_name()
 
     class Meta:
         model = Application
