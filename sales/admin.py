@@ -38,8 +38,10 @@ class ApplicationAdmin(admin.ModelAdmin):
     raw_id_fields = ('client', 'quote')
     search_fields = (
         'reference_no', 'quote__id', 'quote__lead__id', 'id',
-        'client__phone_no', 'client__address__pincode',
-        'client__address__city')
+        'client__phone_no',
+        'client__address__pincode__pincode',
+        'client__address__pincode__city'
+    )
     _inlines_class_set = dict(
         healthinsurance=HealthInsuranceInline
     )
