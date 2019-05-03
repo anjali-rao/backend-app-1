@@ -185,7 +185,7 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
         return obj.lead.wellness_rewards
 
     def get_health_checkups(self, obj):
-        return obj.lead.health_checkups
+        return obj.lead.adults
 
     class Meta:
         model = Quote
