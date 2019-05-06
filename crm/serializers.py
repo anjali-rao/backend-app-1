@@ -1,8 +1,54 @@
 from rest_framework import serializers
 
 from content.models import NetworkHospital
+from crm.models import Lead
 from sales.models import Quote
 from utils import constants
+
+
+class CreateLeadSerializer(serializers.ModelSerializer):
+    category_id = serializers.IntegerField(required=True)
+    gender = serializers.CharField(required=True)
+    pincode = serializers.CharField(required=True, max_length=6)
+
+    def validate_category_id(self, value):
+        from product.models import Category
+        if not Category.objects.filter(id=value).exists():
+            raise serializers.ValidationError(
+                constants.INVALID_CATEGORY_ID)
+        return value
+
+    def validate_gender(self, value):
+        value = value.lower()
+        if value not in constants.GENDER:
+            raise serializers.ValidationError(
+                constants.INVALID_GENDER_PROVIDED)
+        return value
+
+    class Meta:
+        model = Lead
+        fields = ('id', 'category_id', 'pincode', 'gender')
+
+    @property
+    def data(self):
+        # TO DOS: Remove this when app is build
+        super(CreateLeadSerializer, self).data
+        self._data = dict(
+            message='Lead created successfully',
+            lead_id=self.instance.id
+        )
+        return self._data
+
+
+class LeadSerializer(serializers.ModelSerializer):
+    category_name = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lead
+        fields = (
+            'id', 'category_name', 'full_name', 'status'
+        )
 
 
 class QuoteSerializer(serializers.ModelSerializer):

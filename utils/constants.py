@@ -149,6 +149,7 @@ LOOKUP_ERROR = 'Expected view %s to be called with a URL keyword argument '
 APPLICATION_UNMAPPED = 'Application not mapped to any insurance or inproper application type'
 INVALID_QUOTE_ID = 'Invalid Quote id provided.'
 INVALID_QUESTION_ANSWER_COMBINATION = 'Invalid question and answer combination provided'
+INVALID_LEAD_ID = 'Invalid / missing Lead id.'
 
 
 # Creation Fields

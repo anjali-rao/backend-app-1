@@ -44,8 +44,11 @@ class Lead(BaseModel):
             current = self.__class__.objects.get(pk=self.id)
             if self.final_score != current.final_score:
                 self.refresh_quote_data()
+            if not current.family:
+                self.parse_family_json()
         except Lead.DoesNotExist:
-            self.parse_family_json()
+            if self.family:
+                self.parse_family_json()
         super(Lead, self).save(*args, **kwargs)
 
     def parse_family_json(self):

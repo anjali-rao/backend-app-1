@@ -34,6 +34,7 @@ class AnswerSerializer(serializers.ModelSerializer):
 
 
 class ResponseSerializer(serializers.Serializer):
+    lead_id = serializers.IntegerField(required=True)
     category_id = serializers.IntegerField(required=True)
     gender = serializers.CharField(required=True)
     pincode = serializers.CharField(required=True, max_length=6)
@@ -45,6 +46,12 @@ class ResponseSerializer(serializers.Serializer):
         if not Category.objects.filter(id=value).exists():
             raise serializers.ValidationError(
                 constants.INVALID_CATEGORY_ID)
+        return value
+
+    def validate_lead_id(self, value):
+        from crm.models import Lead
+        if not Lead.objects.filter(id=value).exists():
+            raise serializers.ValidationError(constants.INVALID_LEAD_ID)
         return value
 
 #    def validate_pincode(self, value):

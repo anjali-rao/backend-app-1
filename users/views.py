@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 
-
+from crm.serializers import LeadSerializer
 from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
@@ -168,3 +168,12 @@ class GetSales(generics.RetrieveAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = User.objects.all()
     serializer_class = SalesSerializer
+
+
+class GetLeads(generics.ListAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = LeadSerializer
+
+    def get_queryset(self):
+        from crm.models import Lead
+        return Lead.objects.filter(user_id=self.request.user.id)
