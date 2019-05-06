@@ -349,8 +349,12 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
         return GetProposalDetailsSerializer(self.instance.client).data
 
     def get_insured_members(self, obj):
+        members = sorted(
+            self.instance.active_members,
+            key=lambda member: constants.MEMBER_ORDER.get(
+                member.relation, 0))
         return GetApplicationMembersSerializer(
-            self.instance.active_members, many=True).data
+            members, many=True).data
 
     def get_nominee_details(self, obj):
         return NomineeSerializer(self.instance.nominee_set.first()).data
