@@ -20,7 +20,8 @@ class GetQuestionnaire(generics.ListAPIView):
 
     def get_queryset(self):
         questionnaire = Question.objects.filter(
-            category_id=self.request.query_params.get('category'))
+            category_id=self.request.query_params.get('category'),
+            ignore=False)
         if not questionnaire:
             raise exceptions.NotFound(
                 'No Questionnaire found for given category id')
