@@ -129,7 +129,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
             account.upload_docs(
                 validated_data, set(validated_data).intersection(
                     set(constants.USER_FILE_UPLOAD)))
-        return self.isnstance
+        return self.instance
 
     def get_account(self, validated_data):
         validated_data['pincode_id'] = validated_data['pincode']
