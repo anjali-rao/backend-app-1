@@ -83,7 +83,6 @@ class Lead(BaseModel):
 
     def get_premiums(self, **kw):
         query = dict()
-        print(self.citytier)
         queryset = Premium.objects.select_related('product_variant').filter(
             sum_insured=kw.get('score', self.final_score),
             adults=kw.get('adults', self.adults),
@@ -173,13 +172,9 @@ class Lead(BaseModel):
         return self.get_quotes()[:5]
 
     def update_fields(self, **kw):
-        updated = False
         for field in kw.keys():
             setattr(self, field, kw[field])
-            if not updated:
-                updated = True
-        if updated:
-            self.save()
+        self.save()
 
     @property
     def city(self):
@@ -226,13 +221,9 @@ class Contact(BaseModel):
         ), self.phone_no)
 
     def update_fields(self, **kw):
-        updated = False
         for field in kw.keys():
             setattr(self, field, kw[field])
-            if not updated:
-                updated = True
-        if updated:
-            self.save()
+        self.save()
 
     def is_kyc_required(self):
         kyc_docs = self.kycdocument_set.all()

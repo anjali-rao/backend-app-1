@@ -226,6 +226,11 @@ class Member(BaseModel):
                     '%s relation already exists.' % self.relation)
         super(Member, self).save(*ar, **kw)
 
+    def update_fields(self, **kw):
+        for field in kw.keys():
+            setattr(self, field, kw[field])
+        self.save()
+
     def get_full_name(self):
         name = '%s %s' % (self.first_name, self.last_name)
         return name.strip()
