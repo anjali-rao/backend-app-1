@@ -129,6 +129,8 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                     street=validated_data['street']
                 ).id
             )
+            members = Member.objects.filter(
+                application_id=app.id, relation='self')
             if self.instance.phone_no != validated_data['phone_no']:
                 instances = self.Meta.model.objects.filter(
                     phone_no=validated_data['phone_no'])
@@ -137,6 +139,13 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                 else:
                     self.instance = None
                     update_fields['user_id'] = app.quote.lead.user.id
+            elif members.exists():
+                member = members.get()
+                member.update_fields(**dict(
+                    first_name=validated_data['first_name'],
+                    last_name=validated_data['last_name'],
+                    occupation=validated_data['occupation'],
+                    dob=validated_data['dob']))
             self.instance = super(
                 UpdateContactDetailsSerializer, self).save(**kwargs)
             kycdocument, created = KYCDocument.objects.get_or_create(
