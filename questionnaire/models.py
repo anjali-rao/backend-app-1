@@ -13,6 +13,7 @@ class Question(BaseModel):
         default="single")
     question = models.TextField()
     order = models.IntegerField(default=0)
+    ignore = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
