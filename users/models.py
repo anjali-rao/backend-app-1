@@ -56,6 +56,16 @@ class Account(AbstractUser):
             return users.earliest('created')
         return users.earliest('created')
 
+    def upload_docs(self, validated_data, fields):
+        for field in fields:
+            import pdb; pdb.set_trace()
+            file_name = '%s_%s_%s' % (
+                self.id, field, now().date().isoformat())
+            doc = Document.objects.create(
+                doc_type=field, account_id=self.id)
+            doc.file.save(file_name, open(validated_data[field]))
+            doc.save()
+
     @classmethod
     def send_otp(cls, phone_no):
         from users.tasks import send_sms
@@ -113,6 +123,7 @@ class User(BaseModel):
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
     flag = JSONField(default=constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
+    manager_id = models.CharField(max_length=48, null=True)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     enterprise_id = models.PositiveIntegerField()
     enterprise = GenericForeignKey('content_type', 'enterprise_id')
@@ -127,6 +138,9 @@ class User(BaseModel):
                 models_name = 'enterprise'
             self.content_type_id = ContentType.objects.get(
                 app_label='users', model=models_name).id
+            if self.manager_id:
+                self.is_active = False
+                self.user_type = 'pos'
         super(User, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -285,7 +299,7 @@ class Referral(BaseModel):
 
 
 class Document(BaseModel):
-    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    account = models.ForeignKey('users.Account', on_delete=models.CASCADE)
     doc_type = models.CharField(
         choices=get_choices(constants.DOC_TYPES), max_length=16)
     file = models.FileField(upload_to=get_upload_path)

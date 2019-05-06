@@ -48,7 +48,8 @@ APPLICATION_STATUS = (
 
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
-    'ration_card', 'passport', 'birth_certificate'
+    'ration_card', 'passport', 'birth_certificate', 'cancelled_cheque',
+    'photo'
 )
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
@@ -176,3 +177,4 @@ RESPIRATORY_DISEASES = 'Any form of Heart Disease, Peripheral Vascular Disease, 
 BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Blood disorder (whether treated or not)'
 
 INSURANCE_EXCLUDE_FIELDS = ['id', 'created', 'modified', 'application']
+USER_FILE_UPLOAD = ['cancelled_cheque', 'photo']

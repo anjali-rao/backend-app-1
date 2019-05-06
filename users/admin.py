@@ -52,9 +52,9 @@ class AccountDetailsAdmin(admin.ModelAdmin):
 
 @admin.register(Document)
 class DocumentsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'doc_type', 'file')
-    search_fields = ('user__username', 'user__account__phone_no')
-    raw_id_fields = ('user',)
+    list_display = ('account', 'doc_type', 'file')
+    search_fields = ('account__username', 'account__phone_no')
+    raw_id_fields = ('account',)
     list_filter = ('doc_type',)
 
 

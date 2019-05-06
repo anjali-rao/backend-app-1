@@ -7,7 +7,9 @@ from django.utils.timezone import now
 
 from dateutil.relativedelta import relativedelta
 
-from users.models import User, Account, Enterprise, AccountDetail, Pincode
+from users.models import (
+    User, Account, Enterprise, AccountDetail, Pincode, Document
+)
 from sales.serializers import SalesApplicationSerializer
 
 from utils import constants, genrate_random_string
@@ -76,6 +78,9 @@ class CreateUserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
     email = serializers.CharField(required=True)
+    cancelled_cheque = serializers.FileField(required=False)
+    photo = serializers.FileField(required=False)
+    manager_id = serializers.CharField(required=False)
 
     def validate_password(self, value):
         return make_password(value)
@@ -111,14 +116,19 @@ class CreateUserSerializer(serializers.ModelSerializer):
         validated_data.update(User.get_referral_details(
             validated_data.get('referral_code')))
         account = self.get_account(validated_data)
-        data = {
-            'account_id': account.id,
-            'user_type': validated_data['user_type'],
-            'enterprise_id': validated_data['enterprise_id'],
-            'is_active': True
-        }
+        data = dict(
+            account_id=account.id,
+            user_type=validated_data['user_type'],
+            enterprise_id=validated_data['enterprise_id'],
+            manager_id=validated_data.get('manager_id'),
+            is_active=True
+        )
         instance = User.objects.create(**data)
         instance.generate_referral()
+        if any(x in validated_data.keys() for x in constants.USER_FILE_UPLOAD):
+            account.upload_docs(
+                validated_data, set(validated_data).intersection(
+                    set(constants.USER_FILE_UPLOAD)))
         return instance
 
     def get_account(self, validated_data):
