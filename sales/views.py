@@ -78,6 +78,9 @@ class RetrieveUpdateApplicationMembers(
 
     def get(self, request, *args, **kwargs):
         members = self.get_object().member_set.all()
+        members = sorted(
+            members, key=lambda member: constants.MEMBER_ORDER.get(
+                member.relation, 0))
         return Response(
             self.get_serializer(members, many=True).data,
             status=status.HTTP_200_OK)

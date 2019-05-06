@@ -3,6 +3,8 @@ GENDER = ('male', 'female', 'transgender')
 
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
 
+MEMBER_ORDER = {key: i for i, key in enumerate(['self', 'spouse', 'father', 'mother'])} # noqa
+
 NCR_PINCODES = [
     110001, 110002, 110003, 110004, 110005, 110006, 110007, 110008, 110009,
     110010, 110011, 110012, 110013, 110014, 110015, 110016, 110017, 110018,
@@ -161,11 +163,11 @@ DEBUG_HOST = 'http://localhost:8000'
 
 GASTROINTESTINAL_DISEASE = 'Disease of Kidney, Digestive tract, Liver/Gall Bladder, Pancreas, Breast, Reproductive /Urinary system, or any past complications of pregnancy/ child birth including high blood pressure or diabetes etc' # noqa
 NEURONAL_DISEASES = 'Disease of the Brain/Spine/Nervous System, Epilepsy, Paralysis, Polio, Joints/Arthritis, Congenital/ Birth defect, Physical deformity/disability, HIV/AIDS, other Sexually Transmitted Disease or Accidental injury or any other medical (other than common cold & viral fever) or surgical condition or Investigation parameter has been detected to be out of range/ not normal?' # noqa
-ALCOHOL_CONSUMPTION = 'Does any person proposed to be insured consume alcohol?' # noqa
+ALCOHOL_CONSUMPTION = 'Does any person proposed to be insured consume alcohol ?' # noqa
 TABBACO_CONSUMPTION = 'Does any person proposed to be insured consume Pan Masala/Gutka ?' # noqa
 CIGARETTE_CONSUMPTION = 'Does any person proposed to be insured smoke?' # noqa
 PREVIOUS_CLAIM = 'Claim in previous policy.' # noqa
-PROPOSAL_TERMS = 'Was any proposal for life, health, hospital daily cash or critical illness insurance declined, deferred, withdrawn or accepted with modified terms' # noqa
+PROPOSAL_TERMS = 'Was any proposal for life, health, hospital daily cash or critical illness insurance declined, deferred, withdrawn or accepted with modified terms ?' # noqa
 EXISTING_POLICY = 'Do you have Previous/ Current policy for life, health, hospital daily cash or critical illness insurance?' # noqa
 ONCOLOGY_DISEASE = 'Cancer, Tumour, lump, cyst, ulcer'
 ENT_DISEASE = 'Disease of Eye, Ear, Nose, Throat, Thyroid'
