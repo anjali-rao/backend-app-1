@@ -12,17 +12,15 @@ from django.db.models.signals import post_save
 from django.utils.timezone import now
 from django.dispatch import receiver
 from django.core.cache import cache
-
-from goplannr.settings import JWT_SECRET, DEBUG
-
-import uuid
-
-import jwt
 from django.utils.translation import ugettext_lazy as _
-
 from django.contrib.contenttypes.fields import (
     GenericForeignKey, GenericRelation)
 from django.contrib.contenttypes.models import ContentType
+
+from goplannr.settings import JWT_SECRET, DEBUG
+
+import jwt
+import uuid
 
 
 class Account(AbstractUser):
@@ -55,6 +53,14 @@ class Account(AbstractUser):
         if users.filter(user_type='pos').exists():
             return users.earliest('created')
         return users.earliest('created')
+
+    def upload_docs(self, validated_data, fields):
+        for field in fields:
+            file_name = '%s_%s_%s' % (
+                self.id, field, now().date().isoformat())
+            doc = Document.objects.create(
+                doc_type=field, account_id=self.id)
+            doc.file.save(file_name, validated_data[field])
 
     @classmethod
     def send_otp(cls, phone_no):
@@ -113,6 +119,7 @@ class User(BaseModel):
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
     flag = JSONField(default=constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
+    manager_id = models.CharField(max_length=48, null=True)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     enterprise_id = models.PositiveIntegerField()
     enterprise = GenericForeignKey('content_type', 'enterprise_id')
@@ -123,8 +130,9 @@ class User(BaseModel):
     def save(self, *args, **kwargs):
         if not self.__class__.objects.filter(pk=self.id):
             models_name = 'subcriberenterprise'
-            if self.user_type == 'enterprise':
+            if self.user_type == 'enterprise' or self.user_type == 'pos':
                 models_name = 'enterprise'
+                self.is_active = False
             self.content_type_id = ContentType.objects.get(
                 app_label='users', model=models_name).id
         super(User, self).save(*args, **kwargs)
@@ -165,9 +173,8 @@ class User(BaseModel):
             }
         referral = referrals.get()
         return {
-            'enterprise_id': referral.enterprise or SubcriberEnterprise.objects.get( # noqa
-                name=constants.DEFAULT_ENTERPRISE).id,
-            'user_type': 'enterprise' if referral.enterprise else constants.DEFAULT_USER_TYPE # noqa
+            'enterprise_id': (referral.enterprise or SubcriberEnterprise.objects.get( # noqa
+                name=constants.DEFAULT_ENTERPRISE)).id,
         }
 
     def generate_referral(self, referral_reference=None):
@@ -180,7 +187,8 @@ class User(BaseModel):
                     self.account.first_name.lower()[:3],
                     random.randint(111, 999))
         return Referral.objects.create(
-            referral_code=code, referral_reference=referral_reference)
+            referral_code=code, referral_reference=referral_reference,
+            user_id=self.id)
 
     @property
     def account_no(self):
@@ -276,8 +284,8 @@ class AccountDetail(BaseModel):
 
 
 class Referral(BaseModel):
-    referral_code = models.CharField(max_length=10, unique=True)
-    referral_reference = models.CharField(max_length=10, null=True, blank=True)
+    referral_code = models.CharField(max_length=6, unique=True)
+    referral_reference = models.CharField(max_length=6, null=True, blank=True)
     enterprise = models.ForeignKey(
         'users.Enterprise', null=True, blank=True, on_delete=models.CASCADE)
     user = models.ForeignKey(
@@ -285,7 +293,7 @@ class Referral(BaseModel):
 
 
 class Document(BaseModel):
-    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    account = models.ForeignKey('users.Account', on_delete=models.CASCADE)
     doc_type = models.CharField(
         choices=get_choices(constants.DOC_TYPES), max_length=16)
     file = models.FileField(upload_to=get_upload_path)

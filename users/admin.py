@@ -8,7 +8,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from users.models import (
     Account, User, Campaign, AccountDetail, Document, Bank, BankAccount,
     BankBranch, Enterprise, SubcriberEnterprise, State, Pincode, Address,
-    IPAddress)
+    IPAddress, Referral)
 
 
 @admin.register(Account)
@@ -52,9 +52,9 @@ class AccountDetailsAdmin(admin.ModelAdmin):
 
 @admin.register(Document)
 class DocumentsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'doc_type', 'file')
-    search_fields = ('user__username', 'user__account__phone_no')
-    raw_id_fields = ('user',)
+    list_display = ('account', 'doc_type', 'file')
+    search_fields = ('account__username', 'account__phone_no')
+    raw_id_fields = ('account',)
     list_filter = ('doc_type',)
 
 
@@ -127,3 +127,10 @@ class IPAddressAdmin(admin.ModelAdmin):
     raw_id_fields = ('account',)
     search_fields = ('ip_address',)
     list_filter = ('authentication_required', 'blocked')
+
+
+@admin.register(Referral)
+class ReferralAdmin(admin.ModelAdmin):
+    list_display = ('referral_code', 'referral_reference')
+    raw_id_fields = ('enterprise', 'user')
+    search_fields = ('referral_code', 'referral_reference')

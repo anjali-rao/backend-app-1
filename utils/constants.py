@@ -48,7 +48,8 @@ APPLICATION_STATUS = (
 
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
-    'ration_card', 'passport', 'birth_certificate'
+    'ration_card', 'passport', 'birth_certificate', 'cancelled_cheque',
+    'photo'
 )
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
@@ -104,9 +105,10 @@ OTP_SUCCESS = 'OTP verified successfully.'
 OTP_GENERATED = 'OTP send successfully.'
 AUTHORIZATION_GENERATED = 'Authorization key generated successfully.'
 PASSWORD_CHANGED = 'Password changed successfully.'
-USER_CREATION_MESSAGE = 'Hi,\nYour account with GoPlannr has been created successfully with phone no %s.\n\nRegards\nTeam GoPlannr' # noqa
+USER_CREATION_MESSAGE = 'Hi,\nYour account with OneCover has been created successfully with phone no %s.\n\nRegards\nTeam GoPlannr' # noqa
 USER_CREATED_SUCESS = 'User created successfully!'
-USER_PASSWORD_CHANGE = 'Hi,\nYour GoPlannr account password has been changed successfully.\n\nRegards\nTeam GoPlannr' # noqa
+USER_PASSWORD_CHANGE = 'Hi,\nYour OneCover account password has been changed successfully.\n\nRegards\nTeam OneCover' # noqa
+PASSWORD_REQUIRED = 'Password is required.'
 
 # TTL's (seconds)
 OTP_TTL = 900
@@ -123,15 +125,15 @@ INVALID_USERNAME = 'Invalid username provided.'
 INVALID_PASSWORD = 'Invalid password provided.'
 INVALID_USERNAME_PHONE_COMBINATION = 'Invalid username and phone no combination.' # noqa
 PASSWORD_MISMATCH = 'Password and confirm password mismatch'
-ACCOUNT_DISABLED = 'Account is unactive. Please contact Goplannr for reactivation' # noqa
+ACCOUNT_DISABLED = 'Account is unactive. Please contact OneCover for reactivation' # noqa
 INVALID_CATEGORY_ID = 'Category id passed is invalid or category doesnot exists.' # noqa
 INVALID_CUSTOMER_SEGMENT = 'Invalid Customer Segment id'
 INVALID_ANSWER_ID = 'Answer id: %s is invalid.'
 INVALID_QUESTION_ID = 'Question id: %s is invalid.'
 INVALID_GENDER_PROVIDED = 'Invalid gender input provided.'
 INVALID_PINCODE = 'Invalid pincode provided.'
-USER_ALREADY_EXISTS = 'User already exists as subscriber.'
-FAILED_APPLICATION_CREATION = 'Failed to add contact. Please contact GoPlannr.'
+USER_ALREADY_EXISTS = 'User already exists with provided input.'
+FAILED_APPLICATION_CREATION = 'Failed to add contact. Please contact OneCover.'
 APPLICATION_ALREAY_EXISTS = 'Application already exists with quote id.'
 ANSWER_CANNOT_BE_LEFT_BLANK = 'Answers are required.'
 INVALID_FAMILY_DETAILS = 'Please provide valid family details.'
@@ -176,3 +178,4 @@ RESPIRATORY_DISEASES = 'Any form of Heart Disease, Peripheral Vascular Disease, 
 BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Blood disorder (whether treated or not)'
 
 INSURANCE_EXCLUDE_FIELDS = ['id', 'created', 'modified', 'application']
+USER_FILE_UPLOAD = ['cancelled_cheque', 'photo']

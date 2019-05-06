@@ -42,6 +42,8 @@ class RegisterUser(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
+                if 'manager_id' not in request.data and 'password' not in request.data:  # noqa
+                    raise APIException(constants.PASSWORD_REQUIRED)
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
