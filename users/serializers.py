@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.db.models import CharField, Value
 
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
@@ -7,7 +6,9 @@ from django.utils.timezone import now
 
 from dateutil.relativedelta import relativedelta
 
-from users.models import User, Account, Enterprise, AccountDetail, Pincode
+from users.models import (
+    User, Account, Enterprise, AccountDetail, Pincode
+)
 from sales.serializers import SalesApplicationSerializer
 
 from utils import constants, genrate_random_string
@@ -70,12 +71,16 @@ class CreateUserSerializer(serializers.ModelSerializer):
         required=False, allow_blank=True, max_length=10)
     phone_no = serializers.CharField(required=True, max_length=10)
     transaction_id = serializers.CharField(required=True)
-    password = serializers.CharField(required=True)
+    password = serializers.CharField(required=False)
     referral_code = serializers.CharField(required=False)
-    referral_reference = serializers.CharField(required=False)
+#    referral_reference = serializers.CharField(required=False)
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
     email = serializers.CharField(required=True)
+    cancelled_cheque = serializers.FileField(required=False)
+    photo = serializers.FileField(required=False)
+    manager_id = serializers.CharField(required=False)
+    user_type = serializers.CharField(default='enterprise')
 
     def validate_password(self, value):
         return make_password(value)
@@ -111,15 +116,20 @@ class CreateUserSerializer(serializers.ModelSerializer):
         validated_data.update(User.get_referral_details(
             validated_data.get('referral_code')))
         account = self.get_account(validated_data)
-        data = {
-            'account_id': account.id,
-            'user_type': validated_data['user_type'],
-            'enterprise_id': validated_data['enterprise_id'],
-            'is_active': True
-        }
-        instance = User.objects.create(**data)
-        instance.generate_referral()
-        return instance
+        data = dict(
+            account_id=account.id,
+            user_type=validated_data['user_type'],
+            enterprise_id=validated_data['enterprise_id'],
+            manager_id=validated_data.get('manager_id'),
+            is_active=True
+        )
+        self.instance = User.objects.create(**data)
+        self.instance.generate_referral(validated_data.get('referral_code'))
+        if any(x in validated_data.keys() for x in constants.USER_FILE_UPLOAD):
+            account.upload_docs(
+                validated_data, set(validated_data).intersection(
+                    set(constants.USER_FILE_UPLOAD)))
+        return self.isnstance
 
     def get_account(self, validated_data):
         validated_data['pincode_id'] = validated_data['pincode']
@@ -134,15 +144,17 @@ class CreateUserSerializer(serializers.ModelSerializer):
         cache.delete('TXN:%s' % self.validated_data['phone_no'])
         return {
             'phone_no': self.validated_data['phone_no'],
-            'message': constants.USER_CREATED_SUCESS
+            'message': constants.USER_CREATED_SUCESS,
+            'user_id': self.instance.id
         }
 
     class Meta:
         model = User
         fields = (
             'first_name', 'last_name', 'email', 'password',
-            'referral_code', 'referral_reference', 'user_type', 'pincode',
-            'pan_no', 'phone_no', 'transaction_id'
+            'referral_code', 'user_type', 'pincode', 'pan_no',
+            'phone_no', 'transaction_id', 'cancelled_cheque',
+            'photo', 'manager_id', 'user_type'
         )
 
 
