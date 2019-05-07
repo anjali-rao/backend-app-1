@@ -95,7 +95,7 @@ class Lead(BaseModel):
         if kw.get('childrens', self.childrens) <= 4:
             query['childrens'] = kw.get('childrens', self.childrens)
         query['age_range__contains'] = (
-            kw.get('effective_age', self.effective_age) + 1)
+            kw.get('effective_age', self.effective_age))
         return queryset.filter(**query) or queryset[:7]
 
     def refresh_quote_data(self, **kw):
