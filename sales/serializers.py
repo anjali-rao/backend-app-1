@@ -129,6 +129,7 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                     street=validated_data['street']
                 ).id
             )
+            self.validated_data.pop('pincode')
             members = Member.objects.filter(
                 application_id=app.id, relation='self')
             if self.instance.phone_no != validated_data['phone_no']:
