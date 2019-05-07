@@ -80,9 +80,9 @@ class SearchAccount(generics.ListAPIView):
         filter_location = {}
         params = self.request.query_params
 
-        filter_location[0] = 'account__pincode__state__name'
-        filter_location[1] = 'account__pincode__city'
-        filter_location[2] = 'account__pincode__pincode'
+        filter_location[0] = 'account__address__pincode__state__name'
+        filter_location[1] = 'account__address__pincode__city'
+        filter_location[2] = 'account__address__pincode__pincode'
 
         query['user_type__in'] = ['subscriber']
 

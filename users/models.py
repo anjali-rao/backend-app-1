@@ -34,8 +34,6 @@ class Account(AbstractUser):
         null=True, blank=True)
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
-    pincode = models.ForeignKey(
-        'users.Pincode', null=True, blank=True, on_delete=models.CASCADE)
 
     def send_notification(self, **kwargs):
         return getattr(self, 'send_%s' % kwargs['type'])(kwargs)
