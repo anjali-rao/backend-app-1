@@ -188,10 +188,7 @@ class EnterpriseSerializer(serializers.ModelSerializer):
 
 
 class AvailableUserSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-
-    def get_name(self, obj):
-        return obj.enterprise.name
+    name = serializers.ReadOnlyField(source='enterprise.name')
 
     class Meta:
         model = User
@@ -309,7 +306,6 @@ class AccountDetailsSerializers(serializers.ModelSerializer):
 
 
 class AccountSearchSerializers(serializers.ModelSerializer):
-
     account = serializers.SerializerMethodField()
 
     def get_account(self, obj):
@@ -323,10 +319,7 @@ class AccountSearchSerializers(serializers.ModelSerializer):
 
 
 class PincodeSerializer(serializers.ModelSerializer):
-    state = serializers.SerializerMethodField()
-
-    def get_state(self, obj):
-        return obj.state.name
+    state = serializers.ReadOnlyField(source='state.name')
 
     class Meta:
         model = Pincode
