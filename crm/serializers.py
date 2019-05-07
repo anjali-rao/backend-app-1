@@ -41,14 +41,26 @@ class CreateLeadSerializer(serializers.ModelSerializer):
 
 
 class LeadSerializer(serializers.ModelSerializer):
-    category_name = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
+    created = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+
+    def get_category(self, obj):
+        return obj.category.name
+
+    def get_full_name(self, obj):
+        return obj.contact.get_full_name()
+
+    def get_created(self, obj):
+        return obj.created.strftime("%d/%m/%Y")
+
+    def get_status(self, obj):
+        return obj.get_status_display()
 
     class Meta:
         model = Lead
-        fields = (
-            'id', 'category_name', 'full_name', 'status'
-        )
+        fields = ('id', 'category', 'full_name', 'status', 'created')
 
 
 class QuoteSerializer(serializers.ModelSerializer):

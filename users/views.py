@@ -176,4 +176,5 @@ class GetLeads(generics.ListAPIView):
 
     def get_queryset(self):
         from crm.models import Lead
-        return Lead.objects.filter(user_id=self.request.user.id)
+        return Lead.objects.filter(
+            user_id=self.request.user.id).exclude(contact=None)
