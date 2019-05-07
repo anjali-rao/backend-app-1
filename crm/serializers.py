@@ -5,6 +5,8 @@ from crm.models import Lead
 from sales.models import Quote
 from utils import constants
 
+import pytz
+
 
 class CreateLeadSerializer(serializers.ModelSerializer):
     category_id = serializers.IntegerField(required=True)
@@ -41,22 +43,11 @@ class CreateLeadSerializer(serializers.ModelSerializer):
 
 
 class LeadSerializer(serializers.ModelSerializer):
-    category = serializers.SerializerMethodField()
-    full_name = serializers.SerializerMethodField()
-    created = serializers.SerializerMethodField()
-    status = serializers.SerializerMethodField()
-
-    def get_category(self, obj):
-        return obj.category.name
-
-    def get_full_name(self, obj):
-        return obj.contact.get_full_name()
-
-    def get_created(self, obj):
-        return obj.created.strftime("%d/%m/%Y")
-
-    def get_status(self, obj):
-        return obj.get_status_display()
+    category = serializers.ReadOnlyField(source='category.name')
+    full_name = serializers.ReadOnlyField(source='contact.get_full_name')
+    created = serializers.DateTimeField(
+        format='%d %B %Y', default_timezone=pytz.timezone("Asia/Kolkata"))
+    status = serializers.ReadOnlyField(source='get_status_display')
 
     class Meta:
         model = Lead
@@ -64,26 +55,13 @@ class LeadSerializer(serializers.ModelSerializer):
 
 
 class QuoteSerializer(serializers.ModelSerializer):
-    quote_id = serializers.SerializerMethodField()
-    sum_insured = serializers.SerializerMethodField()
-    premium = serializers.SerializerMethodField()
-    product = serializers.SerializerMethodField()
-    recommendation_score = serializers.SerializerMethodField()
-
-    def get_quote_id(self, obj):
-        return obj.id
-
-    def get_sum_insured(self, obj):
-        return obj.premium.sum_insured
-
-    def get_premium(self, obj):
-        return obj.premium.amount
-
-    def get_product(self, obj):
-        return obj.premium.product_variant.get_product_details()
-
-    def get_recommendation_score(seld, obj):
-        return obj.recommendation_score
+    quote_id = serializers.ReadOnlyField(source='id')
+    sum_insured = serializers.ReadOnlyField(source='premium.sum_insured')
+    premium = serializers.ReadOnlyField(source='premium.amount')
+    product = serializers.ReadOnlyField(
+        source='premium.product_variant.get_product_details')
+    recommendation_score = serializers.ReadOnlyField(
+        source='recommendation_score')
 
     class Meta:
         model = Quote
@@ -94,11 +72,11 @@ class QuoteSerializer(serializers.ModelSerializer):
 
 
 class QuoteDetailsSerializer(serializers.ModelSerializer):
-    suminsured = serializers.SerializerMethodField()
-    premium = serializers.SerializerMethodField()
+    suminsured = serializers.ReadOnlyField(source='premium.sum_insured')
+    premium = serializers.ReadOnlyField(source='premium.amount')
     benefits = serializers.SerializerMethodField()
     coverage = serializers.SerializerMethodField()
-    faq = serializers.SerializerMethodField()
+    faq = serializers.ReadOnlyField(source='get_faq')
     company_details = serializers.SerializerMethodField()
 
     def get_benefits(self, obj):
@@ -134,19 +112,10 @@ class QuoteDetailsSerializer(serializers.ModelSerializer):
             coverages.append({'name': pending, 'value': None})
         return coverages
 
-    def get_faq(self, obj):
-        return obj.get_faq()
-
     def get_company_details(self, obj):
         details = obj.premium.product_variant.get_product_details()
         details.update(obj.premium.product_variant.get_basic_details())
         return details
-
-    def get_suminsured(self, obj):
-        return obj.premium.sum_insured
-
-    def get_premium(self, obj):
-        return obj.premium.amount
 
     class Meta:
         model = Quote
@@ -156,24 +125,13 @@ class QuoteDetailsSerializer(serializers.ModelSerializer):
 
 
 class QuotesCompareSerializer(serializers.ModelSerializer):
-    quote_id = serializers.SerializerMethodField()
-    suminsured = serializers.SerializerMethodField()
-    premium = serializers.SerializerMethodField()
-    product = serializers.SerializerMethodField()
+    quote_id = serializers.ReadOnlyField(source='id')
+    suminsured = serializers.ReadOnlyField(source='premium.sum_insured')
+    premium = serializers.ReadOnlyField(source='premium.amount')
+    product = serializers.ReadOnlyField(
+        source='premium.product_variant.get_product_details')
     features = serializers.SerializerMethodField()
     network_coverage = serializers.SerializerMethodField()
-
-    def get_quote_id(self, obj):
-        return obj.id
-
-    def get_suminsured(self, obj):
-        return obj.premium.sum_insured
-
-    def get_premium(self, obj):
-        return obj.premium.amount
-
-    def get_product(self, obj):
-        return obj.premium.product_variant.get_product_details()
 
     def get_features(self, obj):
         features = list()
@@ -204,23 +162,16 @@ class QuotesCompareSerializer(serializers.ModelSerializer):
 
 
 class QuoteRecommendationSerializer(serializers.ModelSerializer):
-    quote_id = serializers.SerializerMethodField()
-    sum_insured = serializers.SerializerMethodField()
-    premium = serializers.SerializerMethodField()
-    tax_saving = serializers.SerializerMethodField()
-    wellness_rewards = serializers.SerializerMethodField()
-    health_checkups = serializers.SerializerMethodField()
-    product = serializers.SerializerMethodField()
+    quote_id = serializers.ReadOnlyField(source='id')
+    sum_insured = serializers.ReadOnlyField(source='premium.sum_insured')
+    premium = serializers.ReadOnlyField(source='premium.amount')
+    tax_saving = serializers.ReadOnlyField(source='lead.tax_saving')
+    wellness_rewards = serializers.ReadOnlyField(
+        source='lead.wellness_rewards')
+    health_checkups = serializers.ReadOnlyField(source='lead.adults')
+    product = serializers.ReadOnlyField(
+        source='premium.product_variant.get_product_details')
     features = serializers.SerializerMethodField()
-
-    def get_quote_id(self, obj):
-        return obj.id
-
-    def get_sum_insured(self, obj):
-        return obj.premium.sum_insured
-
-    def get_premium(self, obj):
-        return obj.premium.amount
 
     def get_features(self, obj):
         features = list()
@@ -232,18 +183,6 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
             features.append('%s: %s' % (
                 f['feature_master__name'], f['short_description']))
         return features
-
-    def get_product(self, obj):
-        return obj.premium.product_variant.get_product_details()
-
-    def get_tax_saving(self, obj):
-        return obj.lead.tax_saving
-
-    def get_wellness_rewards(self, obj):
-        return obj.lead.wellness_rewards
-
-    def get_health_checkups(self, obj):
-        return obj.lead.adults
 
     class Meta:
         model = Quote

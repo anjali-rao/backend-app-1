@@ -34,10 +34,10 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid()
         try:
             with transaction.atomic():
-                lead = Lead.objects.get(id=serializer.data['lead_id'])
+                lead = Lead.objects.get(id=serializer.data.get('lead_id', 39))
                 lead.update_fields(**dict(
                     category_id=serializer.data['category_id'],
                     pincode=serializer.data['pincode'],

@@ -10,12 +10,14 @@ from utils import constants, mixins
 
 from django.db import transaction, IntegrityError
 
+import pytz
+
 
 class CreateApplicationSerializer(serializers.ModelSerializer):
+    application_id = serializers.ReadOnlyField(source='id', read_only=True)
     quote_id = serializers.CharField(required=True)
     contact_name = serializers.CharField(required=True, write_only=True)
     contact_no = serializers.CharField(required=True, write_only=True)
-    application_id = serializers.SerializerMethodField()
 
     def validate_quote_id(self, value):
         if not Quote.objects.filter(id=value).exists():
@@ -45,9 +47,6 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                 constants.APPLICATION_ALREAY_EXISTS)
         raise mixins.NotAcceptable(
             constants.FAILED_APPLICATION_CREATION)
-
-    def get_application_id(self, obj):
-        return obj.id
 
     class Meta:
         model = Application
@@ -289,14 +288,6 @@ class MemberSerializer(serializers.ModelSerializer):
 
 
 class GetApplicationMembersSerializer(serializers.ModelSerializer):
-    height_foot = serializers.SerializerMethodField()
-    height_inches = serializers.SerializerMethodField()
-
-    def get_height_foot(self, obj):
-        return obj.height_foot
-
-    def get_height_inches(self, obj):
-        return obj.height_inches
 
     class Meta:
         model = Member
@@ -323,10 +314,7 @@ class CreateNomineeSerializer(serializers.ModelSerializer):
 
 
 class NomineeSerializer(serializers.ModelSerializer):
-    full_name = serializers.SerializerMethodField()
-
-    def get_full_name(self, obj):
-        return obj.get_full_name()
+    full_name = serializers.ReadOnlyField(source='get_full_name')
 
     class Meta:
         model = Nominee
@@ -444,26 +432,21 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
 
 class SalesApplicationSerializer(serializers.ModelSerializer):
     proposer_name = serializers.SerializerMethodField()
-    product_name = serializers.SerializerMethodField()
+    product_name = serializers.ReadOnlyField(
+        source='quote.premium.product_variant.product_short_name')
     section = serializers.SerializerMethodField()
     earning = serializers.SerializerMethodField()
-    last_updated = serializers.SerializerMethodField()
-    logo = serializers.SerializerMethodField()
+    last_updated = serializers.DateTimeField(
+        source='modified', format='%d %B %Y',
+        default_timezone=pytz.timezone("Asia/Kolkata"))
+    logo = serializers.ReadOnlyField(
+        source='quote.premium.product_variant.logo')
 
     def get_earning(self, obj):
         return ''
 
-    def get_last_updated(self, obj):
-        return obj.modified.strftime("%d/%m/%Y")
-
-    def get_logo(self, obj):
-        return obj.quote.premium.product_variant.logo
-
     def get_section(self, obj):
         return self.context['section']
-
-    def get_product_name(self, obj):
-        return obj.quote.premium.product_variant.product_short_name
 
     def get_proposer_name(self, obj):
         instance = obj.client or obj.quote.lead.contact
@@ -475,3 +458,20 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
             'id', 'reference_no', 'premium', 'suminsured', 'earning',
             'last_updated', 'logo', 'section', 'product_name', 'proposer_name'
         )
+
+
+class ClientSerializer(serializers.ModelSerializer):
+    product_name = serializers.ReadOnlyField(
+        source='quote.premium.product_variant.product_short_name')
+    full_name = serializers.SerializerMethodField()
+    created = serializers.DateTimeField(
+        format='%d %B %Y', default_timezone=pytz.timezone("Asia/Kolkata"))
+    status = serializers.ReadOnlyField(source='get_status_display')
+
+    def get_full_name(self, obj):
+        instance = obj.client or obj.quote.lead.contact
+        return instance.get_full_name()
+
+    class Meta:
+        model = Application
+        fields = ('product_name', 'full_name', 'created', 'premium', 'status')

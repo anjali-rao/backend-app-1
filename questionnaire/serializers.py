@@ -5,11 +5,8 @@ from utils import constants
 
 
 class QuestionnSerializers(serializers.ModelSerializer):
-    question_id = serializers.SerializerMethodField()
+    question_id = serializers.ReadOnlyField(source='id')
     answers = serializers.SerializerMethodField()
-
-    def get_question_id(self, obj):
-        return obj.id
 
     def get_answers(self, obj):
         return AnswerSerializer(
@@ -23,10 +20,7 @@ class QuestionnSerializers(serializers.ModelSerializer):
 
 
 class AnswerSerializer(serializers.ModelSerializer):
-    answer_id = serializers.SerializerMethodField()
-
-    def get_answer_id(self, obj):
-        return obj.id
+    answer_id = serializers.ReadOnlyField(source='id')
 
     class Meta:
         model = Answer
