@@ -4,6 +4,7 @@ GENDER = ('male', 'female', 'transgender')
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
 
 MEMBER_ORDER = {key: i for i, key in enumerate(['self', 'spouse', 'father', 'mother'])} # noqa
+CATEGORY_ORDER = {key: i for i, key in enumerate(['Health', 'Travel'])} # noqa
 
 NCR_PINCODES = [
     110001, 110002, 110003, 110004, 110005, 110006, 110007, 110008, 110009,

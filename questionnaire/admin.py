@@ -13,7 +13,7 @@ class QuestionnaireAnswerInLine(admin.TabularInline):
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ('title', 'question', 'category')
+    list_display = ('title', 'question', 'category', 'order')
     search_fields = ('category__name', 'category__id', 'id', 'title')
     raw_id_fields = ('category', )
     inlines = (QuestionnaireAnswerInLine, )
