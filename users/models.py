@@ -203,13 +203,16 @@ class User(BaseModel):
     def get_categories(self):
         categories = list()
         for category in self.enterprise.categories.only(
-                'name', 'id', 'hexa_code', 'logo'):
-            categories.append({
-                'id': category.id, 'hexa_code': category.hexa_code,
-                'logo': (
-                    constants.DEBUG_HOST if DEBUG else '') + category.logo.url,
-                'name': category.name.split(' ')[0]
-            })
+                'name', 'id', 'hexa_code', 'logo', 'is_active'):
+            categories.append(dict(
+                id=category.id, hexa_code=category.hexa_code,
+                name=category.name.split(' ')[0], is_active=category.is_active,
+                logo=(
+                    constants.DEBUG_HOST if DEBUG else '') + category.logo.url
+            ))
+        categories = sorted(
+            categories, key=lambda category: constants.CATEGORY_ORDER.get(
+                category['name'], 1))
         return categories
 
     def get_applications(self, status=None):
