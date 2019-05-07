@@ -153,7 +153,7 @@ INVALID_QUESTION_ANSWER_COMBINATION = 'Invalid question and answer combination p
 # Creation Fields
 ACCOUNT_CREATION_FIELDS = (
     'password', 'first_name', 'last_name', 'email',
-    'pincode_id', 'pan_no'
+    'address_id', 'pan_no'
 )
 CONTACT_CREATION_FIELDS = (
     'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
