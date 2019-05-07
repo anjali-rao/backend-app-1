@@ -155,6 +155,11 @@ ACCOUNT_CREATION_FIELDS = (
     'password', 'first_name', 'last_name', 'email',
     'pincode_id', 'pan_no'
 )
+CONTACT_CREATION_FIELDS = (
+    'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
+    'occupation', 'marital_status', 'email'
+)
+
 
 # Upload paths
 COMPANY_UPLOAD_PATH = 'company'
