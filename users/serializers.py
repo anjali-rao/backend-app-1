@@ -7,7 +7,8 @@ from django.utils.timezone import now
 from dateutil.relativedelta import relativedelta
 
 from users.models import (
-    User, Account, Enterprise, AccountDetail, Pincode
+    User, Account, Enterprise, AccountDetail, Pincode,
+    Address
 )
 from sales.serializers import SalesApplicationSerializer
 
@@ -132,7 +133,8 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return self.instance
 
     def get_account(self, validated_data):
-        validated_data['pincode_id'] = validated_data['pincode']
+        validated_data['address_id'] = Address.objects.create(
+            pincode_id=validated_data['pincode']).id
         acc = Account.get_account(validated_data['phone_no'])
         for field_name in constants.ACCOUNT_CREATION_FIELDS:
             setattr(acc, field_name, validated_data.get(field_name))
@@ -163,8 +165,8 @@ class AccountSerializer(serializers.ModelSerializer):
 
     def get_pincode(self, obj):
 
-        if obj.pincode:
-            return PincodeSerializer(obj.pincode).data
+        if obj.address and obj.address.pincode:
+            return PincodeSerializer(obj.address.pincode).data
         return dict()
 
     class Meta:
