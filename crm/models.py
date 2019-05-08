@@ -94,9 +94,15 @@ class Lead(BaseModel):
             query['product_variant__company_category__category_id'] = kw['category_id'] # noqa
         if kw.get('childrens', self.childrens) <= 4:
             query['childrens'] = kw.get('childrens', self.childrens)
-        query['age_range__contains'] = (
-            kw.get('effective_age', self.effective_age))
-        return queryset.filter(**query) or queryset[:7]
+        query.update(dict(
+            age_range__contains=kw.get('effective_age', self.effective_age),
+            product_variant__company_category__company_id__in=self.companies_id
+        ))
+        premiums = queryset.filter(**query)
+        if not premiums.exists():
+            query.pop('product_variant__company_category__company_id__in')
+            premiums = queryset.filter(**query)
+        return premiums or queryset[:5]
 
     def refresh_quote_data(self, **kw):
         quotes = self.get_quotes()
@@ -188,6 +194,10 @@ class Lead(BaseModel):
         if self.pincode in constants.NCR_PINCODES or self.city in constants.MUMBAI_AREA_TIER: # noqa
             return constants.MUMBAI_NCR_TIER
         return constants.ALL_INDIA_TIER
+
+    @property
+    def companies_id(self):
+        return self.user.enterprise.companies.values_list('id', flat=True)
 
     def __str__(self):
         return "%s - %s" % (
