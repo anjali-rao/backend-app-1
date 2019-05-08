@@ -27,6 +27,7 @@ class Answer(BaseModel):
         'questionnaire.Question', on_delete=models.CASCADE)
     answer = models.CharField(max_length=128)
     order = models.IntegerField(default=0)
+    ignore = models.BooleanField(default=False)
     score = models.IntegerField(default=0)
 
     class Meta:
