@@ -30,7 +30,7 @@ class Quote(BaseModel):
     def save(self, *args, **kwargs):
         self.__class__.objects.filter(
             lead_id=self.lead_id, premium_id=self.premium_id
-        ).update(ignore=True)
+        ).exclude(status='accepted').update(ignore=True)
         super(Quote, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -49,19 +49,12 @@ class Quote(BaseModel):
 
     def get_faq(self):
         company_category = self.premium.product_variant.company_category
-        return [
-            {
-                'question': 'Claim settlement ratio',
-                'answer': company_category.claim_settlement
-            },
-            {
-                'question': 'Company details',
-                'answer': 'Name: %s\nWebsite: %s' % (
-                    company_category.company.name,
-                    company_category.company.website or '-'
-                )
-            }
-        ]
+        return [dict(
+            question='Claim settlement ratio',
+            answer=company_category.claim_settlement),
+            dict(question='Company details', answer='Name: %s\nWebsite: %s' % (
+                company_category.company.name,
+                company_category.company.website or '-'))]
 
 
 class Application(BaseModel):
@@ -379,7 +372,7 @@ class Policy(BaseModel):
 def application_post_save(sender, instance, created, **kwargs):
     if created:
         Quote.objects.filter(lead_id=instance.quote.lead.id).exclude(
-            id=instance.quote_id).update(status='rejected')
+            id=instance.quote_id, status='accepted').update(status='rejected')
         instance.quote.status = 'accepted'
         instance.quote.save()
         instance.add_default_members()
