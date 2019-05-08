@@ -112,7 +112,7 @@ def upload_premiums(filename):
         instance, created = Premium.objects.get_or_create(pk=row['id'])
         instance.base_premium = row['base_premium'].replace(',', '').replace(',', '') # noqa
         instance.age_rage = NumericRange(
-            lower=int(row['min_age']), upper=int(row['max_age']))
+            lower=int(row['min_age']), upper=int(row['max_age']) + 1)
         #   instance.max_age = int(row['max_age'])
         #   instance.min_age = int(row['min_age'])
         instance.adults = int(row['adults'])

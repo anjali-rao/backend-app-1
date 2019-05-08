@@ -13,7 +13,7 @@ class QuestionnSerializers(serializers.ModelSerializer):
 
     def get_answers(self, obj):
         return AnswerSerializer(
-            obj.answer_set.all().order_by('id'), many=True).data
+            obj.answer_set.filter(ignore=False), many=True).data
 
     class Meta:
         model = Question

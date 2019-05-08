@@ -15,6 +15,9 @@ class Question(BaseModel):
     order = models.IntegerField(default=0)
     ignore = models.BooleanField(default=False)
 
+    class Meta:
+        ordering = ('order',)
+
     def __str__(self):
         return self.title
 
@@ -23,7 +26,12 @@ class Answer(BaseModel):
     question = models.ForeignKey(
         'questionnaire.Question', on_delete=models.CASCADE)
     answer = models.CharField(max_length=128)
+    order = models.IntegerField(default=0)
+    ignore = models.BooleanField(default=False)
     score = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ('order',)
 
     def __str__(self):
         return self.answer

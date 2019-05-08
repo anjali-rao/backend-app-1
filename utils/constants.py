@@ -4,6 +4,7 @@ GENDER = ('male', 'female', 'transgender')
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
 
 MEMBER_ORDER = {key: i for i, key in enumerate(['self', 'spouse', 'father', 'mother'])} # noqa
+CATEGORY_ORDER = {key: i for i, key in enumerate(['Health', 'Travel'])} # noqa
 
 NCR_PINCODES = [
     110001, 110002, 110003, 110004, 110005, 110006, 110007, 110008, 110009,
@@ -153,7 +154,7 @@ INVALID_QUESTION_ANSWER_COMBINATION = 'Invalid question and answer combination p
 # Creation Fields
 ACCOUNT_CREATION_FIELDS = (
     'password', 'first_name', 'last_name', 'email',
-    'pincode_id', 'pan_no'
+    'address_id', 'pan_no'
 )
 CONTACT_CREATION_FIELDS = (
     'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
