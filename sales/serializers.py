@@ -10,8 +10,6 @@ from utils import constants, mixins
 
 from django.db import transaction, IntegrityError
 
-import pytz
-
 
 class CreateApplicationSerializer(serializers.ModelSerializer):
     application_id = serializers.ReadOnlyField(source='id', read_only=True)
@@ -433,9 +431,7 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         source='quote.premium.product_variant.product_short_name')
     section = serializers.SerializerMethodField()
     earning = serializers.SerializerMethodField()
-    last_updated = serializers.DateTimeField(
-        source='modified', format='%d %B %Y',
-        default_timezone=pytz.timezone("Asia/Kolkata"))
+    last_updated = serializers.DateField(source='modified')
     logo = serializers.ReadOnlyField(
         source='quote.premium.product_variant.logo')
 
@@ -461,8 +457,6 @@ class ClientSerializer(serializers.ModelSerializer):
     product_name = serializers.ReadOnlyField(
         source='quote.premium.product_variant.product_short_name')
     full_name = serializers.SerializerMethodField()
-    created = serializers.DateTimeField(
-        format='%d %B %Y', default_timezone=pytz.timezone("Asia/Kolkata"))
     status = serializers.ReadOnlyField(source='get_status_display')
 
     def get_full_name(self, obj):

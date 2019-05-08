@@ -5,8 +5,6 @@ from crm.models import Lead
 from sales.models import Quote
 from utils import constants
 
-import pytz
-
 
 class CreateLeadSerializer(serializers.ModelSerializer):
     category_id = serializers.IntegerField(required=True)
@@ -45,8 +43,6 @@ class CreateLeadSerializer(serializers.ModelSerializer):
 class LeadSerializer(serializers.ModelSerializer):
     category = serializers.ReadOnlyField(source='category.name')
     full_name = serializers.ReadOnlyField(source='contact.get_full_name')
-    created = serializers.DateTimeField(
-        format='%d %B %Y', default_timezone=pytz.timezone("Asia/Kolkata"))
     status = serializers.ReadOnlyField(source='get_status_display')
 
     class Meta:
