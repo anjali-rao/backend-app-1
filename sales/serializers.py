@@ -431,7 +431,7 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         source='quote.premium.product_variant.product_short_name')
     section = serializers.SerializerMethodField()
     earning = serializers.SerializerMethodField()
-    last_updated = serializers.DateField(source='modified')
+    last_updated = serializers.DateTimeField(source='modified')
     logo = serializers.ReadOnlyField(
         source='quote.premium.product_variant.logo')
 
@@ -439,7 +439,7 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         return ''
 
     def get_section(self, obj):
-        return self.context['section']
+        return self.context.get('section', '-')
 
     def get_proposer_name(self, obj):
         instance = obj.client or obj.quote.lead.contact
@@ -449,7 +449,8 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         model = Application
         fields = (
             'id', 'reference_no', 'premium', 'suminsured', 'earning',
-            'last_updated', 'logo', 'section', 'product_name', 'proposer_name'
+            'last_updated', 'logo', 'section', 'product_name', 'proposer_name',
+            'stage'
         )
 
 
