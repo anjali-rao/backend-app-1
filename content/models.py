@@ -45,3 +45,7 @@ class NetworkHospital(BaseModel):
 class NewsletterSubscriber(BaseModel):
     email = models.EmailField()
     unsubscribe = models.BooleanField(default=False)
+
+
+class PhoneNumber(BaseModel):
+    phone_no = models.CharField(max_length=10, )

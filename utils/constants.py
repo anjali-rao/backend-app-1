@@ -155,6 +155,7 @@ APPLICATION_UNMAPPED = 'Application not mapped to any insurance or inproper appl
 INVALID_QUOTE_ID = 'Invalid Quote id provided.'
 INVALID_QUESTION_ANSWER_COMBINATION = 'Invalid question and answer combination provided'
 INVALID_LEAD_ID = 'Invalid / missing Lead id.'
+INVALID_PHONE_NO_FORMAT = 'Phone number is not valid'
 
 
 # Creation Fields

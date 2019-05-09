@@ -5,7 +5,9 @@ from rest_framework import generics, permissions
 
 
 from content.serializers import (
-    Faq, FaqSerializer, ContactUsSerializer, NewsLetterSerializer)
+    Faq, FaqSerializer, ContactUsSerializer, NewsLetterSerializer,
+    SubmitPhoneNumberSerializer
+)
 
 
 class GetFaq(generics.ListAPIView):
@@ -22,3 +24,8 @@ class ContactUsAPI(generics.CreateAPIView):
 class AddNewsLetterSubscriber(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = NewsLetterSerializer
+
+
+class SubmitPhoneNumber(generics.CreateAPIView):
+    permissions = [permissions.AllowAny]
+    serializer_class = SubmitPhoneNumberSerializer
