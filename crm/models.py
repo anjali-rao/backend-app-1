@@ -35,7 +35,7 @@ class Lead(BaseModel):
     health_checkups = models.FloatField(default=0.0)
     pincode = models.CharField(max_length=6, null=True)
     adults = models.IntegerField(default=0)
-    gender = models.CharField(max_length=12)
+    gender = models.CharField(max_length=12, null=True)
     childrens = models.IntegerField(default=0)
     family = JSONField(default=dict)
 
@@ -44,8 +44,11 @@ class Lead(BaseModel):
             current = self.__class__.objects.get(pk=self.id)
             if self.final_score != current.final_score:
                 self.refresh_quote_data()
+            if not current.family:
+                self.parse_family_json()
         except Lead.DoesNotExist:
-            self.parse_family_json()
+            if self.family:
+                self.parse_family_json()
         super(Lead, self).save(*args, **kwargs)
 
     def parse_family_json(self):

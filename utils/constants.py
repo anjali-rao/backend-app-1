@@ -47,6 +47,11 @@ APPLICATION_STATUS = (
     ('approved', 'Approved'), ('cancelled', 'Cancelled'),
     ('completed', 'Completed'))
 
+APPLICATION_STAGES = (
+    'proposal_details', 'insured_members', 'nominee_details',
+    'health_details', 'summary', 'completed'
+)
+
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
     'ration_card', 'passport', 'birth_certificate', 'cancelled_cheque',
@@ -57,7 +62,7 @@ HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
 RELATION_CHOICES = (
     'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother',
-    'sister'
+    'sister', 'cousin'
 )
 
 HEALTHINSURANCE_FIELDS = [
@@ -149,6 +154,7 @@ LOOKUP_ERROR = 'Expected view %s to be called with a URL keyword argument '
 APPLICATION_UNMAPPED = 'Application not mapped to any insurance or inproper application type'
 INVALID_QUOTE_ID = 'Invalid Quote id provided.'
 INVALID_QUESTION_ANSWER_COMBINATION = 'Invalid question and answer combination provided'
+INVALID_LEAD_ID = 'Invalid / missing Lead id.'
 
 
 # Creation Fields

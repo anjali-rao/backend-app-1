@@ -8,10 +8,20 @@ from users.decorators import UserAuthentication
 from crm.models import Lead
 from crm.serializers import (
     QuoteSerializer, QuoteDetailsSerializer, Quote,
-    QuotesCompareSerializer, QuoteRecommendationSerializer
+    QuotesCompareSerializer, QuoteRecommendationSerializer,
+    CreateLeadSerializer
 )
 
 from django.db import transaction, IntegrityError
+
+
+class CreateLead(generics.CreateAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = CreateLeadSerializer
+
+    def perform_create(self, serializer):
+        with transaction.atomic():
+            serializer.save(user_id=self.request.user.id)
 
 
 class GetQuotes(generics.ListAPIView):

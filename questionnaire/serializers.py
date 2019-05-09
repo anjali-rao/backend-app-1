@@ -5,11 +5,8 @@ from utils import constants
 
 
 class QuestionnSerializers(serializers.ModelSerializer):
-    question_id = serializers.SerializerMethodField()
+    question_id = serializers.ReadOnlyField(source='id')
     answers = serializers.SerializerMethodField()
-
-    def get_question_id(self, obj):
-        return obj.id
 
     def get_answers(self, obj):
         return AnswerSerializer(
@@ -23,10 +20,7 @@ class QuestionnSerializers(serializers.ModelSerializer):
 
 
 class AnswerSerializer(serializers.ModelSerializer):
-    answer_id = serializers.SerializerMethodField()
-
-    def get_answer_id(self, obj):
-        return obj.id
+    answer_id = serializers.ReadOnlyField(source='id')
 
     class Meta:
         model = Answer
@@ -34,24 +28,23 @@ class AnswerSerializer(serializers.ModelSerializer):
 
 
 class ResponseSerializer(serializers.Serializer):
-    category_id = serializers.IntegerField(required=True)
+    lead_id = serializers.IntegerField(required=True)
     gender = serializers.CharField(required=True)
-    pincode = serializers.CharField(required=True, max_length=6)
     family = serializers.JSONField(required=True)
     answers = serializers.JSONField(required=True)
+    pincode = serializers.CharField(required=False, max_length=6)
 
-    def validate_category_id(self, value):
-        from product.models import Category
-        if not Category.objects.filter(id=value).exists():
-            raise serializers.ValidationError(
-                constants.INVALID_CATEGORY_ID)
+    def validate_lead_id(self, value):
+        from crm.models import Lead
+        if not Lead.objects.filter(id=value).exists():
+            raise serializers.ValidationError(constants.INVALID_LEAD_ID)
         return value
 
-#    def validate_pincode(self, value):
-#        from users.models import Pincode
-#        if not Pincode.get_pincode(value):
-#            raise serializers.ValidationError(constants.INVALID_PINCODE)
-#        return value
+    def validate_pincode(self, value):
+        from users.models import Pincode
+        if not Pincode.get_pincode(value):
+            raise serializers.ValidationError(constants.INVALID_PINCODE)
+        return value
 
     def validate_customer_segment_id(self, value):
         from product.models import CustomerSegment
