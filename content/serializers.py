@@ -29,7 +29,6 @@ class SubmitPhoneNumberSerializer(serializers.ModelSerializer):
     phone_no = serializers.CharField(required=True)
 
     def validate_phone_no(self, value):
-        import pdb; pdb.set_trace()
         if value[0] in range(0, 4):
             raise serializers.ValidationError(
                 constants.INVALID_PHONE_NO_FORMAT)
