@@ -1,7 +1,7 @@
 from utils import constants
 from rest_framework import serializers
 
-from content.models import Faq, ContactUs, NewsletterSubscriber, PhoneNumber
+from content.models import Faq, ContactUs, NewsletterSubscriber, PromoBook
 
 
 class FaqSerializer(serializers.ModelSerializer):
@@ -25,7 +25,7 @@ class NewsLetterSerializer(serializers.ModelSerializer):
         fields = ('email',)
 
 
-class SubmitPhoneNumberSerializer(serializers.ModelSerializer):
+class PromoBookSerializer(serializers.ModelSerializer):
     phone_no = serializers.CharField(required=True)
 
     def validate_phone_no(self, value):
@@ -35,5 +35,5 @@ class SubmitPhoneNumberSerializer(serializers.ModelSerializer):
         return value
 
     class Meta:
-        model = PhoneNumber
+        model = PromoBook
         fields = ('phone_no',)
