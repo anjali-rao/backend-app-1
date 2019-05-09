@@ -68,6 +68,9 @@ class Application(BaseModel):
     quote = models.OneToOneField('sales.Quote', on_delete=models.CASCADE)
     status = models.CharField(
         max_length=32, choices=constants.APPLICATION_STATUS, default='fresh')
+    stage = models.CharField(
+        max_length=32, default='proposal_details',
+        choices=get_choices(constants.APPLICATION_STAGES))
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
     terms_and_conditions = models.BooleanField(null=True)

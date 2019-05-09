@@ -8,8 +8,13 @@ from utils import constants
 
 class CreateLeadSerializer(serializers.ModelSerializer):
     category_id = serializers.IntegerField(required=True)
-    gender = serializers.CharField(required=True)
     pincode = serializers.CharField(required=True, max_length=6)
+
+    def validate_pincode(self, value):
+        from users.models import Pincode
+        if not Pincode.get_pincode(value):
+            raise serializers.ValidationError(constants.INVALID_PINCODE)
+        return value
 
     def validate_category_id(self, value):
         from product.models import Category
@@ -18,16 +23,9 @@ class CreateLeadSerializer(serializers.ModelSerializer):
                 constants.INVALID_CATEGORY_ID)
         return value
 
-    def validate_gender(self, value):
-        value = value.lower()
-        if value not in constants.GENDER:
-            raise serializers.ValidationError(
-                constants.INVALID_GENDER_PROVIDED)
-        return value
-
     class Meta:
         model = Lead
-        fields = ('id', 'category_id', 'pincode', 'gender')
+        fields = ('id', 'category_id', 'pincode')
 
     @property
     def data(self):

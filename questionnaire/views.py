@@ -39,10 +39,9 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
             with transaction.atomic():
                 lead = Lead.objects.get(id=serializer.data['lead_id'])
                 lead.update_fields(**dict(
-                    category_id=serializer.data['category_id'],
-                    pincode=serializer.data['pincode'],
                     gender=serializer.data['gender'],
-                    family=serializer.data['family']
+                    family=serializer.data['family'],
+                    pincode=serializer.data.get('pincode', lead.pincode)
                 ))
                 for response in serializer.data['answers']:
                     ans_serializer = QuestionnaireResponseSerializer(

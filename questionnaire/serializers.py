@@ -29,18 +29,10 @@ class AnswerSerializer(serializers.ModelSerializer):
 
 class ResponseSerializer(serializers.Serializer):
     lead_id = serializers.IntegerField(required=True)
-    category_id = serializers.IntegerField(required=True)
     gender = serializers.CharField(required=True)
-    pincode = serializers.CharField(required=True, max_length=6)
     family = serializers.JSONField(required=True)
     answers = serializers.JSONField(required=True)
-
-    def validate_category_id(self, value):
-        from product.models import Category
-        if not Category.objects.filter(id=value).exists():
-            raise serializers.ValidationError(
-                constants.INVALID_CATEGORY_ID)
-        return value
+    pincode = serializers.CharField(required=False, max_length=6)
 
     def validate_lead_id(self, value):
         from crm.models import Lead
@@ -48,11 +40,11 @@ class ResponseSerializer(serializers.Serializer):
             raise serializers.ValidationError(constants.INVALID_LEAD_ID)
         return value
 
-#    def validate_pincode(self, value):
-#        from users.models import Pincode
-#        if not Pincode.get_pincode(value):
-#            raise serializers.ValidationError(constants.INVALID_PINCODE)
-#        return value
+    def validate_pincode(self, value):
+        from users.models import Pincode
+        if not Pincode.get_pincode(value):
+            raise serializers.ValidationError(constants.INVALID_PINCODE)
+        return value
 
     def validate_customer_segment_id(self, value):
         from product.models import CustomerSegment

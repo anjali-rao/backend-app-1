@@ -35,7 +35,7 @@ class Lead(BaseModel):
     health_checkups = models.FloatField(default=0.0)
     pincode = models.CharField(max_length=6, null=True)
     adults = models.IntegerField(default=0)
-    gender = models.CharField(max_length=12)
+    gender = models.CharField(max_length=12, null=True)
     childrens = models.IntegerField(default=0)
     family = JSONField(default=dict)
 
