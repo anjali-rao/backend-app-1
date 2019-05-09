@@ -53,4 +53,4 @@ class PromoBook(BaseModel):
     def save(self, *args, **kwargs):
         from users.tasks import send_sms
         send_sms(self.phone_no, constants.PROMO_MESSAGE % self.phone_no)
-        super(PhoneNumber, self).save(*args, **kwargs)
+        super(PromoBook, self).save(*args, **kwargs)
