@@ -72,8 +72,6 @@ class QuoteSerializer(serializers.ModelSerializer):
     premium = serializers.ReadOnlyField(source='premium.amount')
     product = serializers.ReadOnlyField(
         source='premium.product_variant.get_product_details')
-    recommendation_score = serializers.ReadOnlyField(
-        source='recommendation_score')
 
     class Meta:
         model = Quote
