@@ -36,8 +36,11 @@ class ContactUs(BaseModel):
 
 
 class NetworkHospital(BaseModel):
-    name = models.CharField(blank=True, max_length=100)
-    city = models.CharField(max_length=64)
+    name = models.CharField(blank=True, max_length=256)
+    company = models.ForeignKey(
+        'product.Company', null=True, on_delete=models.CASCADE, blank=True)
+    pincode = models.ForeignKey(
+        'users.Pincode', on_delete=models.CASCADE, blank=True)
     address = models.TextField()
     contact_number = models.CharField(blank=True, max_length=100)
 

@@ -29,8 +29,8 @@ class ContactUs(admin.ModelAdmin):
 
 @admin.register(NetworkHospital)
 class NetworkHospitalAdmin(admin.ModelAdmin):
-    list_display = ('name', 'city', 'contact_number')
-    search_fields = ('name', 'city')
+    list_display = ('name','contact_number')
+    search_fields = ('name',)
 
 
 @admin.register(NewsletterSubscriber)
