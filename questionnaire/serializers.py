@@ -29,21 +29,12 @@ class AnswerSerializer(serializers.ModelSerializer):
 
 class ResponseSerializer(serializers.Serializer):
     lead_id = serializers.IntegerField(required=True)
-    gender = serializers.CharField(required=True)
-    family = serializers.JSONField(required=True)
     answers = serializers.JSONField(required=True)
-    pincode = serializers.CharField(required=False, max_length=6)
 
     def validate_lead_id(self, value):
         from crm.models import Lead
         if not Lead.objects.filter(id=value).exists():
             raise serializers.ValidationError(constants.INVALID_LEAD_ID)
-        return value
-
-    def validate_pincode(self, value):
-        from users.models import Pincode
-        if not Pincode.get_pincode(value):
-            raise serializers.ValidationError(constants.INVALID_PINCODE)
         return value
 
     def validate_customer_segment_id(self, value):
@@ -66,22 +57,6 @@ class ResponseSerializer(serializers.Serializer):
                     continue
                 error_list.extend([j for i in errors.values() for j in i])
             raise serializers.ValidationError(error_list)
-        return value
-
-    def validate_gender(self, value):
-        if value.lower() not in constants.GENDER:
-            raise serializers.ValidationError(
-                constants.INVALID_GENDER_PROVIDED)
-        return value
-
-    def validate_family(self, value):
-        if not value:
-            raise serializers.ValidationError(
-                constants.INVALID_FAMILY_DETAILS)
-        for member, age in value.items():
-            if not isinstance(age, int) and not age.isdigit():
-                raise serializers.ValidationError(
-                    constants.INVALID_FAMILY_DETAILS)
         return value
 
 
