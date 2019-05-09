@@ -115,7 +115,7 @@ USER_CREATION_MESSAGE = 'Hi,\nYour account with OneCover has been created succes
 USER_CREATED_SUCESS = 'User created successfully!'
 USER_PASSWORD_CHANGE = 'Hi,\nYour OneCover account password has been changed successfully.\n\nRegards\nTeam OneCover' # noqa
 PASSWORD_REQUIRED = 'Password is required.'
-PROMO_MESSAGE = 'Hi %s, Welcome to OneCover, download our app and become super advisior https://play.google.com/store/apps/details?id=com.one_cover .'
+PROMO_MESSAGE = 'Hi %s, Welcome to OneCover, download our app and become super advisor https://tinyurl.com/y2ux5cdj .'
 
 # TTL's (seconds)
 OTP_TTL = 900
