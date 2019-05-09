@@ -47,5 +47,10 @@ class NewsletterSubscriber(BaseModel):
     unsubscribe = models.BooleanField(default=False)
 
 
-class PhoneNumber(BaseModel):
-    phone_no = models.CharField(max_length=10, )
+class PromoBook(BaseModel):
+    phone_no = models.CharField(max_length=10)
+
+    def save(self, *args, **kwargs):
+        from users.tasks import send_sms
+        send_sms(self.phone_no, constants.PROMO_MESSAGE % self.phone_no)
+        super(PhoneNumber, self).save(*args, **kwargs)
