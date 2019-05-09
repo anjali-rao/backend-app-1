@@ -9,7 +9,7 @@ from crm.models import Lead
 from crm.serializers import (
     QuoteSerializer, QuoteDetailsSerializer, Quote,
     QuotesCompareSerializer, QuoteRecommendationSerializer,
-    CreateLeadSerializer
+    CreateUpdateLeadSerializer
 )
 
 from django.db import transaction, IntegrityError
@@ -17,11 +17,17 @@ from django.db import transaction, IntegrityError
 
 class CreateLead(generics.CreateAPIView):
     authentication_classes = (UserAuthentication,)
-    serializer_class = CreateLeadSerializer
+    serializer_class = CreateUpdateLeadSerializer
 
     def perform_create(self, serializer):
         with transaction.atomic():
             serializer.save(user_id=self.request.user.id)
+
+
+class UpdateLead(generics.UpdateAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = CreateUpdateLeadSerializer
+    queryset = Lead.objects.all()
 
 
 class GetQuotes(generics.ListAPIView):

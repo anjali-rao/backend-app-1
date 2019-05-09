@@ -6,9 +6,11 @@ from sales.models import Quote
 from utils import constants
 
 
-class CreateLeadSerializer(serializers.ModelSerializer):
+class CreateUpdateLeadSerializer(serializers.ModelSerializer):
     category_id = serializers.IntegerField(required=True)
     pincode = serializers.CharField(required=True, max_length=6)
+    gender = serializers.CharField(required=False)
+    family = serializers.JSONField(required=False)
 
     def validate_pincode(self, value):
         from users.models import Pincode
@@ -23,16 +25,32 @@ class CreateLeadSerializer(serializers.ModelSerializer):
                 constants.INVALID_CATEGORY_ID)
         return value
 
+    def validate_gender(self, value):
+        if value.lower() not in constants.GENDER:
+            raise serializers.ValidationError(
+                constants.INVALID_GENDER_PROVIDED)
+        return value
+
+    def validate_family(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                constants.INVALID_FAMILY_DETAILS)
+        for member, age in value.items():
+            if not isinstance(age, int) and not age.isdigit():
+                raise serializers.ValidationError(
+                    constants.INVALID_FAMILY_DETAILS)
+        return value
+
     class Meta:
         model = Lead
-        fields = ('id', 'category_id', 'pincode')
+        fields = ('id', 'category_id', 'pincode', 'family', 'gender')
 
     @property
     def data(self):
         # TO DOS: Remove this when app is build
-        super(CreateLeadSerializer, self).data
+        super(CreateUpdateLeadSerializer, self).data
         self._data = dict(
-            message='Lead created successfully',
+            message='Lead operation successfully processed.',
             lead_id=self.instance.id
         )
         return self._data
