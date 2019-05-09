@@ -10,7 +10,7 @@ from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
     AccountSearchSerializers, User, PincodeSerializer, Pincode,
-    SalesSerializer
+    SalesSerializer, SalesApplicationSerializer
 )
 from users.decorators import UserAuthentication
 from utils import constants
@@ -169,6 +169,14 @@ class GetSales(generics.RetrieveAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = User.objects.all()
     serializer_class = SalesSerializer
+
+
+class GetCart(generics.ListAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = SalesApplicationSerializer
+
+    def get_queryset(self):
+        return self.request.user.get_applications(status='pending')
 
 
 class GetLeads(generics.ListAPIView):

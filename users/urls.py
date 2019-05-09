@@ -3,7 +3,7 @@ from django.urls import path
 from users.views import (
     RegisterUser, verify_otp, generate_otp, generate_authorization,
     update_password, SearchAccount, PincodeSearch, GetSales,
-    GetLeads, GetClients
+    GetLeads, GetClients, GetCart
 )
 
 urlpatterns = [
@@ -14,6 +14,7 @@ urlpatterns = [
     path('user/update/password', update_password),
     path('user/leads', GetLeads.as_view()),
     path('user/clients', GetClients.as_view()),
+    path('user/cart', GetCart.as_view()),
     path('user/<slug:pk>/sales', GetSales.as_view()),
     path('users/account/search', SearchAccount.as_view()),
     path('pincode/search', PincodeSearch.as_view()),
