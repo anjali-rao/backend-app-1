@@ -155,13 +155,14 @@ class QuotesCompareSerializer(serializers.ModelSerializer):
         return features
 
     def get_network_coverage(self, obj):
-        return [
-            {
-                'name': 'hospitals',
-                'value': NetworkHospital.objects.filter(
-                    city=obj.lead.city).count()
-            }
-        ]
+        company = obj.premium.product_variant.company_category.company.name
+        return [dict(
+            name='hospitals',
+            value=NetworkHospital.objects.select_related(
+                'pincode', 'company').filter(
+                    pincode__pincode=obj.lead.pincode,
+                    company__name=company).count()
+        )]
 
     class Meta:
         model = Quote
