@@ -111,7 +111,7 @@ class ProductVariant(BaseModel):
         return helpfile.file.url if helpfile else ''
 
     def __str__(self):
-        return self.name
+        return self.product_short_name
 
 
 class CustomerSegment(BaseModel):

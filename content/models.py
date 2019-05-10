@@ -11,8 +11,9 @@ class Faq(BaseModel):
 
 
 class HelpFile(BaseModel):
-    company_category = models.ForeignKey(
-        'product.CompanyCategory', on_delete=models.CASCADE)
+    title = models.CharField(max_length=62, null=True, blank=True)
+    product_variant = models.ForeignKey(
+        'product.ProductVariant', on_delete=models.CASCADE)
     file = models.FileField(upload_to=constants.HELP_FILES_PATH)
     file_type = models.CharField(
         choices=get_choices(constants.HELP_FILES_TYPE),
@@ -22,8 +23,8 @@ class HelpFile(BaseModel):
     def __str__(self):
         return '%s: %s %s' % (
             self.file_type.title().replace('_', ' '),
-            self.company_category.company.name,
-            self.company_category.category.name)
+            self.product_variant.company_category.company.name,
+            self.product_variant.company_category.category.name)
 
 
 class ContactUs(BaseModel):

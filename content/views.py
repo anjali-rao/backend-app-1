@@ -4,14 +4,13 @@ from __future__ import unicode_literals
 from rest_framework import generics, permissions
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-
 from users.decorators import UserAuthentication
 from utils.mixins import CustomPagination
 
 from content.serializers import (
     Faq, FaqSerializer, ContactUsSerializer, NewsLetterSerializer,
     PromoBookSerializer, NetworkHospital, NetworkCoverageSerializer,
-    HelpFileSerializer, HelpFile
+    ProductVariantHelpFileSerializer, ProductVariant
 )
 
 
@@ -56,9 +55,9 @@ class GetNetworkHospital(generics.ListAPIView):
 
 class GetHelpFiles(generics.ListAPIView):
     authentication_classes = (UserAuthentication,)
-    serializer_class = HelpFileSerializer
+    serializer_class = ProductVariantHelpFileSerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = [
-        'company_category__company__name',
-        'company_category__category__name']
-    queryset = HelpFile.objects.all()
+        'product_variant__company_category__company__name',
+        'product_variant__company_category__category__name']
+    queryset = ProductVariant.objects.all()

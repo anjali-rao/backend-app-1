@@ -16,14 +16,14 @@ class FaqAdmin(admin.ModelAdmin):
 
 @admin.register(HelpFile)
 class HelpFileAdmin(admin.ModelAdmin):
-    list_display = ('company_category', 'file_type')
+    list_display = ('product_variant', 'file_type')
     search_fields = (
-        'company_category__category__name',
-        'company_category__company__name')
+        'product_variant__company_category__category__name',
+        'product_variant__company_category__company__name')
     list_filter = (
-        'file_type', 'company_category__category__name',
-        'company_category__company__name')
-    raw_id_fields = ('company_category',)
+        'file_type', 'product_variant__company_category__category__name',
+        'product_variant__company_category__company__name')
+    raw_id_fields = ('product_variant',)
 
 
 @admin.register(ContactUs)
