@@ -58,7 +58,7 @@ KYC_DOC_TYPES = (
     'photo'
 )
 QUESTION_COICES = ('mcq', 'single')
-HELP_FILES_TYPE = ('ALL', 'SALES BROCHURES', 'CLAIM FORMS')
+HELP_FILES_TYPE = ('all', 'sales_brochure', 'claim_form')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
 RELATION_CHOICES = (
     'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother',

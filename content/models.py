@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from django.core.validators import RegexValidator
 
 from utils.models import BaseModel, models
 from utils import get_choices, constants
-
-from product.models import Category
 
 
 class Faq(BaseModel):
@@ -14,16 +11,20 @@ class Faq(BaseModel):
 
 
 class HelpFile(BaseModel):
-    title = models.CharField(blank=True, max_length=512)
+    title = models.CharField(max_length=62, null=True, blank=True)
+    product_variant = models.ForeignKey(
+        'product.ProductVariant', on_delete=models.CASCADE)
     file = models.FileField(upload_to=constants.HELP_FILES_PATH)
     file_type = models.CharField(
         choices=get_choices(constants.HELP_FILES_TYPE),
-        default="ALL", max_length=128
+        default="all", max_length=32
     )
-    category = models.CharField(
-        choices=get_choices(
-            Category.objects.values_list('name', flat=True), 'ALL'
-        ), default="ALL", max_length=512)
+
+    def __str__(self):
+        return '%s: %s %s' % (
+            self.file_type.title().replace('_', ' '),
+            self.product_variant.company_category.company.name,
+            self.product_variant.company_category.category.name)
 
 
 class ContactUs(BaseModel):

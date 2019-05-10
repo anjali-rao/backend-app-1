@@ -16,9 +16,14 @@ class FaqAdmin(admin.ModelAdmin):
 
 @admin.register(HelpFile)
 class HelpFileAdmin(admin.ModelAdmin):
-    list_display = ('title', 'file_type')
-    search_fields = ('category',)
-    list_filter = ('file_type',)
+    list_display = ('product_variant', 'file_type')
+    search_fields = (
+        'product_variant__company_category__category__name',
+        'product_variant__company_category__company__name')
+    list_filter = (
+        'file_type', 'product_variant__company_category__category__name',
+        'product_variant__company_category__company__name')
+    raw_id_fields = ('product_variant',)
 
 
 @admin.register(ContactUs)
@@ -29,8 +34,12 @@ class ContactUs(admin.ModelAdmin):
 
 @admin.register(NetworkHospital)
 class NetworkHospitalAdmin(admin.ModelAdmin):
-    list_display = ('name','contact_number')
-    search_fields = ('name',)
+    list_display = ('name', 'contact_number', 'company', 'pincode')
+    search_fields = (
+        'name', 'contact_number', 'company__name', 'pincode__pincode',
+        'pincode__city', 'pincode__state__name')
+    list_filter = ('pincode__state__name', )
+    raw_id_fields = ('pincode', 'company')
 
 
 @admin.register(NewsletterSubscriber)
