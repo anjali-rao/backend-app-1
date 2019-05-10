@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from django.core.validators import RegexValidator
 
 from utils.models import BaseModel, models
 from utils import get_choices, constants
@@ -36,10 +37,19 @@ class ContactUs(BaseModel):
 
 
 class NetworkHospital(BaseModel):
-    name = models.CharField(blank=True, max_length=100)
-    city = models.CharField(max_length=64)
+    name = models.CharField(blank=True, max_length=256, db_index=True)
+    company = models.ForeignKey(
+        'product.Company', null=True, on_delete=models.CASCADE, blank=True)
+    pincode = models.ForeignKey(
+        'users.Pincode', on_delete=models.CASCADE, blank=True)
     address = models.TextField()
-    contact_number = models.CharField(blank=True, max_length=100)
+    contact_number = models.CharField(
+        blank=True, max_length=100, db_index=True)
+
+    def get_full_address(self):
+        return '%s, %s, %s (%s)' % (
+            self.address, self.pincode.city, self.pincode.state,
+            self.pincode.pincode)
 
 
 class NewsletterSubscriber(BaseModel):

@@ -1,5 +1,6 @@
 from rest_framework import exceptions, status
 from django.utils.translation import ugettext_lazy as _
+from rest_framework.pagination import PageNumberPagination
 
 
 class MethodSerializerView(object):
@@ -69,3 +70,8 @@ class RecommendationException(Exception):
 
 class InsuranceException(Exception):
     pass
+
+
+class CustomPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
