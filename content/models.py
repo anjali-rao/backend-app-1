@@ -26,6 +26,9 @@ class HelpFile(BaseModel):
             self.product_variant.company_category.company.name,
             self.product_variant.company_category.category.name)
 
+    class Meta:
+        ordering = ('-created',)
+
 
 class ContactUs(BaseModel):
     full_name = models.CharField(max_length=512)
