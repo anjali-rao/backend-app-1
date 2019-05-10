@@ -96,19 +96,15 @@ class ProductVariant(BaseModel):
     def get_basic_details(self):
         return {
             'toll_free_number': self.company_category.company.toll_free_number,
-            'brochure': self.get_help_file('SALES BROCHURES'),
-            'claim_form': self.get_help_file('CLAIM FORMS')
+            'brochure': self.get_help_file('sales_brochure'),
+            'claim_form': self.get_help_file('claim_form')
         }
 
     def get_help_file(self, file_type):
         from content.models import HelpFile
         helpfile = HelpFile.objects.filter(
-            category=self.company_category.category.name,
-            file_type=file_type).last()
-        if not helpfile:
-            helpfile = HelpFile.objects.filter(
-                category='ALL', file_type=file_type).last()
-        return helpfile.file.url if helpfile else ''
+            product_variant_id=self.id, file_type=file_type).first()
+        return helpfile.file.url if helpfile else '-'
 
     def __str__(self):
         return self.product_short_name
