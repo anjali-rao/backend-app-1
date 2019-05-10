@@ -10,7 +10,8 @@ from utils.mixins import CustomPagination
 
 from content.serializers import (
     Faq, FaqSerializer, ContactUsSerializer, NewsLetterSerializer,
-    PromoBookSerializer, NetworkHospital, NetworkCoverageSerializer
+    PromoBookSerializer, NetworkHospital, NetworkCoverageSerializer,
+    HelpFileSerializer, HelpFile
 )
 
 
@@ -18,6 +19,8 @@ class GetFaq(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     queryset = Faq.objects.all()
     serializer_class = FaqSerializer
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ['question', 'answer']
 
 
 class ContactUsAPI(generics.CreateAPIView):
@@ -49,3 +52,13 @@ class GetNetworkHospital(generics.ListAPIView):
         return NetworkHospital.objects.select_related(
             'company', 'pincode').filter(
                 company_id__in=Company.objects.values_list('id', flat=True))
+
+
+class GetHelpFiles(generics.ListAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = HelpFileSerializer
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = [
+        'company_category__company__name',
+        'company_category__category__name']
+    queryset = HelpFile.objects.all()

@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from content.models import (
     Faq, ContactUs, NewsletterSubscriber, PromoBook,
-    NetworkHospital)
+    NetworkHospital, HelpFile)
 
 
 class FaqSerializer(serializers.ModelSerializer):
@@ -49,3 +49,13 @@ class NetworkCoverageSerializer(serializers.ModelSerializer):
     class Meta:
         model = NetworkHospital
         fields = ('company', 'hospital_name', 'address')
+
+
+class HelpFileSerializer(serializers.ModelSerializer):
+    company = serializers.ReadOnlyField(source='company_category.company.name')
+    category = serializers.ReadOnlyField(
+        source='company_category.category.name')
+
+    class Meta:
+        model = HelpFile
+        fields = ('company', 'category', 'file_type', 'file')

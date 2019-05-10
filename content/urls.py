@@ -2,7 +2,7 @@ from django.urls import path
 
 from content.views import (
     GetFaq, ContactUsAPI, AddNewsLetterSubscriber,
-    GetNetworkHospital
+    GetNetworkHospital, GetHelpFiles
 )
 from content.views import AddPromotion
 
@@ -13,4 +13,5 @@ urlpatterns = [
     path('newsletter', AddNewsLetterSubscriber.as_view()),
     path('submit-phone', AddPromotion.as_view()),
     path('network-hospital', GetNetworkHospital.as_view()),
+    path('help-files', GetHelpFiles.as_view()),
 ]
