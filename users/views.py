@@ -106,7 +106,7 @@ class SearchAccount(generics.ListAPIView):
 
 class PincodeSearch(APIView):
 
-    def get(self, request, version, format=None):
+    def get(self, request, version):
 
         data = []
         text = request.query_params.get('text')

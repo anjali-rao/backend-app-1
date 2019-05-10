@@ -1,7 +1,9 @@
 from utils import constants
 from rest_framework import serializers
 
-from content.models import Faq, ContactUs, NewsletterSubscriber, PromoBook
+from content.models import (
+    Faq, ContactUs, NewsletterSubscriber, PromoBook,
+    NetworkHospital)
 
 
 class FaqSerializer(serializers.ModelSerializer):
@@ -26,7 +28,7 @@ class NewsLetterSerializer(serializers.ModelSerializer):
 
 
 class PromoBookSerializer(serializers.ModelSerializer):
-    phone_no = serializers.CharField(required=True)
+    phone_no = serializers.CharField(required=True, max_length=10)
 
     def validate_phone_no(self, value):
         if value[0] in range(0, 4):
@@ -37,3 +39,13 @@ class PromoBookSerializer(serializers.ModelSerializer):
     class Meta:
         model = PromoBook
         fields = ('phone_no',)
+
+
+class NetworkCoverageSerializer(serializers.ModelSerializer):
+    company = serializers.ReadOnlyField(source='company.name')
+    hospital_name = serializers.ReadOnlyField(source='name')
+    address = serializers.ReadOnlyField(source='get_full_address')
+
+    class Meta:
+        model = NetworkHospital
+        fields = ('company', 'hospital_name', 'address')
