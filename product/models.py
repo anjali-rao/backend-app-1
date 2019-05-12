@@ -136,6 +136,9 @@ class FeatureMaster(BaseModel):
         return "%s - %s" % (
             self.name, self.category.name)
 
+    class Meta:
+        ordering = ('order',)
+
 
 class Feature(BaseModel):
     feature_master = models.ForeignKey(
@@ -147,6 +150,9 @@ class Feature(BaseModel):
     rating = models.FloatField(default=0.0)
     short_description = models.CharField(max_length=156, null=True, blank=True)
     long_description = models.CharField(max_length=512, null=True, blank=True)
+
+    class Meta:
+        ordering = ('feature_master__order',)
 
     def __str__(self):
         return "%s - %s" % (

@@ -45,7 +45,7 @@ class Quote(BaseModel):
         return self.premium.product_variant.feature_set.values(
             'feature_master__name', 'short_description',
             'feature_master__long_description'
-        ).order_by('feature_master__order')
+        )
 
     def get_faq(self):
         company_category = self.premium.product_variant.company_category

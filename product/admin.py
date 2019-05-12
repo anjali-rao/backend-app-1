@@ -48,14 +48,14 @@ class CustomerSegmentAdmin(admin.ModelAdmin):
 
 @admin.register(FeatureMaster)
 class FeatureMasterAdmin(admin.ModelAdmin):
-    list_display = ('category', 'name', 'short_description')
+    list_display = ('category', 'name', 'short_description', 'order')
     search_fields = ('category__id',)
     raw_id_fields = ('category',)
 
 
 @admin.register(Feature)
 class Feature(admin.ModelAdmin):
-    list_display = ('feature_master', 'product_variant')
+    list_display = ('feature_master', 'product_variant',)
     search_fields = ('feature_master__name',)
     raw_id_fields = ('feature_master', 'product_variant')
 
