@@ -182,6 +182,9 @@ class Application(BaseModel):
             self.reference_no, self.application_type,
             self.company_category.company.name)
 
+    class Meta:
+        ordering = ('-created',)
+
 
 class ExistingPolicies(BaseModel):
     application = models.ForeignKey(

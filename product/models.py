@@ -3,9 +3,10 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import constants, get_choices
-from django.utils.functional import cached_property
 
+from django.utils.functional import cached_property
 from django.contrib.postgres.fields import IntegerRangeField
+from django.contrib.postgres.fields import ArrayField
 
 
 class Category(BaseModel):
@@ -33,7 +34,8 @@ class Company(BaseModel):
         max_length=8, default=constants.DEFAULT_HEXA_CODE)
     website = models.URLField(null=True, blank=True)
     spoc = models.TextField(null=True, blank=True)
-    toll_free_number = models.CharField(max_length=50, null=True, blank=True)
+    toll_free_number = ArrayField(
+        models.CharField(max_length=32), default=list, blank=True, null=True)
     long_description = models.TextField(null=True, blank=True)
     small_description = models.TextField(null=True, blank=True)
 

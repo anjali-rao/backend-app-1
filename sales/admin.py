@@ -33,7 +33,8 @@ class QuoteAdmin(admin.ModelAdmin):
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = (
-        'reference_no', 'application_type', 'status', 'terms_and_conditions')
+        'reference_no', 'application_type', 'status', 'terms_and_conditions',
+        'created')
     list_filter = ('application_type', 'terms_and_conditions', 'status')
     raw_id_fields = ('client', 'quote')
     search_fields = (

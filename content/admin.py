@@ -5,7 +5,7 @@ from django.contrib import admin
 
 from content.models import (
     Faq, HelpFile, ContactUs, NetworkHospital, NewsletterSubscriber,
-    PromoBook)
+    PromoBook, HelpLine)
 
 
 @admin.register(Faq)
@@ -53,3 +53,11 @@ class NewsletterSubscriberAdmin(admin.ModelAdmin):
 class PromoBookAdmin(admin.ModelAdmin):
     list_display = ('phone_no',)
     search_fields = ('phone_no',)
+
+
+@admin.register(HelpLine)
+class HelpLineAdmin(admin.ModelAdmin):
+    list_display = ('company', 'number')
+    search_fields = ('number', 'company__name')
+    list_filter = ('company__name',)
+    raw_id_fields = ('company',)

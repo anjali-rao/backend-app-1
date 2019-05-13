@@ -10,6 +10,12 @@ class Faq(BaseModel):
     answer = models.TextField()
 
 
+class HelpLine(BaseModel):
+    company = models.ForeignKey('product.Company', on_delete=models.CASCADE)
+    description = models.TextField(blank=True)
+    number = models.CharField(blank=True, max_length=32)
+
+
 class HelpFile(BaseModel):
     title = models.CharField(max_length=62, null=True, blank=True)
     product_variant = models.ForeignKey(

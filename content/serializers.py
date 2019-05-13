@@ -3,9 +3,9 @@ from rest_framework import serializers
 
 from content.models import (
     Faq, ContactUs, NewsletterSubscriber, PromoBook,
-    NetworkHospital, HelpFile)
+    NetworkHospital, HelpLine)
 
-from product.models import ProductVariant
+from product.models import ProductVariant, Company
 
 
 class FaqSerializer(serializers.ModelSerializer):
@@ -79,5 +79,12 @@ class ProductVariantHelpFileSerializer(serializers.ModelSerializer):
             'product', 'category', 'company', 'sales_brochure', 'claim_form')
 
 
-class HelpLineSerializer(serializers.ModelSerializer):
-    contact_number = serializers.ReadOnlyField(source='toll_free_number')
+class CompanyHelpLineSerializer(serializers.ModelSerializer):
+    helplines = serializers.SerializerMethodField()
+
+    def get_helplines(self, obj):
+        return obj.helpline_set.values_list('number', flat=True)
+
+    class Meta:
+        model = Company
+        fields = ('name', 'helplines')
