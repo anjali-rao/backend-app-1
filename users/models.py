@@ -25,9 +25,11 @@ import uuid
 
 class Account(AbstractUser):
     phone_no = models.CharField(max_length=10)
+    password = models.CharField(_('password'), max_length=128, null=True)
     alternate_no = models.CharField(max_length=10, null=True, blank=True)
     pan_no = models.CharField(max_length=10, null=True, blank=True)
     aadhar_no = models.CharField(max_length=12, null=True, blank=True)
+    fcm_id = models.CharField(max_length=256, null=True)
     dob = models.DateField(null=True, blank=True)
     gender = models.CharField(
         choices=get_choices(constants.GENDER), max_length=8,
@@ -103,6 +105,9 @@ class Account(AbstractUser):
         days = (now().date() - self.dob).days
         return '%s years and %s months' % ((days % 365) / 30, days / 365)
 
+    def __str__(self):
+        return 'Account: %s' % self.phone_no
+
     class Meta:
         verbose_name = _('Account')
 
@@ -126,7 +131,8 @@ class User(BaseModel):
     enterprise = GenericForeignKey('content_type', 'enterprise_id')
 
     class Meta:
-        unique_together = ('user_type', 'enterprise_id', 'account')
+        unique_together = (
+            'user_type', 'enterprise_id', 'content_type', 'account')
 
     def save(self, *args, **kwargs):
         if not self.__class__.objects.filter(pk=self.id):
@@ -159,49 +165,19 @@ class User(BaseModel):
     def get_accounts(self):
         return self.bankaccount_set.filter(is_active=True)
 
-    @staticmethod
-    def validate_referral_code(code):
-        return Referral.objects.filter(referral_code=code).exists()
-
-    @staticmethod
-    def get_referral_details(code):
-        referrals = Referral.objects.filter(referral_code=code)
-        if not referrals.exists():
-            return {
-                'user_type': constants.DEFAULT_USER_TYPE,
-                'enterprise_id': SubcriberEnterprise.objects.get(
-                    name=constants.DEFAULT_ENTERPRISE).id
-            }
-        referral = referrals.get()
-        return {
-            'enterprise_id': (referral.enterprise or SubcriberEnterprise.objects.get( # noqa
-                name=constants.DEFAULT_ENTERPRISE)).id,
-        }
-
     def generate_referral(self, referral_reference=None):
         import random
-        code = '%s%s' % (
+        code = ('%s%s' % (
             self.account.first_name.lower()[:3], self.account.phone_no[-3:])
+        ).upper()
         if Referral.objects.filter(referral_code=code).exists():
             while Referral.objects.filter(referral_code=code).exists():
-                code = '%s%s' % (
+                code = ('%s%s' % (
                     self.account.first_name.lower()[:3],
-                    random.randint(111, 999))
+                    random.randint(111, 999))).upper()
         return Referral.objects.create(
             referral_code=code, referral_reference=referral_reference,
             user_id=self.id)
-
-    @property
-    def account_no(self):
-        return self.bankaccount_set.get(default=True).account_no
-
-    @property
-    def ifsc(self):
-        return self.bankaccount_set.get(default=True).branch.ifsc
-
-    @property
-    def bank_name(self):
-        return self.bankaccount_set.get(default=True).branch.bank.name
 
     def get_categories(self):
         categories = list()
@@ -224,6 +200,39 @@ class User(BaseModel):
         if status:
             query['status'] = status
         return Application.objects.filter(**query)
+
+    @staticmethod
+    def validate_referral_code(code):
+        return Referral.objects.filter(referral_code=code).exists()
+
+    @staticmethod
+    def get_referral_details(code):
+        referrals = Referral.objects.filter(referral_code=code)
+        if not referrals.exists():
+            return {
+                'user_type': constants.DEFAULT_USER_TYPE,
+                'enterprise_id': SubcriberEnterprise.objects.get(
+                    name=constants.DEFAULT_ENTERPRISE).id
+            }
+        referral = referrals.get()
+        Earning.objects.create(
+            user_id=referral.user.id, earning_type='referral', amount=100)
+        return {
+            'enterprise_id': (referral.enterprise or SubcriberEnterprise.objects.get( # noqa
+                name=constants.DEFAULT_ENTERPRISE)).id,
+        }
+
+    @property
+    def account_no(self):
+        return self.bankaccount_set.get(default=True).account_no
+
+    @property
+    def ifsc(self):
+        return self.bankaccount_set.get(default=True).branch.ifsc
+
+    @property
+    def bank_name(self):
+        return self.bankaccount_set.get(default=True).branch.bank.name
 
 
 class Campaign(BaseModel):
@@ -400,6 +409,27 @@ class IPAddress(BaseModel):
     def _get_whitelisted_networks(cls):
         return cls.objects.filter(
             blocked=False).values_list('ip_address', flat=True)
+
+
+class Earning(models.Model):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    quote = models.ForeignKey(
+        'sales.Quote', on_delete=models.CASCADE, null=True, blank=True)
+    amount = models.FloatField(default=0.0)
+    earning_type = models.CharField(
+        choices=get_choices(constants.EARNING_TYPES), max_length=16)
+    sub_type = models.CharField(max_length=32, null=True)
+    paid = models.BooleanField(default=False)
+
+    @classmethod
+    def get_user_earnings(cls, user_id, earning_type=None, sub_type=None):
+        query = dict(user_id=user_id)
+        if earning_type:
+            query['earning_type'] = earning_type
+        if sub_type:
+            query['sub_type'] = sub_type
+        return cls.objects.filter(**query).annotate(
+            s=models.Sum('amount'))['s']
 
 
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))

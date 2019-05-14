@@ -88,7 +88,7 @@ DOCS_UPLOAD_TYPES = {
 TIER_1_CITIES = ('Bengaluru', 'Delhi', 'Mumbai', 'Kolkota')
 TIER_2_CITIES = ('Lucknow', 'Allahabad')
 
-EARNING_TYPES = ('commission', 'incentive')
+EARNING_TYPES = ('commission', 'incentive', 'referral')
 
 MARITAL_STATUS = ('married', 'single', 'divorced')
 
@@ -164,7 +164,7 @@ PLAYLIST_UNAVAILABLE = 'No playlist available. Please Contact Admin.'
 # Creation Fields
 ACCOUNT_CREATION_FIELDS = (
     'password', 'first_name', 'last_name', 'email',
-    'address_id', 'pan_no'
+    'address_id', 'pan_no', 'fcm_id'
 )
 CONTACT_CREATION_FIELDS = (
     'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',

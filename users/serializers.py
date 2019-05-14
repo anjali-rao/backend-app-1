@@ -74,7 +74,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     transaction_id = serializers.CharField(required=True)
     password = serializers.CharField(required=False)
     referral_code = serializers.CharField(required=False)
-#    referral_reference = serializers.CharField(required=False)
+    fcm_id = serializers.CharField(required=False)
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
     email = serializers.CharField(required=True)
@@ -156,7 +156,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
             'first_name', 'last_name', 'email', 'password',
             'referral_code', 'user_type', 'pincode', 'pan_no',
             'phone_no', 'transaction_id', 'cancelled_cheque',
-            'photo', 'manager_id', 'user_type'
+            'photo', 'manager_id', 'user_type', 'fcm_id'
         )
 
 
