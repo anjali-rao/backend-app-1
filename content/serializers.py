@@ -92,9 +92,13 @@ class CompanyHelpLineSerializer(serializers.ModelSerializer):
 
 class EnterprisePlaylistSerializer(serializers.ModelSerializer):
     name = serializers.ReadOnlyField(source='playlist.name')
-    url = serializers.URLField(source='playlist.url')
+    playlist_id = serializers.SerializerMethodField()
     playlist_type = serializers.ReadOnlyField(source='playlist.playlist_type')
+
+    def get_playlist_id(self, obj):
+        return obj.playlist.url[
+            obj.playlist.url.rfind('list'):].replace('list=', '')
 
     class Meta:
         model = EnterprisePlaylist
-        fields = ('name', 'url', 'playlist_type')
+        fields = ('name', 'playlist_id', 'playlist_type')
