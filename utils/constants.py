@@ -157,6 +157,8 @@ INVALID_QUOTE_ID = 'Invalid Quote id provided.'
 INVALID_QUESTION_ANSWER_COMBINATION = 'Invalid question and answer combination provided'
 INVALID_LEAD_ID = 'Invalid / missing Lead id.'
 INVALID_PHONE_NO_FORMAT = 'Phone number is not valid'
+INVALID_PLAYLIST_TYPE = 'Playlist type provided is invalid.'
+PLAYLIST_UNAVAILABLE = 'No playlist available. Please Contact Admin.'
 
 
 # Creation Fields
@@ -193,3 +195,9 @@ BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Bloo
 
 INSURANCE_EXCLUDE_FIELDS = ['id', 'created', 'modified', 'application']
 USER_FILE_UPLOAD = ['cancelled_cheque', 'photo']
+
+PLAYLIST_CHOICES = ('marketing', 'training')
+TASK_CHOICES = ('basic', 'notification', 'event')
+EVENT_CHOICES = (
+    'notification', 'marketing', ''
+)

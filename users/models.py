@@ -118,7 +118,10 @@ class User(BaseModel):
     flag = JSONField(default=constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
     manager_id = models.CharField(max_length=48, null=True)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    limit = models.Q(app_label='users', model='enterprise') | \
+        models.Q(app_label='users', model='subcriberenterprise')
+    content_type = models.ForeignKey(
+        ContentType, on_delete=models.CASCADE, limit_choices_to=limit)
     enterprise_id = models.PositiveIntegerField()
     enterprise = GenericForeignKey('content_type', 'enterprise_id')
 
@@ -237,7 +240,10 @@ class Enterprise(BaseModel):
         upload_to=constants.ENTERPRISE_UPLOAD_PATH,
         default=constants.DEFAULT_LOGO)
     person = GenericRelation(
-        User, related_query_name='enterprise_user',
+        'users.User', related_query_name='enterprise_user',
+        object_id_field='enterprise_id')
+    playlist = GenericRelation(
+        'content.EnterprisePlaylist', related_query_name='enterprise_playlist',
         object_id_field='enterprise_id')
 
     def __str__(self):
@@ -257,7 +263,10 @@ class SubcriberEnterprise(BaseModel):
         upload_to=constants.ENTERPRISE_UPLOAD_PATH,
         default=constants.DEFAULT_LOGO)
     person = GenericRelation(
-        User, related_query_name='subscriber_enterprise_user',
+        'users.User', related_query_name='subscriber_enterprise_user',
+        object_id_field='enterprise_id')
+    playlist = GenericRelation(
+        'content.EnterprisePlaylist', related_query_name='enterprise_playlist',
         object_id_field='enterprise_id')
 
     def __str__(self):

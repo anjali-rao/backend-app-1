@@ -15,6 +15,7 @@ from users.serializers import (
 from users.decorators import UserAuthentication
 from utils import constants
 from utils.mixins import APIException
+from content.serializers import EnterprisePlaylistSerializer
 
 from django.db.models import Q
 from django.db import transaction, IntegrityError
@@ -195,3 +196,21 @@ class GetClients(generics.ListAPIView):
 
     def get_queryset(self):
         return self.request.user.get_applications(status='submitted')
+
+
+class GetPlaylist(generics.ListAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = EnterprisePlaylistSerializer
+
+    def get_queryset(self):
+        data = self.request.query_params
+        playlists = self.request.user.enterprise.playlist.select_related(
+            'playlist')
+        if playlists.exists():
+            if 'playlist_type' in data:
+                if data['playlist_type'] in constants.PLAYLIST_CHOICES:
+                    return playlists.filter(
+                        playlist__playlist_type=data['playlist_type'])
+                raise APIException(constants.INVALID_PLAYLIST_TYPE)
+            return playlists
+        raise APIException(constants.PLAYLIST_UNAVAILABLE)

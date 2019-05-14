@@ -3,6 +3,10 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import get_choices, constants
+from product.models import Category
+
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 
 class Faq(BaseModel):
@@ -74,3 +78,42 @@ class PromoBook(BaseModel):
         from users.tasks import send_sms
         send_sms(self.phone_no, constants.PROMO_MESSAGE % self.phone_no)
         super(PromoBook, self).save(*args, **kwargs)
+
+
+class Playlist(BaseModel):
+    name = models.CharField(max_length=32)
+    url = models.URLField()
+    playlist_type = models.CharField(
+        max_length=32, choices=get_choices(constants.PLAYLIST_CHOICES))
+
+    def __str__(self):
+        return '%s | %s: %s' % (self.name, self.playlist_type, self.url)
+
+
+class EnterprisePlaylist(BaseModel):
+    limit = models.Q(app_label='users', model='enterprise') | \
+        models.Q(app_label='users', model='subcriberenterprise')
+    content_type = models.ForeignKey(
+        ContentType, on_delete=models.CASCADE, limit_choices_to=limit)
+    enterprise_id = models.PositiveIntegerField()
+    enterprise = GenericForeignKey('content_type', 'enterprise_id')
+    playlist = models.ForeignKey('content.Playlist', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return '%s:%s' % (self.enterprise, self.playlist.name)
+
+
+class Article(BaseModel):
+    heading = models.CharField(max_length=256)
+    tags = models.CharField(max_length=32, choices=get_choices(
+        Category.objects.values_list('name', flat=True)))
+    url = models.URLField()
+    short_descripton = models.CharField(max_length=512)
+    image = models.ImageField(null=True)
+
+
+class Coverages(BaseModel):
+    company_category = models.ForeignKey(
+        'product.CompanyCategory', on_delete=models.CASCADE)
+    name = models.CharField(max_length=64)
+    description = models.TextField()

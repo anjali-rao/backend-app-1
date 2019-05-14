@@ -5,7 +5,8 @@ from django.contrib import admin
 
 from content.models import (
     Faq, HelpFile, ContactUs, NetworkHospital, NewsletterSubscriber,
-    PromoBook, HelpLine)
+    PromoBook, HelpLine, Playlist, EnterprisePlaylist, Article,
+    Coverages)
 
 
 @admin.register(Faq)
@@ -61,3 +62,29 @@ class HelpLineAdmin(admin.ModelAdmin):
     search_fields = ('number', 'company__name')
     list_filter = ('company__name',)
     raw_id_fields = ('company',)
+
+
+@admin.register(Playlist)
+class PlaylistAdmin(admin.ModelAdmin):
+    list_display = ('name', 'playlist_type', 'url')
+    search_fields = ('name', 'url')
+    list_filter = ('playlist_type',)
+
+
+@admin.register(EnterprisePlaylist)
+class EnterprisePlaylist(admin.ModelAdmin):
+    list_display = ('enterprise', 'playlist')
+    search_fields = ('enterprise_id',)
+    raw_id_fields = ('playlist',)
+
+
+@admin.register(Article)
+class ArticleAdmin(admin.ModelAdmin):
+    list_display = ('heading', 'tags', 'url')
+    search_fields = ('tags', 'heading')
+    list_filter = ('tags',)
+
+
+@admin.register(Coverages)
+class CoveragesAdmin(admin.ModelAdmin):
+    list_display = ('company_category', 'name',)

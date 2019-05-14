@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from content.models import (
     Faq, ContactUs, NewsletterSubscriber, PromoBook,
-    NetworkHospital, HelpLine)
+    NetworkHospital, EnterprisePlaylist)
 
 from product.models import ProductVariant, Company
 
@@ -88,3 +88,13 @@ class CompanyHelpLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = ('name', 'helplines')
+
+
+class EnterprisePlaylistSerializer(serializers.ModelSerializer):
+    name = serializers.ReadOnlyField(source='playlist.name')
+    url = serializers.URLField(source='playlist.url')
+    playlist_type = serializers.ReadOnlyField(source='playlist.playlist_type')
+
+    class Meta:
+        model = EnterprisePlaylist
+        fields = ('name', 'url', 'playlist_type')
