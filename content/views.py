@@ -77,7 +77,7 @@ class GetHelpFiles(generics.ListAPIView):
 
     @method_decorator(cache_page(API_CACHE_TIME))
     def dispatch(self, *args, **kwargs):
-        return super(GetHelpLines, self).dispatch(*args, **kwargs)
+        return super(self.__class__, self).dispatch(*args, **kwargs)
 
 
 class GetHelpLines(generics.ListAPIView):

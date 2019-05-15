@@ -411,7 +411,7 @@ class IPAddress(BaseModel):
             blocked=False).values_list('ip_address', flat=True)
 
 
-class Earning(models.Model):
+class Earning(BaseModel):
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
     quote = models.ForeignKey(
         'sales.Quote', on_delete=models.CASCADE, null=True, blank=True)

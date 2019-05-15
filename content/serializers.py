@@ -54,7 +54,7 @@ class NetworkCoverageSerializer(serializers.ModelSerializer):
 
 
 class ProductVariantHelpFileSerializer(serializers.ModelSerializer):
-    company = serializers.ReadOnlyField(source='company_category.company.name')
+    company_logo = serializers.ReadOnlyField(source='logo')
     product = serializers.ReadOnlyField(source='name')
     category = serializers.ReadOnlyField(
         source='company_category.category.name')
@@ -76,7 +76,8 @@ class ProductVariantHelpFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductVariant
         fields = (
-            'product', 'category', 'company', 'sales_brochure', 'claim_form')
+            'product', 'category', 'company_logo', 'sales_brochure',
+            'claim_form')
 
 
 class CompanyHelpLineSerializer(serializers.ModelSerializer):
