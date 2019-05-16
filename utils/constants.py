@@ -1,11 +1,61 @@
-# Choices
+# Choices  ==================================
 GENDER = ('male', 'female', 'transgender')
-
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
+OCCUPATION_CHOICES = (
+    'self_employed_or_business', 'salaried', 'retired', 'unemployed', 'others')
+LEAD_STATUS_CHOICES = (
+    ('fresh', 'Fresh'), ('inprogress', 'In Progress'),
+    ('closed', 'Closed'), ('dropped', 'Dropped'))
+LEAD_STAGE_CHOICES = (
+    ('new', 'New'), ('appointment_scheduled', 'Appointment Scheduled'),
+    ('needs', 'Needs'), ('quote', 'Quote'), ('cart', 'Cart'),
+    ('proposal', 'Proposal'), ('payment', 'Payment'),
+    ('submitted', 'Submitted'), ('issued', 'Issued'))
+STATUS_CHOICES = (
+    ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'))
+APPLICATION_STATUS = (
+    ('fresh', 'Fresh'), ('pending', 'Pending'), ('submitted', 'Submitted'),
+    ('approved', 'Approved'), ('cancelled', 'Cancelled'),
+    ('completed', 'Completed'))
+APPLICATION_STAGES = (
+    'proposal_details', 'insured_members', 'nominee_details',
+    'health_details', 'summary', 'completed')
+KYC_DOC_TYPES = (
+    'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
+    'ration_card', 'passport', 'birth_certificate', 'cancelled_cheque',
+    'photo')
+QUESTION_COICES = ('mcq', 'single')
+HELP_FILES_TYPE = ('all', 'sales_brochure', 'claim_form')
+CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
+RELATION_CHOICES = (
+    'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother',
+    'sister', 'cousin')
+DOC_TYPES = ('pan', 'license', 'photo')
+DOCS_UPLOAD_TYPES = dict(
+    pan='advisor/pan', license='advisor/license', photo='advisor/selfie')
+FEATURE_TYPES = (
+    'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
+    'Exclusion')
+APPLICATION_TYPES = ('healthinsurance', 'travelinsurance')
+TIER_1_CITIES = ('Bengaluru', 'Delhi', 'Mumbai', 'Kolkota')
+TIER_2_CITIES = ('Lucknow', 'Allahabad')
+EARNING_TYPES = ('commission', 'incentive', 'referral')
+MARITAL_STATUS = ('married', 'single', 'divorced')
+PLAYLIST_CHOICES = ('marketing', 'training')
+USER_FILE_UPLOAD = ['cancelled_cheque', 'photo']
+
+
+# ORDERS  ==================================
 
 MEMBER_ORDER = {key: i for i, key in enumerate(['self', 'spouse', 'father', 'mother'])} # noqa
 CATEGORY_ORDER = {key: i for i, key in enumerate(['Health', 'Travel'])} # noqa
 
+
+# ROUGH HANDLING  ==================================
+
+MUMBAI_NCR_TIER = ['Mumbai & NCR', 'All India']
+MUMBAI_AREA_TIER = ['Mumabi', 'Navi Mumbai']
+ALL_INDIA_TIER = CITY_TIER = ['All India', 'All India except Mumbai & NCR']
 NCR_PINCODES = [
     110001, 110002, 110003, 110004, 110005, 110006, 110007, 110008, 110009,
     110010, 110011, 110012, 110013, 110014, 110015, 110016, 110017, 110018,
@@ -19,80 +69,17 @@ NCR_PINCODES = [
     110088, 110091, 110092, 110093, 110094, 110095, 110096, 201301, 122001,
     201001, 201009, 121001, 121002, 124507
 ]
-
-MUMBAI_NCR_TIER = ['Mumbai & NCR', 'All India']
-MUMBAI_AREA_TIER = ['Mumabi', 'Navi Mumbai']
-ALL_INDIA_TIER = CITY_TIER = ['All India', 'All India except Mumbai & NCR']
-
-USER_FLAG = {'blacklist': False, 'training': False, 'exam_passed': None}
-
-OCCUPATION_CHOICES = (
-    'self_employed_or_business', 'salaried', 'retired', 'unemployed', 'others')
-
-LEAD_STATUS_CHOICES = (
-    ('fresh', 'Fresh'), ('inprogress', 'In Progress'),
-    ('closed', 'Closed'), ('dropped', 'Dropped'))
-
-LEAD_STAGE_CHOICES = (
-    ('new', 'New'), ('appointment_scheduled', 'Appointment Scheduled'),
-    ('needs', 'Needs'), ('quote', 'Quote'), ('cart', 'Cart'),
-    ('proposal', 'Proposal'), ('payment', 'Payment'),
-    ('submitted', 'Submitted'), ('issued', 'Issued'))
-
-STATUS_CHOICES = (
-    ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'))
-
-APPLICATION_STATUS = (
-    ('fresh', 'Fresh'), ('pending', 'Pending'), ('submitted', 'Submitted'),
-    ('approved', 'Approved'), ('cancelled', 'Cancelled'),
-    ('completed', 'Completed'))
-
-APPLICATION_STAGES = (
-    'proposal_details', 'insured_members', 'nominee_details',
-    'health_details', 'summary', 'completed'
-)
-
-KYC_DOC_TYPES = (
-    'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
-    'ration_card', 'passport', 'birth_certificate', 'cancelled_cheque',
-    'photo'
-)
-QUESTION_COICES = ('mcq', 'single')
-HELP_FILES_TYPE = ('all', 'sales_brochure', 'claim_form')
-CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
-RELATION_CHOICES = (
-    'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother',
-    'sister', 'cousin'
-)
-
+USER_FLAG = dict(blacklist=False, training=False, exam_passed=False)
 HEALTHINSURANCE_FIELDS = [
     'gastrointestinal_disease', 'neuronal_diseases', 'oncology_disease',
     'respiratory_diseases', 'cardiovascular_disease', 'ent_diseases',
     'blood_diseases'
 ]
+INSURANCE_EXCLUDE_FIELDS = ['id', 'created', 'modified', 'application']
 
-FEATURE_TYPES = (
-    'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
-    'Exclusion')
 
-APPLICATION_TYPES = ('healthinsurance', 'travelinsurance')
+# Defaults ==================================
 
-DOC_TYPES = ('pan', 'license', 'photo')
-
-DOCS_UPLOAD_TYPES = {
-    'pan': 'advisor/pan',
-    'license': 'advisor/license',
-    'photo': 'advisor/selfie'
-}
-
-TIER_1_CITIES = ('Bengaluru', 'Delhi', 'Mumbai', 'Kolkota')
-TIER_2_CITIES = ('Lucknow', 'Allahabad')
-
-EARNING_TYPES = ('commission', 'incentive', 'referral')
-
-MARITAL_STATUS = ('married', 'single', 'divorced')
-
-# Defaults
 DEFAULT_LOGO = 'enterprise/goplannr.jpeg'
 HELP_FILES_PATH = 'contents'
 DEFAULT_HEXA_CODE = '#005db1'
@@ -105,7 +92,7 @@ DEFAULT_COMMISSION = 0.20
 ADULT_AGE_LIMIT = 18
 API_CACHE_TIME = 3600
 
-# Success messages
+# Success messages  ==================================
 OTP_MESSAGE = '<#> Your One Time Password for OneCover is %s XTmeqjNJd+R'
 OTP_SUCCESS = 'OTP verified successfully.'
 OTP_GENERATED = 'OTP send successfully.'
@@ -115,15 +102,17 @@ USER_CREATION_MESSAGE = 'Hi,\nYour account with OneCover has been created succes
 USER_CREATED_SUCESS = 'User created successfully!'
 USER_PASSWORD_CHANGE = 'Hi,\nYour OneCover account password has been changed successfully.\n\nRegards\nTeam OneCover' # noqa
 PASSWORD_REQUIRED = 'Password is required.'
-PROMO_MESSAGE = 'Hi %s, Welcome to OneCover, download our app and become super advisor https://tinyurl.com/y2ux5cdj .'
+PROMO_MESSAGE = 'Hi %s, Welcome to OneCover, download our app and become super advisor https://tinyurl.com/y2ux5cdj .' # noqa
 
-# TTL's (seconds)
+
+# TTL's (seconds)  ==================================
+
 OTP_TTL = 900
 TRANSACTION_TTL = 900
 
-POST_REQUEST_ONLY = ['put', 'delete']
 
-# Exception messages
+# Exception messages  ==================================
+
 REFERRAL_CODE_EXCEPTION = 'Invalid referral code provided.'
 OTP_VALIDATION_FAILED = 'Invalid otp provided.'
 INVALID_TRANSACTION_ID = 'Invalid transaction id provided.'
@@ -152,16 +141,19 @@ INCOMPLETE_APPLICATION = 'Application not completed, please fill %s'
 LOOKUP_ERROR = 'Expected view %s to be called with a URL keyword argument '
 'named "%s". Fix your URL conf, or set the `.lookup_field` '
 'attribute on the view correctly.'
-APPLICATION_UNMAPPED = 'Application not mapped to any insurance or inproper application type'
+APPLICATION_UNMAPPED = 'Application not mapped to any insurance or inproper application type' # noqa
 INVALID_QUOTE_ID = 'Invalid Quote id provided.'
-INVALID_QUESTION_ANSWER_COMBINATION = 'Invalid question and answer combination provided'
+INVALID_QUESTION_ANSWER_COMBINATION = 'Invalid question and answer combination provided'  # noqa
 INVALID_LEAD_ID = 'Invalid / missing Lead id.'
 INVALID_PHONE_NO_FORMAT = 'Phone number is not valid'
 INVALID_PLAYLIST_TYPE = 'Playlist type provided is invalid.'
 PLAYLIST_UNAVAILABLE = 'No playlist available. Please Contact Admin.'
+INVALID_CONTACT_ID = 'Invalid contact id provided.'
+INVALID_LEAD_STAGE = 'Invalid lead stage'
 
 
-# Creation Fields
+# Creation Fields  ==================================
+
 ACCOUNT_CREATION_FIELDS = (
     'password', 'first_name', 'last_name', 'email',
     'address_id', 'pan_no', 'fcm_id'
@@ -172,12 +164,15 @@ CONTACT_CREATION_FIELDS = (
 )
 
 
-# Upload paths
+# Upload paths  ==================================
+
 COMPANY_UPLOAD_PATH = 'company'
 ENTERPRISE_UPLOAD_PATH = 'enterprise'
 CATEGORY_UPLOAD_PATH = 'category'
-
 DEBUG_HOST = 'http://localhost:8000'
+
+
+# Help- Texts  ==================================
 
 GASTROINTESTINAL_DISEASE = 'Disease of Kidney, Digestive tract, Liver/Gall Bladder, Pancreas, Breast, Reproductive /Urinary system, or any past complications of pregnancy/ child birth including high blood pressure or diabetes etc' # noqa
 NEURONAL_DISEASES = 'Disease of the Brain/Spine/Nervous System, Epilepsy, Paralysis, Polio, Joints/Arthritis, Congenital/ Birth defect, Physical deformity/disability, HIV/AIDS, other Sexually Transmitted Disease or Accidental injury or any other medical (other than common cold & viral fever) or surgical condition or Investigation parameter has been detected to be out of range/ not normal?' # noqa
@@ -190,14 +185,5 @@ EXISTING_POLICY = 'Do you have Previous/ Current policy for life, health, hospit
 ONCOLOGY_DISEASE = 'Cancer, Tumour, lump, cyst, ulcer'
 ENT_DISEASE = 'Disease of Eye, Ear, Nose, Throat, Thyroid'
 CARDIOVASCULAR_DISEASE = 'Tuberculosis (TB), any Respiratory / Lung disease'
-RESPIRATORY_DISEASES = 'Any form of Heart Disease, Peripheral Vascular Disease, procedures like Angioplasty/PTCA/By Pass Surgery, valve replacement etc'
-BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Blood disorder (whether treated or not)'
-
-INSURANCE_EXCLUDE_FIELDS = ['id', 'created', 'modified', 'application']
-USER_FILE_UPLOAD = ['cancelled_cheque', 'photo']
-
-PLAYLIST_CHOICES = ('marketing', 'training')
-TASK_CHOICES = ('basic', 'notification', 'event')
-EVENT_CHOICES = (
-    'notification', 'marketing', ''
-)
+RESPIRATORY_DISEASES = 'Any form of Heart Disease, Peripheral Vascular Disease, procedures like Angioplasty/PTCA/By Pass Surgery, valve replacement etc' # noqa
+BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Blood disorder (whether treated or not)' # noqa
