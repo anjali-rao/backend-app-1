@@ -9,7 +9,7 @@ from crm.models import Lead
 from crm.serializers import (
     QuoteSerializer, QuoteDetailsSerializer, Quote,
     QuotesCompareSerializer, QuoteRecommendationSerializer,
-    CreateUpdateLeadSerializer
+    CreateUpdateLeadSerializer, LeadDetailSerializer
 )
 
 from django.db import transaction, IntegrityError
@@ -99,3 +99,9 @@ class GetRecommendatedQuotes(generics.ListAPIView):
             pass
         raise mixins.APIException(
             'Curently we are unable to suggest any quote. please try again.')
+
+
+class GetLeadDetails(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = LeadDetailSerializer
+    queryset = Lead.objects.all()

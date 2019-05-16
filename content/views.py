@@ -62,8 +62,7 @@ class GetNetworkHospital(generics.ListAPIView):
     serializer_class = NetworkCoverageSerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = [
-        'company__name', '=pincode__pincode', 'pincode__city',
-        'pincode__state__name']
+        '=pincode__pincode', 'pincode__city', 'pincode__state__name']
     pagination_class = CustomPagination
 
     @method_decorator(cache_page(API_CACHE_TIME))
@@ -72,9 +71,12 @@ class GetNetworkHospital(generics.ListAPIView):
 
     def get_queryset(self):
         from product.models import Company
-        return NetworkHospital.objects.select_related(
-            'company', 'pincode').filter(
-                company_id__in=Company.objects.values_list('id', flat=True))
+        queryset = NetworkHospital.objects.select_related('pincode', 'company')
+        if 'insurer_id' in self.request.query_params:
+            return queryset.filter(
+                company_id=self.request.query_params['insurer_id'])
+        return queryset.filter(
+            company_id__in=Company.objects.values_list('id', flat=True))
 
 
 class GetHelpFiles(generics.ListAPIView):

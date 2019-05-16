@@ -202,3 +202,19 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
             'tax_saving', 'wellness_rewards', 'health_checkups',
             'product', 'features'
         )
+
+
+class LeadDetailSerializer(serializers.ModelSerializer):
+    lead_id = serializers.ReadOnlyField(source='id')
+    phone_no = serializers.ReadOnlyField(source='contact.phone_no')
+    address = serializers.ReadOnlyField(source='contact.address.full_address')
+    quotes = serializers.SerializerMethodField()
+
+    def get_quotes(self, obj):
+        return QuoteSerializer(
+            obj.quote_set.filter(ignore=False, status='accepted'),
+            many=True).data
+
+    class Meta:
+        model = Lead
+        fields = ('lead_id', 'phone_no', 'address', 'status', 'quotes')

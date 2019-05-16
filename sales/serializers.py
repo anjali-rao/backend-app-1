@@ -466,4 +466,5 @@ class ClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Application
-        fields = ('product_name', 'full_name', 'created', 'premium', 'status')
+        fields = (
+            'id', 'product_name', 'full_name', 'created', 'premium', 'status')
