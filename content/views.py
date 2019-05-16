@@ -73,11 +73,13 @@ class GetHelpFiles(generics.ListAPIView):
     search_fields = [
         'product_variant__company_category__company__name',
         'product_variant__company_category__category__name']
-    queryset = ProductVariant.objects.all()
 
     @method_decorator(cache_page(API_CACHE_TIME))
     def dispatch(self, *args, **kwargs):
         return super(self.__class__, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        return ProductVariant.objects.exclude(helpfile=None)
 
 
 class GetHelpLines(generics.ListAPIView):
