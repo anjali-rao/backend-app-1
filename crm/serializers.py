@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from content.models import NetworkHospital
-from crm.models import Lead
+from crm.models import Lead, Contact
 from sales.models import Quote
 from utils import constants
 
@@ -11,6 +11,8 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
     pincode = serializers.CharField(required=True, max_length=6)
     gender = serializers.CharField(required=False)
     family = serializers.JSONField(required=False)
+    contact_id = serializers.IntegerField(required=False)
+    stage = serializers.CharField(required=False)
 
     def validate_pincode(self, value):
         from users.models import Pincode
@@ -41,9 +43,22 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
                     constants.INVALID_FAMILY_DETAILS)
         return value
 
+    def contact_id(self, value):
+        contacts = Contact.objects.filter(id=value)
+        if not contacts.exists():
+            raise serializers.ValidationError(constants.INVALID_CONTACT_ID)
+        return value
+
+    def validate_stage(self, value):
+        if value not in [s for s, S in constants.LEAD_STAGE_CHOICES]:
+            raise serializers.ValidationError(constants.INVALID_LEAD_STAGE)
+        return value
+
     class Meta:
         model = Lead
-        fields = ('id', 'category_id', 'pincode', 'family', 'gender')
+        fields = (
+            'id', 'category_id', 'pincode', 'family', 'gender',
+            'contact_id', 'stage')
 
     @property
     def data(self):

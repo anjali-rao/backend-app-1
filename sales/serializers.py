@@ -455,6 +455,8 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
 
 
 class ClientSerializer(serializers.ModelSerializer):
+    company_logo = serializers.ReadOnlyField(
+        source='quote.premium.product_variant.logo')
     product_name = serializers.ReadOnlyField(
         source='quote.premium.product_variant.product_short_name')
     full_name = serializers.SerializerMethodField()
@@ -467,4 +469,5 @@ class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Application
         fields = (
-            'id', 'product_name', 'full_name', 'created', 'premium', 'status')
+            'id', 'product_name', 'full_name', 'created', 'premium',
+            'status', 'company_logo')
