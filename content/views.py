@@ -18,17 +18,28 @@ from content.serializers import (
     CompanyHelpLineSerializer, Company
 )
 
+from product.serializers import CategoryFaqSerializer, Category
+
 
 class GetFaq(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
-    queryset = Faq.objects.all()
-    serializer_class = FaqSerializer
-    filter_backends = [SearchFilter, OrderingFilter]
-    search_fields = ['question', 'answer']
+    version_serializer = dict(
+        v2=FaqSerializer, v3=CategoryFaqSerializer
+    )
 
     @method_decorator(cache_page(API_CACHE_TIME))
     def dispatch(self, *args, **kwargs):
         return super(self.__class__, self).dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        if self.kwargs['version'].lower() == 'v3':
+            self.search_fields = ['']
+            return Category.objects.exclude(faq=None)
+        return Faq.objects.all()
+
+    def get_serializer_class(self):
+        return self.version_serializer.get(
+            self.kwargs['version'], FaqSerializer)
 
 
 class ContactUsAPI(generics.CreateAPIView):

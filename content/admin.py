@@ -11,8 +11,9 @@ from content.models import (
 
 @admin.register(Faq)
 class FaqAdmin(admin.ModelAdmin):
-    list_display = ('question', 'answer')
+    list_display = ('category', 'question', 'answer')
     search_fields = ('question', 'id')
+    list_filter = ('category',)
 
 
 @admin.register(HelpFile)

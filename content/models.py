@@ -10,8 +10,15 @@ from django.contrib.contenttypes.models import ContentType
 
 
 class Faq(BaseModel):
+    category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
     question = models.CharField(max_length=264)
     answer = models.TextField()
+
+    def __str__(self):
+        return '%s: %s' % (self.category.name, self.question)
+
+    class Meta:
+        ordering = ('id',)
 
 
 class HelpLine(BaseModel):

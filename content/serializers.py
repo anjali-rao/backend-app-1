@@ -9,10 +9,11 @@ from product.models import ProductVariant, Company
 
 
 class FaqSerializer(serializers.ModelSerializer):
+    category = serializers.ReadOnlyField(source='category.name')
 
     class Meta:
         model = Faq
-        fields = ('question', 'answer')
+        fields = ('question', 'answer', 'category')
 
 
 class ContactUsSerializer(serializers.ModelSerializer):
