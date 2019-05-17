@@ -20,10 +20,11 @@ class CompanyNameSerializers(serializers.ModelSerializer):
 
 class CategoryFaqSerializer(serializers.ModelSerializer):
     faqs = serializers.SerializerMethodField()
+    category = serializers.ReadOnlyField(source='name')
 
     def get_faqs(self, obj):
         return FaqSerializer(obj.faq_set.all(), many=True).data
 
     class Meta:
         model = Category
-        fields = ('name', 'faqs')
+        fields = ('category', 'faqs')
