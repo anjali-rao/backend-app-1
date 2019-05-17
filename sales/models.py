@@ -87,8 +87,8 @@ class Application(BaseModel):
         super(Application, self).save(*args, **kwargs)
 
     def broker_operation(self):
-        from broker.models import Application
-        app = Application.objects.create(reference_app_id=self.id)
+        from broker.wallnut.models import Application
+        Application.objects.create(reference_app_id=self.id)
 
     def update_fields(self, **kw):
         updated = False

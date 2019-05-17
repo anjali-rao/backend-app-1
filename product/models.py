@@ -216,9 +216,7 @@ class Premium(BaseModel):
 
     @cached_property
     def amount(self):
-        return round((
-            self.gst * self.base_premium
-        ) + self.base_premium + (self.base_premium * self.commission), 2)
+        return round((self.gst * self.base_premium) + self.base_premium, 2)
 
     def __str__(self):
         return '%s | %s' % (self.sum_insured, self.age_range)

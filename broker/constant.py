@@ -24,9 +24,13 @@ STATE_CODE = {
     'Uttar Pradesh': '033', 'Uttarakhand': '034', 'West Bengal': '035'
 }
 
-GENDER_MAPPING = dict(male='M', female='F')
+GENDER = dict(male='M', female='F')
 
 SECTION = dict(healthinsurance='mediclaim')
+
+COMPANY_NAME = {
+    'Aditya Birla Health Insurance': 'Aditya Birla Health Insurance'
+}
 
 
 # CONSTANTS ==============================================
