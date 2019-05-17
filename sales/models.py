@@ -86,6 +86,10 @@ class Application(BaseModel):
             ).replace(' ', '')
         super(Application, self).save(*args, **kwargs)
 
+    def broker_operation(self):
+        from broker.models import Application
+        app = Application.objects.create(reference_app_id=self.id)
+
     def update_fields(self, **kw):
         updated = False
         for field in kw.keys():

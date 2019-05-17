@@ -44,7 +44,7 @@ class Lead(BaseModel):
             current = self.__class__.objects.get(pk=self.id)
             if self.final_score != current.final_score:
                 self.refresh_quote_data()
-            if not current.family:
+            if not current.family and self.family:
                 self.parse_family_json()
         except Lead.DoesNotExist:
             if self.family:

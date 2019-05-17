@@ -64,7 +64,7 @@ INSTALLED_APPS = [
     'product',
     'sales',
     'questionnaire',
-    'storages'
+    'broker.wallnut'
 ]
 
 if DEBUG:
@@ -76,7 +76,7 @@ if DEBUG:
 else:
     STATIC_ROOT = "static"
     RAVEN_CONFIG = get_env_var('RAVEN_CONFIG')
-    INSTALLED_APPS.append('raven.contrib.django.raven_compat')
+    INSTALLED_APPS.extend(['raven.contrib.django.raven_compat', 'storages'])
     # For S3 Document Stroage
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     CLOUDFRONT_DOMAIN = get_env_var('CLOUDFRONT_DOMAIN')
