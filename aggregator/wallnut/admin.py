@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from broker.wallnut.models import Application
+from aggregator.wallnut.models import Application
 
 
 @admin.register(Application)

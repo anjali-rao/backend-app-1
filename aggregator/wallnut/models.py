@@ -1,7 +1,9 @@
 from django.contrib.postgres.fields import JSONField
+from django.utils.functional import cached_property
 
 from utils.models import BaseModel, models
-from broker import constant as Constant
+from aggregator import Constant
+from aggregator.wallnut import evaluateClassName
 import requests
 
 
@@ -10,14 +12,14 @@ class Application(BaseModel):
     reference_app = models.ForeignKey(
         'sales.application', on_delete=models.PROTECT)
     section = models.CharField(max_length=16)
+    company_name = models.CharField(max_length=32, null=True)
     suminsured = models.CharField(max_length=16)
     premium = models.FloatField(default=0.0)
     insurance_type = models.CharField(max_length=16)
     quote_id = models.CharField(max_length=128, null=True)
     city_code = models.CharField(max_length=16, null=True)
     state_code = models.CharField(max_length=16, null=True)
-    insurer_code = models.CharField(max_length=8, null=True)
-    dealstage = models.CharField(max_length=16, null=True)
+    dealstage = models.CharField(max_length=32, null=True)
     user_id = models.CharField(max_length=16, null=True)
     proposer_id = models.CharField(max_length=32, null=True)
     city = models.CharField(max_length=16, null=True)
@@ -25,7 +27,10 @@ class Application(BaseModel):
     pincode = models.CharField(max_length=16, null=True)
     raw_quote = JSONField(default=dict)
     raw_quote_data = JSONField(default=dict)
-    all_premiums = models.CharField(null=True, max_length=32)
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        self.insurer_product = evaluateClassName(self.company_name)(self)
 
     def save(self, *args, **kwargs):
         try:
@@ -56,19 +61,15 @@ class Application(BaseModel):
 
     def generate_quote_id(self):
         url = self._host % 'save_quote_data'
-        gender_ages = list()
-        for member in self.reference_app.active_members:
-            gender_ages.append([
-                ('M' if member.gender == 'male' else 'F'), str(member.age)])
         import json
         data = dict(
             section=self.section,
             quote_data=json.dumps(dict(
-                health_pay_mode='I' if len(gender_ages) == 1 else 'F',
-                health_pay_mode_text='Individual' if len(gender_ages) == 1 else 'Family', # noqa
+                health_pay_mode=self.pay_mode,
+                health_pay_mode_text=self.pay_mode_text,
                 health_me=list(), health_pay_type='',
                 health_pay_type_text='', health_sum_insured=self.suminsured,
-                pincode=self.pincode, gender_age=gender_ages,
+                pincode=self.pincode, gender_age=self.gender_ages,
                 health_sum_insured_range=[self.suminsured, self.suminsured],
                 spouse='', child='', child_data=list()
             )), quote=''
@@ -95,6 +96,8 @@ class Application(BaseModel):
         self.raw_quote_data = response['quote_data']
         self.raw_quote = self.get_live_quote()
         self.premium = self.raw_quote['total_premium']
+        self.insurer_code = self.raw_quote.get()
+        self.company_name = ''.join(self.raw_quote['company_name'].split())
         reference_app = self.reference_app
         reference_app.premium = self.raw_quote['total_premium']
         reference_app.save()
@@ -109,21 +112,63 @@ class Application(BaseModel):
         url = self._host % 'save_user_info'
         app = self.reference_app
         data = dict(
-            first_name=app.client.first_name,
-            last_name=app.client.last_name,
-            email=app.client.email,
+            first_name=app.client.first_name, dob=app.client.dob,
+            last_name=app.client.last_name, email=app.client.email,
             gender=Constant.GENDER.get(app.client.gender, 'M'),
             mobile_no=app.client.phone_no, alternate_mobile='',
             occupation=Constant.OCCUPATION_CODE[app.client.occupation],
-            dob=app.client.dob,
             pincode=self.pincode, city=self.city, state=self.state,
-            address=app.client.address.full_address,
-            dealstage=self.dealstage,
+            address=app.client.address.full_address, user_id='',
+            dealstage=self.dealstage, insu_id=self.insurer_code,
             insurance_type=self.section.title() + ' Insurance',
-            Insu_id=self.insurer_code, user_id=''
+            amount=self.premium
         )
         response = requests.post(url, data=data)
+        self.user_id = response['user_id']
         return response
+
+    @cached_property
+    def proposer(self):
+        self.self_insured = False
+        proposers = self.reference_app.active_members
+        if proposers.filter(relation='self').exists():
+            self.self_insured = True
+            proposer = proposers.get(relation='self')
+        elif proposers.filter(relation='spouse').exists:
+            proposer = proposers.get(relation='spouse')
+        else:
+            proposer = proposers.first()
+        if proposer.relation in ['son', 'daughter']:
+            proposer.marital_status = 'Single'
+        elif proposer.relation == 'self':
+            proposer.marital_status = self.application.client.marital_status.title() # noqa
+        else:
+            proposer.marital_status = 'Married'
+        return proposer
+
+    @cached_property
+    def pay_mode(self):
+        return 'I' if len(self.gender_ages) == 1 else 'F',
+
+    @cached_property
+    def pay_mode_text(self):
+        return 'Individual' if self.pay_mode == 'I' else 'Family',
+
+    @cached_property
+    def gender_ages(self):
+        gender_ages = list()
+        for member in self.reference_app.active_members:
+            gender_ages.append([
+                ('M' if member.gender == 'male' else 'F'), str(member.age)])
+        return gender_ages
+
+    @cached_property
+    def all_premiums(self):
+        return self.raw_quote['all_premium'].split(',')
+
+    @cached_property
+    def insurer_code(self):
+        return self.raw_quote['insurance_code']
 
     def __str__(self):
         return '%s | %s' % (self.quote_id, self.reference_app.__str__())
