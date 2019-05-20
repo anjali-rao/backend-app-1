@@ -150,6 +150,7 @@ INVALID_PLAYLIST_TYPE = 'Playlist type provided is invalid.'
 PLAYLIST_UNAVAILABLE = 'No playlist available. Please Contact Admin.'
 INVALID_CONTACT_ID = 'Invalid contact id provided.'
 INVALID_LEAD_STAGE = 'Invalid lead stage'
+PASSWORD_NOT_SET = 'Password is not set.'
 
 
 # Creation Fields  ==================================
