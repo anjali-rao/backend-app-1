@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 
 from users.models import (
     User, Account, Enterprise, AccountDetail, Pincode,
-    Address
+    Address, BankAccount, BankBranch, Bank
 )
 from sales.serializers import SalesApplicationSerializer
 
@@ -161,19 +161,28 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
 
 class AccountSerializer(serializers.ModelSerializer):
-    pincode = serializers.SerializerMethodField()
+    account_id = serializers.ReadOnlyField(source='id')
+    address = serializers.ReadOnlyField(
+        source='address.full_address', default=None)
+    pincode = serializers.ReadOnlyField(
+        source='address.pincode.pincode', default=None)
+    city = serializers.ReadOnlyField(
+        source='address.pincode.city', default=None)
+    state = serializers.ReadOnlyField(
+        source='address.pincode.state.name', default=None)
+    profile_pic = serializers.SerializerMethodField()
 
-    def get_pincode(self, obj):
-
-        if obj.address and obj.address.pincode:
-            return PincodeSerializer(obj.address.pincode).data
-        return dict()
+    def get_profile_pic(self, obj):
+        photos = obj.document_set.filter(doc_type='photo')
+        if photos.exists():
+            return photos.latest('created').file.url
+        return ''
 
     class Meta:
         model = Account
         fields = (
-            'id', 'first_name', 'last_name', 'email', 'phone_no',
-            'gender', 'address', 'pincode'
+            'account_id', 'first_name', 'last_name', 'email', 'phone_no',
+            'gender', 'address', 'pincode', 'city', 'state', 'profile_pic'
         )
 
 
@@ -201,6 +210,8 @@ class UserSerializer(serializers.ModelSerializer):
     account = serializers.SerializerMethodField()
     enterprise = serializers.SerializerMethodField()
     available_users = serializers.SerializerMethodField()
+    referral_code = serializers.ReadOnlyField(source='referral.referral_code')
+    bank_details = serializers.SerializerMethodField()
 
     def get_account(self, obj):
         return AccountSerializer(obj.account).data
@@ -212,10 +223,15 @@ class UserSerializer(serializers.ModelSerializer):
         return AvailableUserSerializer(
             User.objects.filter(account_id=obj.account_id), many=True).data
 
+    def get_bank_details(self, obj):
+        return BankAccountSerializer(
+            obj.bankaccount_set.all(), many=True).data
+
     class Meta:
         model = User
         fields = (
-            'id', 'user_type', 'account', 'enterprise', 'available_users'
+            'id', 'user_type', 'account', 'enterprise', 'available_users',
+            'rating', 'referral_code', 'bank_details'
         )
 
 
@@ -234,6 +250,8 @@ class AuthorizationSerializer(serializers.Serializer):
     def validate_password(self, value):
         accounts = Account.objects.filter(
             phone_no=self.initial_data.get('phone_no'))
+        if accounts.exists() and not accounts.get().password:
+            raise serializers.ValidationError(constants.PASSWORD_NOT_SET)
         if not accounts.exists() or not accounts.get().check_password(value):
             raise serializers.ValidationError(
                 constants.INVALID_PASSWORD)
@@ -366,3 +384,30 @@ class SalesSerializer(serializers.ModelSerializer):
         fields = (
             'all_applications', 'pending_applications',
             'submitted_applications')
+
+
+class BankAccountSerializer(serializers.ModelSerializer):
+    bank_name = serializers.ReadOnlyField(source='branch.bank.name')
+    branch = serializers.ReadOnlyField(source='branch.branch_name')
+    ifsc = serializers.ReadOnlyField(source='branch.ifsc')
+    city = serializers.ReadOnlyField(source='branch.city')
+
+    class Meta:
+        model = BankAccount
+        fields = (
+            'account_no', 'bank_name', 'branch', 'ifsc', 'city',
+            'default', 'is_active')
+
+
+class CreateBranch(serializers.ModelSerializer):
+
+    class Meta:
+        model = BankBranch
+        fields = ('bank_id', 'branch_name', 'ifsc', 'micr', 'city')
+
+
+class CreateBankAccount(serializers.ModelSerializer):
+
+    class Meta:
+        model = BankAccount
+        fields = ('user_id', 'branch_id', 'account_no')

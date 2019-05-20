@@ -56,8 +56,9 @@ class Account(AbstractUser):
 
     def upload_docs(self, validated_data, fields):
         for field in fields:
-            file_name = '%s_%s_%s' % (
-                self.id, field, now().date().isoformat())
+            file_name = '%s_%s_%s.%s' % (
+                self.id, field, now().date().isoformat(),
+                validated_data[field].name.split('.')[1])
             doc = Document.objects.create(
                 doc_type=field, account_id=self.id)
             doc.file.save(file_name, validated_data[field])
@@ -123,6 +124,7 @@ class User(BaseModel):
     flag = JSONField(default=constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
     manager_id = models.CharField(max_length=48, null=True)
+    rating = models.IntegerField(default=5)
     limit = models.Q(app_label='users', model='enterprise') | \
         models.Q(app_label='users', model='subcriberenterprise')
     content_type = models.ForeignKey(
@@ -307,7 +309,7 @@ class Referral(BaseModel):
     referral_reference = models.CharField(max_length=6, null=True, blank=True)
     enterprise = models.ForeignKey(
         'users.Enterprise', null=True, blank=True, on_delete=models.CASCADE)
-    user = models.ForeignKey(
+    user = models.OneToOneField(
         'users.User', null=True, blank=True, on_delete=models.CASCADE)
 
 
@@ -326,24 +328,24 @@ class Bank(models.Model):
     is_active = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.bank_name
+        return self.name
 
 
 class BankBranch(models.Model):
     bank = models.ForeignKey('users.Bank', on_delete=models.CASCADE)
     branch_name = models.CharField(max_length=128)
     ifsc = models.CharField(max_length=15, unique=True)
-    micr = models.CharField(max_length=128)
+    micr = models.CharField(max_length=128, null=True)
     city = models.CharField(max_length=64)
 
     def __str__(self):
-        return '%s => %s:%s' % (self.bank_name, self.branch_name, self.ifsc)
+        return '%s => %s:%s' % (self.bank.name, self.branch_name, self.ifsc)
 
 
 class BankAccount(BaseModel):
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
     branch = models.OneToOneField('BankBranch', on_delete=models.CASCADE)
-    account_no = models.IntegerField()
+    account_no = models.CharField(max_length=32)
     default = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
@@ -352,7 +354,8 @@ class BankAccount(BaseModel):
             if self.default and BankAccount.objects.filter(
                     default=True).exists():
                 self.default = False
-        except BankAccount.DoesNotExist:
+        except self.__class__.DoesNotExist:
+            self.__class__.objects.all().update(default=False)
             self.default = True
         super(BankAccount, self).save(*args, **kwargs)
 
@@ -390,7 +393,7 @@ class Address(BaseModel):
 
     @property
     def full_address(self):
-        return '%s, %s, %s - %s'.strip() % (
+        return '%s %s %s %s'.strip() % (
             self.flat_no, self.street, self.land_mark, self.pincode)
 
     def __str__(self):
