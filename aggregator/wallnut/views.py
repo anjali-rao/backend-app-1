@@ -61,5 +61,5 @@ class AdityaBirlaPayment(views.View):
             response=request.POST.dict()
         )
         import requests
-        res = requests.post(self.capture_url, data=data)
+        requests.post(self.capture_url, data=request.POST)
         return HttpResponse("Payment successfully processed.")
