@@ -32,6 +32,11 @@ COMPANY_NAME = {
     'Aditya Birla Health Insurance': 'Aditya Birla Health Insurance'
 }
 
+INCOME = {
+    '< 3 Lakhs': 300000, '3 - 5 lakhs': 500000, '5 - 10 lakhs': 1000000,
+    '10 - 20 lakhs': 2000000, '> 20 lakhs': 5000000
+}
+
 
 # CONSTANTS ==============================================
 
@@ -39,3 +44,13 @@ WALLNUT_SI = [
     '150000', '200000', '300000', '400000', '500000', '700000', '750000',
     '1000000', '1500000', '2000000', '2500000', '3000000', '3500000',
     '4000000', '4500000', '5000000']
+
+
+# METHODS ==============================================
+
+def get_marital_status(relation):
+    if relation in ['son', 'daughter']:
+        return 'Single'
+    elif relation in 'self':
+        return None
+    return 'Married'

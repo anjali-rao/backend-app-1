@@ -5,13 +5,50 @@ import json
 
 class AdityaBirlaHealthInsurance(object):
     proposal_url = 'health/proposal_aditya_birla/save_proposal_data' # noqa
-    submit = 'health/proposal_aditya_birla/proposal_submit'
+    proposal_submit_url = 'health/proposal_aditya_birla/proposal_submit'
+    check_proposal_date_url = 'check_proposal_date'
+    payment_url = 'https://pg-abhi.adityabirlahealth.com/ABHIPGIntegration/ABHISourceLanding.aspx' # noqa
 
     def __init__(self, wallnut):
         self.wallnut = wallnut
         self.application = wallnut.reference_app
 
+    def perform_creation(self):
+        self.save_proposal_data()
+        self.submit_proposal()
+        self.wallnut.save()
+        self.accept_terms()
+
     def save_proposal_data(self):
+        data = self.get_data()
+        url = self.wallnut._host % self.proposal_url
+        response = requests.post(url, data=data).json()
+        self.wallnut.proposal_id = next((
+            i for i in response['return_data'].split('&') if 'proposal_id' in i
+        ), None).split('=')[1]
+        return response
+
+    def submit_proposal(self):
+        data = self.get_data()
+        data['proposal_id'] = self.wallnut.proposal_id
+        url = self.wallnut._host % self.proposal_submit_url
+        response = requests.post(url, data=data)
+        response = response.json()
+        self.wallnut.proposal_id2 = response['proposal_id']
+        self.wallnut.customer_id = response['customer_id']
+        return response
+
+    def accept_terms(self):
+        data = dict(
+            customer_id=self.wallnut.customer_id,
+            proposal_id=self.wallnut.proposal_id2,
+            section='health', company='aditya_birla'
+        )
+        url = self.wallnut._host % self.check_proposal_date_url
+        response = requests.post(url, data=data).json()
+        return response
+
+    def get_data(self):
         data = dict(
             city_id=self.wallnut.city_code, me=list(),
             insu_id=self.wallnut.insurer_code,
@@ -23,7 +60,7 @@ class AdityaBirlaHealthInsurance(object):
             quote_refresh='N', state_id=self.wallnut.state_code,
             sum_insured=self.wallnut.suminsured,
             sum_insured_range=[
-                self.wallnut.suminsured, self.wallnut.sum_insured],
+                self.wallnut.suminsured, self.wallnut.suminsured],
             user_id=self.wallnut.user_id,
             proposer_FirstName=self.wallnut.proposer.first_name,
             proposer_MiddleName='',
@@ -35,10 +72,11 @@ class AdityaBirlaHealthInsurance(object):
             proposer_Email=self.application.client.email,
             proposer_Number=self.application.client.phone_no,
             proposer_Height=self.wallnut.proposer.height,
-            proposer_Weight=self.wallnut.proposer.Weight,
+            proposer_Weight=self.wallnut.proposer.weight,
             proposer_OccupationCode=Constant.OCCUPATION_CODE[
                 self.wallnut.proposer.occupation],
-            proposer_AnnualIncome=self.application.client.annual_income,
+            proposer_AnnualIncome=Constant.INCOME.get(
+                self.application.client.annual_income) or 500000,
             proposer_PanNumber=self.application.client.kycdocument_set.filter(
                 document_type='pancard').last() or '',
             proposer_AadhaarNo=self.application.client.kycdocument_set.filter(
@@ -57,8 +95,8 @@ class AdityaBirlaHealthInsurance(object):
             local_data_values=json.dumps(dict(
                 health_city_id=self.wallnut.city_code,
                 health_insu_id=self.wallnut.insurer_code,
-                health_me=[], health_pay_mode=self.wallnut.health_pay_mode,
-                health_pay_mode_text=self.wallnut.health_pay_mode_text,
+                health_me=[], health_pay_mode=self.wallnut.pay_mode,
+                health_pay_mode_text=self.wallnut.pay_mode_text,
                 health_pay_type='', health_policy_period=1,
                 health_premium=self.wallnut.premium,
                 health_quote=self.wallnut.quote_id,
@@ -67,31 +105,40 @@ class AdityaBirlaHealthInsurance(object):
                 health_sum_insured=self.wallnut.suminsured,
                 health_sum_insured_range=self.wallnut.all_premiums,
                 health_user_id=self.wallnut.user_id,
-                gender_age=self.wallnut.gender_age
+                gender_age=self.wallnut.gender_ages
             )),
-            NomineeName='',
-            RelationToProposerCode='',
             nominee_add_same_as_proposer_add='Y',
-            nominee_AddressLine1='',
+            nominee_AddressLine1=self.application.client.address.full_address,
             nominee_AddressLine2='',
             nominee_AddressLine3='',
-            nominee_PinCode='560034',
+            nominee_PinCode=self.wallnut.pincode,
             nominee_Country='IN',
-            nominee_StateCode='KARNATAKA',
-            nominee_TownCode='Bangalore',
+            nominee_StateCode=self.wallnut.state,
+            nominee_TownCode=self.wallnut.city,
             Namefor80D='R001', super_ncb='N',
             reload_sum_insured='N', room_upgrade='N', disease1='N',
             Doctorname='', ContactDetails='', lifestyle_ques='')
+        nominee = self.application.nominee_set.filter(ignore=False).last()
+        data.update(dict(
+            NomineeName=nominee.get_full_name(),
+            RelationToProposerCode=Constant.RELATION_CODE[nominee.relation]))
         count = 1
         for member in self.application.active_members:
             data.update(self.get_memeber_info(member, count))
             count += 1
-        url = self.application % self.proposal_url
-        response = requests.post(url, data=data)
-        return response
+        while count <= 6:
+            data.update({
+                'FirstName_%s' % count: '', 'MiddleName_%s' % count: '',
+                'LastName_%s' % count: '', 'GenderCode_%s' % count: '',
+                'RelationshipCode_%s' % count: '',
+                'MaritalStatusCode_%s' % count: '',
+                'OccupationCode_%s' % count: '', 'Height_%s' % count: '',
+                'Weight_%s' % count: '', 'Alcohol_%s' % count: '',
+                'Smoking_%s' % count: '', 'Pouches_%s' % count: '',
+            })
+            count += 1
 
-    def submit_proposal(self):
-        pass
+        return data
 
     def get_memeber_info(self, member, count):
         return {
@@ -100,8 +147,12 @@ class AdityaBirlaHealthInsurance(object):
             'LastName_%s' % count: member.last_name,
             'GenderCode_%s' % count: Constant.GENDER.get(member.gender),
             'BirthDate_%s' % count: member.dob.strftime('%d-%m-%Y'),
-            'OccupationCode_%s' % count: Constant.RELATION_CODE[
+            'RelationshipCode_%s' % count: Constant.RELATION_CODE[
                 member.relation],
+            'MaritalStatusCode_%s' % count: Constant.get_marital_status(
+                member.relation) or self.wallnut.proposer.marital_status,
+            'OccupationCode_%s' % count: Constant.OCCUPATION_CODE[
+                member.occupation],
             'Height_%s' % count: member.height,
             'Weight_%s' % count: member.weight,
             'Alcohol_%s' % count: '',

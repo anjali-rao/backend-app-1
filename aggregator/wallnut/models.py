@@ -21,16 +21,20 @@ class Application(BaseModel):
     state_code = models.CharField(max_length=16, null=True)
     dealstage = models.CharField(max_length=32, null=True)
     user_id = models.CharField(max_length=16, null=True)
-    proposer_id = models.CharField(max_length=32, null=True)
+    proposal_id = models.CharField(max_length=32, null=True)
+    proposal_id2 = models.CharField(max_length=32, null=True)
+    customer_id = models.CharField(max_length=32, null=True)
     city = models.CharField(max_length=16, null=True)
     state = models.CharField(max_length=16, null=True)
     pincode = models.CharField(max_length=16, null=True)
     raw_quote = JSONField(default=dict)
     raw_quote_data = JSONField(default=dict)
+    insurer_product = None
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
-        self.insurer_product = evaluateClassName(self.company_name)(self)
+        if self.company_name:
+            self.insurer_product = evaluateClassName(self.company_name)(self)
 
     def save(self, *args, **kwargs):
         try:
@@ -42,7 +46,7 @@ class Application(BaseModel):
     def handle_creation(self):
         self.section = Constant.SECTION.get(
             self.reference_app.application_type)
-        self.suminsured = self.reference_app.suminsured
+        self.suminsured = int(self.reference_app.suminsured)
         self.premium = self.reference_app.premium
         self.pincode = self.reference_app.quote.lead.pincode
         self.dealstage = 'productshortlisted'
@@ -78,8 +82,8 @@ class Application(BaseModel):
         self.quote_id = response['quote']
 
     def get_products(self):
-        url = (self._host % '/mediclaim/get_products/%s') % self.quote_id
-        requests.post(url, data=dict(quote=self.quote_id))
+        url = (self._host % 'mediclaim/get_products/%s') % self.quote_id
+        return requests.post(url, data=dict(quote=self.quote_id))
 
     def get_quote_data(self):
         self.get_products()
@@ -96,7 +100,6 @@ class Application(BaseModel):
         self.raw_quote_data = response['quote_data']
         self.raw_quote = self.get_live_quote()
         self.premium = self.raw_quote['total_premium']
-        self.insurer_code = self.raw_quote.get()
         self.company_name = ''.join(self.raw_quote['company_name'].split())
         reference_app = self.reference_app
         reference_app.premium = self.raw_quote['total_premium']
@@ -108,7 +111,9 @@ class Application(BaseModel):
                 self.reference_app.quote.premium.product_variant.company_category.company.name # noqa
             ), self.raw_quote_data))
 
-    def save_user_details(self):
+    def get_user_id(self):
+        if self.user_id:
+            return self.user_id
         url = self._host % 'save_user_info'
         app = self.reference_app
         data = dict(
@@ -123,9 +128,12 @@ class Application(BaseModel):
             insurance_type=self.section.title() + ' Insurance',
             amount=self.premium
         )
-        response = requests.post(url, data=data)
-        self.user_id = response['user_id']
-        return response
+        return requests.post(url, data=data).json()['user_id']
+
+    def insurer_operation(self):
+        self.user_id = self.get_user_id()
+        self.save()
+        return self.insurer_product.perform_creation()
 
     @cached_property
     def proposer(self):
@@ -138,21 +146,17 @@ class Application(BaseModel):
             proposer = proposers.get(relation='spouse')
         else:
             proposer = proposers.first()
-        if proposer.relation in ['son', 'daughter']:
-            proposer.marital_status = 'Single'
-        elif proposer.relation == 'self':
-            proposer.marital_status = self.application.client.marital_status.title() # noqa
-        else:
-            proposer.marital_status = 'Married'
+        proposer.marital_status = Constant.get_marital_status(
+            proposer.relation) or self.reference_app.client.marital_status.title() # noqa
         return proposer
 
     @cached_property
     def pay_mode(self):
-        return 'I' if len(self.gender_ages) == 1 else 'F',
+        return 'I' if len(self.gender_ages) == 1 else 'F'
 
     @cached_property
     def pay_mode_text(self):
-        return 'Individual' if self.pay_mode == 'I' else 'Family',
+        return 'Individual' if len(self.gender_ages) == 1 else 'Family'
 
     @cached_property
     def gender_ages(self):

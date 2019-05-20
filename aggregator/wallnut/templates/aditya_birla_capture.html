@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>OneCover</title>
+</head>
+<body>
+	<form autocomplete="off" id="payment_modal_form" name="payment_modal_form" accept-charset="utf-8" method="post" action="https://wallnut.in/health/proposal/confirm/aditya_birla" target="_self">
+		<div id="payment_modal_success_error"></div>
+		<div class="input-group">
+			<input type="hidden" name="merchantTxnId" id="merchantTxnId" value="{{payment.merchant_txn_id}}">
+			<input type="hidden" name="amount" id="amount" value="7938">
+			<input type="hidden" name="currency" id="currency" value="{{response.currency}}">
+			<input type="hidden" name="email" id="email" value="{{response.email}}">
+			<input type="hidden" name="mobileNo" id="mobileNo" value="{{response.mobileNo}}">
+			<input type="hidden" name="paymentMode" id="paymentMode" value="{{response.paymentMode}}">
+			<input type="hidden" name="pgRespCode" id="pgRespCode" value="{{response.pgRespCode}}">
+			<input type="hidden" name="QuoteId" id="QuoteId" value="{{response.QuoteId}}"> <input type="hidden" name="SubCode" id="SubCode" value="">
+			<input type="hidden" name="TxMsg" id="TxMsg" value="{{response.TxMsg}}">
+			<input type="hidden" name="TxStatus" id="TxStatus" value="{{response.TxStatus}}">
+			<input type="hidden" name="SourceTxnId" id="SourceTxnId" value="{{response.SourceTxnId}}">
+			<input type="hidden" name="TxRefNo" id="TxRefNo" value="{{response.TxRefNo}}">
+			<input type="hidden" name="txnDateTime" id="txnDateTime" value="{{response.txnDateTime}}">
+			<input type="hidden" name="signature" id="signature" value="{{response.signature}}">
+			<button type="submit" name="submit_modal_payment" id="submit_modal_payment" class="btn-u btn-u-orange"> <i class="ace-icon fa fa-lightbulb-o bigger-110"></i> Make Payment </button>
+		</div>
+	</form>
+
+</body>
+</html>
