@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>OneCover</title>
+</head>
+<body onload="document.forms.payment_modal_form.submit()">
+	<form autocomplete="off" id="payment_modal_form" name="payment_modal_form" accept-charset="utf-8" method="post" action="https://pg-abhi.adityabirlahealth.com/ABHIPGIntegration/ABHISourceLanding.aspx" target="_self">
+		<div id="payment_modal_success_error"></div>
+		<div class="input-group">
+			<input type="hidden" name="Email" id="Email" value="{{email}}">
+			<input type="hidden" name="PhoneNo" id="PhoneNo" value="{{phone_no}}">
+			<input type="hidden" name="SourceCode" id="SourceCode" value="{{source_code}}">
+			<input type="hidden" name="OrderAmount" id="OrderAmount" value="{{premium}}">
+			<input type="hidden" name="Currency" id="Currency" value="INR">
+			<input type="hidden" name="secSignature" id="secSignature" value="{{secSignature}}">
+			<input type="hidden" name="ReturnURL" id="ReturnURL" value="{{return_url}}">
+			<input type="hidden" name="QuoteId" id="QuoteId" value="20190520421970094601"> <input type="hidden" name="SubCode" id="SubCode" value="">
+			<input type="hidden" name="GrossPremium" id="GrossPremium" value="{{premium}}">
+			<input type="hidden" name="FinalPremium" id="FinalPremium" value="7938">
+			<input type="hidden" name="SourceTxnId" id="SourceTxnId" value="{{source_txn_id}}">
+			<button type="submit" name="submit_modal_payment" id="submit_modal_payment" class="btn-u btn-u-orange"> <i class="ace-icon fa fa-lightbulb-o bigger-110"></i> Make Payment </button>
+		</div>
+	</form>
+
+</body>
+</html>

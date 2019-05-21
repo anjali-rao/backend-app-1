@@ -44,7 +44,7 @@ class Lead(BaseModel):
             current = self.__class__.objects.get(pk=self.id)
             if self.final_score != current.final_score:
                 self.refresh_quote_data()
-            if not current.family:
+            if not current.family and self.family:
                 self.parse_family_json()
         except Lead.DoesNotExist:
             if self.family:
@@ -213,6 +213,8 @@ class Contact(BaseModel):
         'users.User', on_delete=models.CASCADE, null=True, blank=True)
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
+    gender = models.CharField(
+        max_length=16, choices=get_choices(constants.GENDER))
     phone_no = models.CharField(max_length=20, null=True, blank=True)
     first_name = models.CharField(max_length=32, blank=True)
     middle_name = models.CharField(max_length=32, blank=True)
