@@ -10,7 +10,7 @@ from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
     AccountSearchSerializers, User, PincodeSerializer, Pincode,
-    SalesSerializer, SalesApplicationSerializer
+    SalesSerializer, SalesApplicationSerializer, UpdateUserSerializer
 )
 from users.decorators import UserAuthentication
 from utils import constants
@@ -214,3 +214,12 @@ class GetPlaylist(generics.ListAPIView):
                 raise APIException(constants.INVALID_PLAYLIST_TYPE)
             return playlists
         raise APIException(constants.PLAYLIST_UNAVAILABLE)
+
+
+class UpdateUser(generics.UpdateAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = UpdateUserSerializer
+    queryset = User.objects.all()
+
+    def get_object(self):
+        return self.request.user

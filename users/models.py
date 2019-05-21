@@ -56,12 +56,14 @@ class Account(AbstractUser):
 
     def upload_docs(self, validated_data, fields):
         for field in fields:
+            name = validated_data[field].name.split('.')
             file_name = '%s_%s_%s.%s' % (
-                self.id, field, now().date().isoformat(),
-                validated_data[field].name.split('.')[1])
+                self.id, name[0], now().date().isoformat(), name[1])
             doc = Document.objects.create(
                 doc_type=field, account_id=self.id)
             doc.file.save(file_name, validated_data[field])
+            validated_data[field] = doc.file.url
+        return validated_data
 
     @classmethod
     def send_otp(cls, phone_no):
@@ -388,13 +390,13 @@ class Pincode(models.Model):
 class Address(BaseModel):
     flat_no = models.CharField(max_length=64, blank=True)
     street = models.CharField(max_length=128, blank=True)
-    land_mark = models.CharField(max_length=128, blank=True)
+    landmark = models.CharField(max_length=128, blank=True)
     pincode = models.ForeignKey('users.Pincode', on_delete=models.CASCADE)
 
     @property
     def full_address(self):
         return '%s %s %s %s'.strip() % (
-            self.flat_no, self.street, self.land_mark, self.pincode)
+            self.flat_no, self.street, self.landmark, self.pincode)
 
     def __str__(self):
         return self.full_address

@@ -159,6 +159,10 @@ ACCOUNT_CREATION_FIELDS = (
     'password', 'first_name', 'last_name', 'email',
     'address_id', 'pan_no', 'fcm_id'
 )
+ACCOUNT_UPDATION_FIELDS = (
+    'first_name', 'last_name', 'email', 'address_id', 'pan_no',
+)
+ADDRESS_UPDATE_FIELDS = ['flat_no', 'street', 'landmark']
 CONTACT_CREATION_FIELDS = (
     'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
     'occupation', 'marital_status', 'email'
