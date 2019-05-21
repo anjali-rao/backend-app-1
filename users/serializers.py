@@ -11,6 +11,7 @@ from users.models import (
     Address, BankAccount, BankBranch, Bank
 )
 from sales.serializers import SalesApplicationSerializer
+from django.db import transaction
 
 from utils import constants, genrate_random_string
 
@@ -411,3 +412,90 @@ class CreateBankAccount(serializers.ModelSerializer):
     class Meta:
         model = BankAccount
         fields = ('user_id', 'branch_id', 'account_no')
+
+
+class UpdateUserSerializer(serializers.ModelSerializer):
+    pincode = serializers.CharField(
+        required=True, allow_blank=True, min_length=6, max_length=6)
+    pan_no = serializers.CharField(
+        required=False, allow_blank=True, max_length=10)
+    password = serializers.CharField(required=False)
+    first_name = serializers.CharField(required=False)
+    last_name = serializers.CharField(required=False)
+    email = serializers.CharField(required=False)
+    cancelled_cheque = serializers.FileField(required=False)
+    photo = serializers.FileField(required=False)
+    manager_id = serializers.CharField(required=False)
+    street = serializers.CharField(required=False)
+    flat_no = serializers.CharField(required=False)
+    landmark = serializers.CharField(required=False)
+
+    def validate_password(self, value):
+        return make_password(value)
+
+    def validate_phone_no(self, value):
+        if not value.isdigit() or len(value) != 10:
+            raise serializers.ValidationError(
+                constants.INVALID_PHONE_NO)
+        return value
+
+    def validate_pincode(self, value):
+        pincodes = Pincode.objects.filter(pincode=value)
+        if not pincodes.exists():
+            raise serializers.ValidationError(
+                constants.INVALID_PINCODE)
+        return pincodes.get().id
+
+    def save(self, **kwargs):
+        with transaction.atomic():
+            self.instance = super(
+                UpdateUserSerializer, self).save(**kwargs)
+            self.update_account(**kwargs)
+
+    def update_account(self, **kwargs):
+        validated_data = dict(
+            list(self.validated_data.items()) + list(kwargs.items()))
+        acc = self.instance.account
+        address_fields = constants.ADDRESS_UPDATE_FIELDS + ['pincode']
+        if any(x in validated_data.keys() for x in address_fields):
+            acc.address_id = self.get_address_id(acc, validated_data)
+        for field_name in constants.ACCOUNT_UPDATION_FIELDS:
+            setattr(acc, field_name, validated_data.get(
+                field_name, getattr(acc, field_name)))
+        acc.save()
+        if any(
+            x in validated_data.keys() for x in constants.USER_FILE_UPLOAD
+        ):
+            self.initial_data = acc.upload_docs(
+                validated_data, set(validated_data).intersection(
+                    set(constants.USER_FILE_UPLOAD)))
+
+    def get_address_id(self, acc, validated_data):
+        if validated_data['pincode_id'] != acc.address.pincode_id:
+            address = Address.objects.create(
+                pincode_id=Pincode.get_pincode(
+                    validated_data['pincode']).id).id
+        else:
+            address = acc.address_id
+        validated_data['address_id'] = address.id
+        for field_name in constants.ADDRESS_UPDATE_FIELDS:
+            setattr(address, field_name, validated_data.get(
+                field_name, getattr(address, field_name)))
+        address.save()
+        return address.id
+
+    @property
+    def data(self):
+        self._data = dict(
+            message='User updated successfully',
+            updated_fields=self.initial_data
+        )
+        return self._data
+
+    class Meta:
+        model = User
+        fields = (
+            'first_name', 'last_name', 'email', 'password', 'manager_id',
+            'pincode', 'pan_no', 'cancelled_cheque', 'photo', 'street',
+            'flat_no', 'landmark'
+        )

@@ -113,7 +113,7 @@ class PincodeAdmin(admin.ModelAdmin):
 
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
-    list_display = ('flat_no', 'street', 'land_mark')
+    list_display = ('flat_no', 'street', 'landmark')
     search_fields = ('pincode__pincode', 'pincode__state', 'pincode__city')
     raw_id_fields = ('pincode',)
     list_filter = ('pincode__state',)
