@@ -1,8 +1,16 @@
 
-def evaluateClassName(className):
-    from aggregator.wallnut.insurer.aditya_birla import AdityaBirlaHealthInsurance
+def evaluateClassName(className, insuranceType):
+    from aggregator.wallnut.health.aditya_birla import (
+        AdityaBirlaHealthInsurance)
+    from aggregator.wallnut.health.hdfc_ergo import HDFCERGOHealthInsurance
 
-    CLASS_MAPPING = dict(
-        AdityaBirlaHealthInsurance=AdityaBirlaHealthInsurance
+    HEALTH_CLASS_MAPPING = dict(
+        AdityaBirlaHealthInsurance=AdityaBirlaHealthInsurance,
+        HDFCERGOGeneralInsuranceCoLtd=HDFCERGOHealthInsurance
     )
-    return CLASS_MAPPING.get(className)
+
+    INSURANCE_CATEGORY_MAPPING = dict(
+        healthinsurance=HEALTH_CLASS_MAPPING
+    )
+
+    return INSURANCE_CATEGORY_MAPPING[insuranceType][className]

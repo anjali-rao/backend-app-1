@@ -87,11 +87,12 @@ class RetrieveUpdateApplicationMembers(
 
     def post(self, request, *args, **kwargs):
         application = self.get_object()
-        lead = application.quote.lead
         try:
             with transaction.atomic():
                 application.active_members.filter(
                     relation__in=['son', 'daughter']).update(ignore=True)
+                application.active_members.exclude(
+                    relation__in=['son', 'daughter']).update(ignore=None)
                 for member in request.data:
                     serializer = self.get_serializer_class()(data=member)
                     serializer.is_valid(raise_exception=True)
@@ -101,9 +102,8 @@ class RetrieveUpdateApplicationMembers(
                 update_insurance_fields(application_id=application.id)
                 adults = application.active_members.filter(
                     dob__year__lte=(now().year - 18)).count()
-                childrens = application.active_members.count() - adults
-                if lead.adults != adults or lead.childrens != childrens:
-                    application.switch_premium(adults, childrens)
+                application.switch_premium(
+                    adults, application.active_members.count() - adults)
                 application.member_set.filter(ignore=None).update(ignore=True)
         except (IntegrityError, mixins.RecommendationException) as e:
             raise mixins.APIException(e)

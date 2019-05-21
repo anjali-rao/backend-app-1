@@ -87,8 +87,10 @@ class Application(BaseModel):
         super(Application, self).save(*args, **kwargs)
 
     def aggregator_operation(self):
-        from aggregator.wallnut.models import Application
-        Application.objects.create(reference_app_id=self.id)
+        from aggregator.wallnut.models import Application as AggregatorApplication
+        if not hasattr(self, 'application'):
+            AggregatorApplication.objects.create(
+                reference_app_id=self.id, insurance_type=self.application_type)
 
     def update_fields(self, **kw):
         updated = False
@@ -115,6 +117,7 @@ class Application(BaseModel):
             product_variant_id=self.quote.premium.product_variant_id,
             childrens=childrens
         )
+        print(data)
         for member in constants.RELATION_CHOICES:
             members = self.active_members.filter(relation=member)
             if members.exists() and member not in ['son', 'daughter']:

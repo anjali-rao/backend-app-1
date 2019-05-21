@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.contrib import admin
+from django.contrib import admin, messages
 
 from sales.models import (
     Quote, Application, HealthInsurance, Member,
     Nominee
 )
+
+from payment.models import ApplicationRequestLog
+
+from utils import constants as Constants
 
 
 class HealthInsuranceInline(admin.StackedInline):
@@ -15,12 +19,22 @@ class HealthInsuranceInline(admin.StackedInline):
 
 class MemberInlineAdmin(admin.TabularInline):
     model = Member
+    can_delete = False
     max_num = 4
 
 
 class NomineeInlineAdmin(admin.TabularInline):
     model = Nominee
+    can_delete = False
     max_num = 2
+
+
+class ApplicationRequestLogInline(admin.StackedInline):
+    model = ApplicationRequestLog
+    can_delete = False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Quote)
@@ -39,10 +53,10 @@ class ApplicationAdmin(admin.ModelAdmin):
     raw_id_fields = ('client', 'quote')
     search_fields = (
         'reference_no', 'quote__id', 'quote__lead__id', 'id',
-        'client__phone_no',
-        'client__address__pincode__pincode',
+        'client__phone_no', 'client__address__pincode__pincode',
         'client__address__pincode__city'
     )
+    actions = ['send_to_Aggregator', 'generate_Aggregator_Payment_Link']
     _inlines_class_set = dict(
         healthinsurance=HealthInsuranceInline
     )
@@ -55,10 +69,38 @@ class ApplicationAdmin(admin.ModelAdmin):
             inline_class = self.get_inline_class(obj.application_type)
             inlines.append(inline_class(
                 self.model, self.admin_site))
+        inlines.append(
+            ApplicationRequestLogInline(self.model, self.admin_site))
         return inlines
 
     def get_inline_class(self, keywords):
         return self._inlines_class_set.get(keywords)
+
+    def send_to_Aggregator(self, request, queryset):
+        for query in queryset:
+            try:
+                query.aggregator_operation()
+                msz = Constants.SEND_TO_AGGREGATOR % (
+                    query.reference_no)
+                message_class = messages.SUCCESS
+            except Exception as e:
+                msz = Constants.FAILED_TO_SEND_TO_AGGREGATOR % (
+                    query.reference_no, str(e))
+                message_class = messages.ERROR
+            self.message_user(request, msz, message_class)
+
+    def generate_Aggregator_Payment_Link(self, request, queryset):
+        for query in queryset:
+            try:
+                query.application.insurer_operation()
+                msz = Constants.PAYMENT_LINK_GENERATION % (
+                    query.reference_no)
+                message_class = messages.SUCCESS
+            except Exception as e:
+                msz = Constants.PAYMENT_LINK_GENERATION_FAILED % (
+                    query.reference_no, str(e))
+                message_class = messages.ERROR
+            self.message_user(request, msz, message_class)
 
 
 @admin.register(Member)
