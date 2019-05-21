@@ -88,7 +88,8 @@ class Application(BaseModel):
 
     def aggregator_operation(self):
         from aggregator.wallnut.models import Application
-        Application.objects.create(reference_app_id=self.id)
+        Application.objects.create(
+            reference_app_id=self.id, insurance_type=self.application_type)
 
     def update_fields(self, **kw):
         updated = False

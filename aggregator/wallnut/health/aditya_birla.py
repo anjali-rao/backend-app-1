@@ -1,3 +1,5 @@
+from payment.models import ApplicationRequestLog
+
 from aggregator import Constant
 import requests
 import json
@@ -22,6 +24,12 @@ class AdityaBirlaHealthInsurance(object):
     def save_proposal_data(self):
         data = self.get_data()
         url = self.wallnut._host % self.proposal_url
+        log = ApplicationRequestLog.objects.create(
+            application_id=self.application.id, url=url, request_type='POST',
+            payload=data)
+        response = requests.post(url, data=data).json()
+        log.response = response
+        log.save()
         response = requests.post(url, data=data).json()
         self.wallnut.proposal_id = next((
             i for i in response['return_data'].split('&') if 'proposal_id' in i
@@ -32,8 +40,12 @@ class AdityaBirlaHealthInsurance(object):
         data = self.get_data()
         data['proposal_id'] = self.wallnut.proposal_id
         url = self.wallnut._host % self.proposal_submit_url
-        response = requests.post(url, data=data)
-        response = response.json()
+        log = ApplicationRequestLog.objects.create(
+            application_id=self.application.id, url=url, request_type='POST',
+            payload=data)
+        response = requests.post(url, data=data).json()
+        log.response = response
+        log.save()
         self.wallnut.proposal_id2 = response['proposal_id']
         self.wallnut.customer_id = response['customer_id']
         return response
@@ -45,7 +57,12 @@ class AdityaBirlaHealthInsurance(object):
             section='health', company='aditya_birla'
         )
         url = self.wallnut._host % self.check_proposal_date_url
+        log = ApplicationRequestLog.objects.create(
+            application_id=self.application.id, url=url, request_type='POST',
+            payload=data)
         response = requests.post(url, data=data).json()
+        log.response = response
+        log.save()
         return response
 
     def get_data(self):

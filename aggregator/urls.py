@@ -1,8 +1,8 @@
 from django.urls import path
 
-from aggregator.wallnut.views import AdityaBirla, AdityaBirlaPayment
+from aggregator.wallnut.views import AdityaBirla, AdityaBirlaPaymentCapture
 
 urlpatterns = [
-    path('adityabirla/<int:pk>', AdityaBirla.as_view()),
-    path('adityabirla/capture', AdityaBirlaPayment.as_view()),
+    path('health/adityabirla/<int:pk>', AdityaBirla.as_view()),
+    path('health/adityabirla/capture', AdityaBirlaPaymentCapture.as_view()),
 ]

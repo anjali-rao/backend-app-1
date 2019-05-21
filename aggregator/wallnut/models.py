@@ -2,6 +2,7 @@ from django.contrib.postgres.fields import JSONField
 from django.utils.functional import cached_property
 
 from utils.models import BaseModel, models
+from payment.models import ApplicationRequestLog
 from aggregator import Constant
 from aggregator.wallnut import evaluateClassName
 import requests
@@ -9,7 +10,7 @@ import requests
 
 class Application(BaseModel):
     _host = 'https://wallnut.in/%s'
-    reference_app = models.ForeignKey(
+    reference_app = models.OneToOneField(
         'sales.application', on_delete=models.PROTECT)
     section = models.CharField(max_length=16)
     company_name = models.CharField(max_length=32, null=True)
@@ -34,7 +35,8 @@ class Application(BaseModel):
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
         if self.company_name:
-            self.insurer_product = evaluateClassName(self.company_name)(self)
+            self.insurer_product = evaluateClassName(
+                self.company_name, self.insurance_type)(self)
 
     def save(self, *args, **kwargs):
         try:
@@ -59,7 +61,11 @@ class Application(BaseModel):
             'health/proposal_aditya_birla/get_state_city?Pincode=%s') % (
                 self.reference_app.quote.lead.pincode
         )
+        request_log = ApplicationRequestLog.objects.create(
+            application_id=self.reference_app.id, url=url, request_type='GET')
         response = requests.get(url).json()
+        request_log.response = response
+        request_log.save()
         self.city = response['city']
         self.state = response['state']
 
@@ -78,25 +84,43 @@ class Application(BaseModel):
                 spouse='', child='', child_data=list()
             )), quote=''
         )
+        request_log = ApplicationRequestLog.objects.create(
+            application_id=self.reference_app.id, url=url, request_type='POST',
+            payload=data)
         response = requests.post(url, data=data).json()
+        request_log.response = response
+        request_log.save()
         self.quote_id = response['quote']
 
     def get_products(self):
         url = (self._host % 'mediclaim/get_products/%s') % self.quote_id
-        return requests.post(url, data=dict(quote=self.quote_id))
+        data = dict(quote=self.quote_id)
+        ApplicationRequestLog.objects.create(
+            application_id=self.reference_app.id, url=url, request_type='POST',
+            payload=data)
+        response = requests.post(url, data=data)
+        return response
 
     def get_quote_data(self):
         self.get_products()
         import requests
         url = (self._host % 'get_quote_data/%s') % self.quote_id
+        log = ApplicationRequestLog.objects.create(
+            application_id=self.reference_app.id, url=url, request_type='GET',)
         response = requests.get(url).json()
+        log.response = response
+        log.save()
         self.city_code = response['data']['health_city_id']
         self.state_code = response['data']['health_state_id']
         self.fetch_quote_details()
 
     def fetch_quote_details(self):
         url = (self._host % 'mediclaim/fetch_quote/%s') % self.quote_id
+        log = ApplicationRequestLog.objects.create(
+            application_id=self.reference_app.id, url=url, request_type='GET')
         response = requests.get(url).json()
+        log.response = response
+        log.save()
         self.raw_quote_data = response['quote_data']
         self.raw_quote = self.get_live_quote()
         self.premium = self.raw_quote['total_premium']
@@ -128,7 +152,12 @@ class Application(BaseModel):
             insurance_type=self.section.title() + ' Insurance',
             amount=self.premium
         )
-        return requests.post(url, data=data).json()['user_id']
+        log = ApplicationRequestLog.objects.create(
+            application_id=self.reference_app.id, url=url, request_type='GET')
+        response = requests.post(url, data=data).json()
+        log.response = response
+        log.save()
+        return response['user_id']
 
     def insurer_operation(self):
         self.user_id = self.get_user_id()
