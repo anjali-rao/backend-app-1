@@ -29,7 +29,8 @@ GENDER = dict(male='M', female='F')
 SECTION = dict(healthinsurance='mediclaim')
 
 COMPANY_NAME = {
-    'Aditya Birla Health Insurance': 'Aditya Birla Health Insurance'
+    'Aditya Birla Health Insurance': 'Aditya Birla Health Insurance',
+    'HDFC ERGO General Insurance': 'HDFC ERGO General Insurance Co. Ltd.'
 }
 
 INCOME = {

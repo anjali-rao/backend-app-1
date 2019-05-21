@@ -104,6 +104,8 @@ USER_CREATED_SUCESS = 'User created successfully!'
 USER_PASSWORD_CHANGE = 'Hi,\nYour OneCover account password has been changed successfully.\n\nRegards\nTeam OneCover' # noqa
 PASSWORD_REQUIRED = 'Password is required.'
 PROMO_MESSAGE = 'Hi %s, Welcome to OneCover, download our app and become super advisor https://tinyurl.com/y2ux5cdj .' # noqa
+PAYMENT_LINK_GENERATION = 'Payment link generated successfully for application (%s). ' # noqa
+SEND_TO_AGGREGATOR = 'Application (%s) successfully send to aggregator.'
 
 
 # TTL's (seconds)  ==================================
@@ -152,6 +154,8 @@ PLAYLIST_UNAVAILABLE = 'No playlist available. Please Contact Admin.'
 INVALID_CONTACT_ID = 'Invalid contact id provided.'
 INVALID_LEAD_STAGE = 'Invalid lead stage'
 PASSWORD_NOT_SET = 'Password is not set.'
+PAYMENT_LINK_GENERATION_FAILED = 'Failed to generate payment link for application (%s), due to exception:%s' # noqa
+FAILED_TO_SEND_TO_AGGREGATOR = 'Failed to send application (%s) to aggregator due to exception: %s' # noqa
 
 
 # Creation Fields  ==================================

@@ -5,7 +5,9 @@ from utils.models import BaseModel, models
 from payment.models import ApplicationRequestLog
 from aggregator import Constant
 from aggregator.wallnut import evaluateClassName
+
 import requests
+import re
 
 
 class Application(BaseModel):
@@ -122,16 +124,22 @@ class Application(BaseModel):
         log.save()
         self.raw_quote = self.get_live_quote(response['quote_data'])
         self.premium = self.raw_quote['total_premium']
-        self.company_name = ''.join(self.raw_quote['company_name'].split())
+        self.company_name = re.sub('[ .]', '', self.raw_quote['company_name'])
         reference_app = self.reference_app
         reference_app.premium = self.raw_quote['total_premium']
         reference_app.save()
 
     def get_live_quote(self, quote_data):
-        return next(filter(lambda product: product[
+        data = filter(lambda product: product[
             'company_name'] == Constant.COMPANY_NAME.get(
                 self.reference_app.quote.premium.product_variant.company_category.company.name # noqa
-            ), quote_data))
+            ), quote_data)
+        quote = next(data)
+        premium = int(self.reference_app.premium)
+        while int(quote['total_premium']) in range(
+                premium - 100, premium + 100):
+            quote = next(data)
+        return quote
 
     def get_user_id(self):
         if self.user_id:

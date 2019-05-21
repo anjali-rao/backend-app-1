@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 
 from users.models import (
     User, Account, Enterprise, AccountDetail, Pincode,
-    Address, BankAccount, BankBranch, Bank
+    Address, BankAccount, BankBranch
 )
 from sales.serializers import SalesApplicationSerializer
 from django.db import transaction

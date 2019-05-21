@@ -16,7 +16,7 @@ class ApplicationRequestLog(BaseModel):
     response = JSONField(default=dict)
 
     class Meta:
-        ordering = ('modified',)
+        ordering = ('-modified',)
 
 
 class Payment(BaseModel):
@@ -29,3 +29,6 @@ class Payment(BaseModel):
     amount = models.CharField(max_length=63)
     status = models.CharField(max_length=32)
     response = JSONField(default=dict)
+
+    class Meta:
+        ordering = ('-modified',)
