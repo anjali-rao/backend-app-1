@@ -29,7 +29,6 @@ class Application(BaseModel):
     state = models.CharField(max_length=16, null=True)
     pincode = models.CharField(max_length=16, null=True)
     raw_quote = JSONField(default=dict)
-    raw_quote_data = JSONField(default=dict)
     insurer_product = None
 
     def __init__(self, *args, **kwargs):
@@ -121,19 +120,18 @@ class Application(BaseModel):
         response = requests.get(url).json()
         log.response = response
         log.save()
-        self.raw_quote_data = response['quote_data']
-        self.raw_quote = self.get_live_quote()
+        self.raw_quote = self.get_live_quote(response['quote_data'])
         self.premium = self.raw_quote['total_premium']
         self.company_name = ''.join(self.raw_quote['company_name'].split())
         reference_app = self.reference_app
         reference_app.premium = self.raw_quote['total_premium']
         reference_app.save()
 
-    def get_live_quote(self):
+    def get_live_quote(self, quote_data):
         return next(filter(lambda product: product[
             'company_name'] == Constant.COMPANY_NAME.get(
                 self.reference_app.quote.premium.product_variant.company_category.company.name # noqa
-            ), self.raw_quote_data))
+            ), quote_data))
 
     def get_user_id(self):
         if self.user_id:
