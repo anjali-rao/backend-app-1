@@ -70,6 +70,29 @@ class Application(BaseModel):
         self.city = response['city']
         self.state = response['state']
 
+    def get_premium(self):
+        url = self._host % 'mediclaim/get_premium'
+        data = dict(
+            health_pay_mode=self.pay_mode,
+            health_pay_type=self.health_pay_type,
+            health_pay_type_text=self.health_pay_type_text,
+            health_sum_insured=self.suminsured,
+            health_pay_mode_text=self.pay_mode_text,
+            health_me=self.health_me,
+            gender_age=self.gender_ages,
+            pincode=self.pincode,
+            health_insu_id=self.insurer_code,
+            health_sum_insured_range=[self.suminsured, self.suminsured],
+            health_city_id=self.city_code or '',
+            health_state_id=self.state_code or ''
+        )
+        request_log = ApplicationRequestLog.objects.create(
+            application_id=self.reference_app.id, url=url, request_type='POST',
+            payload=data)
+        response = requests.get(url, data=data).json()
+        request_log.response = response
+        request_log.save()
+
     def generate_quote_id(self):
         url = self._host % 'save_quote_data'
         import json
@@ -78,8 +101,9 @@ class Application(BaseModel):
             quote_data=json.dumps(dict(
                 health_pay_mode=self.pay_mode,
                 health_pay_mode_text=self.pay_mode_text,
-                health_me=list(), health_pay_type='',
-                health_pay_type_text='', health_sum_insured=self.suminsured,
+                health_me=self.health_me, health_pay_type=self.health_pay_type,
+                health_pay_type_text=self.health_pay_type_text,
+                health_sum_insured=self.suminsured,
                 pincode=self.pincode, gender_age=self.gender_ages,
                 health_sum_insured_range=[self.suminsured, self.suminsured],
                 spouse='', child='', child_data=list()
@@ -136,7 +160,7 @@ class Application(BaseModel):
             ), quote_data)
         quote = next(data)
         premium = int(self.reference_app.premium)
-        while int(quote['total_premium']) in range(
+        while int(quote['total_premium']) not in range(
                 premium - 100, premium + 100):
             quote = next(data)
         return quote
@@ -171,6 +195,15 @@ class Application(BaseModel):
         return self.insurer_product.perform_creation()
 
     @cached_property
+    def health_me(self):
+        gender_ages = list()
+        for member in self.reference_app.active_members.exclude(
+                relation='self'):
+            gender_ages.append([
+                ('M' if member.gender == 'male' else 'F'), str(member.age)])
+        return gender_ages
+
+    @cached_property
     def proposer(self):
         self.self_insured = False
         proposers = self.reference_app.active_members
@@ -186,20 +219,36 @@ class Application(BaseModel):
         return proposer
 
     @cached_property
+    def health_pay_type(self):
+        if self.reference_app.active_members.count() == 1:
+            return ''
+        return '%sA%sC' % (
+            self.reference_app.adults, self.reference_app.childrens)
+
+    @cached_property
+    def health_pay_type_text(self):
+        pay_type_text = ''
+        if self.reference_app.active_members.count() == 1:
+            return pay_type_text
+        if self.reference_app.active_members.filter(relation='self').exists():
+            pay_type_text += 'ME '
+        if self.reference_app.active_members.filter(relation='spouse').exists(): # noqa
+            pay_type_text += 'Spouse '
+        if self.reference_app.active_members.filter(relation__in=['son', 'daughter']).exists(): # noqa
+            pay_type_text += '%sChild' % self.reference_app.childrens
+        return pay_type_text
+
+    @cached_property
     def pay_mode(self):
-        return 'I' if len(self.gender_ages) == 1 else 'F'
+        return 'I' if len(self.reference_app.active_members) == 1 else 'F'
 
     @cached_property
     def pay_mode_text(self):
-        return 'Individual' if len(self.gender_ages) == 1 else 'Family'
+        return 'Individual' if len(self.reference_app.active_members) == 1 else 'Family'
 
     @cached_property
     def gender_ages(self):
-        gender_ages = list()
-        for member in self.reference_app.active_members:
-            gender_ages.append([
-                ('M' if member.gender == 'male' else 'F'), str(member.age)])
-        return gender_ages
+        return [[Constant.GENDER[self.proposer.gender], self.proposer.age]]
 
     @cached_property
     def all_premiums(self):

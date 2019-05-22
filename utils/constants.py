@@ -44,6 +44,7 @@ MARITAL_STATUS = ('married', 'single', 'divorced')
 PLAYLIST_CHOICES = ('marketing', 'training')
 USER_FILE_UPLOAD = ['cancelled_cheque', 'photo']
 REQUEST_CHOICES = ['GET', 'POST', 'PUT', 'PATCH']
+AGGREGATOR_CHOICES = ['offline', 'wallnut']
 
 
 # ORDERS  ==================================

@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import (
-    constants, get_choices, genrate_random_string)
+    constants as Constants, get_choices, genrate_random_string)
 
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
@@ -20,7 +20,7 @@ from utils.mixins import RecommendationException
 class Quote(BaseModel):
     lead = models.ForeignKey('crm.Lead', on_delete=models.CASCADE)
     status = models.CharField(
-        max_length=16, choices=constants.STATUS_CHOICES,
+        max_length=16, choices=Constants.STATUS_CHOICES,
         default='pending')
     premium = models.ForeignKey(
         'product.Premium', null=True, blank=True, on_delete=models.CASCADE)
@@ -64,15 +64,17 @@ class Application(BaseModel):
     client = models.ForeignKey(
         'crm.Contact', null=True, on_delete=models.PROTECT)
     application_type = models.CharField(
-        max_length=32, choices=get_choices(constants.APPLICATION_TYPES))
+        max_length=32, choices=get_choices(Constants.APPLICATION_TYPES))
     quote = models.OneToOneField('sales.Quote', on_delete=models.CASCADE)
     status = models.CharField(
-        max_length=32, choices=constants.APPLICATION_STATUS, default='fresh')
+        max_length=32, choices=Constants.APPLICATION_STATUS, default='fresh')
     stage = models.CharField(
         max_length=32, default='proposal_details',
-        choices=get_choices(constants.APPLICATION_STAGES))
+        choices=get_choices(Constants.APPLICATION_STAGES))
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
+    payment_mode = models.CharField(max_length=64, choices=get_choices(
+        Constants.AGGREGATOR_CHOICES), default='offline')
     terms_and_conditions = models.BooleanField(null=True)
 
     def save(self, *args, **kwargs):
@@ -87,9 +89,9 @@ class Application(BaseModel):
         super(Application, self).save(*args, **kwargs)
 
     def aggregator_operation(self):
-        from aggregator.wallnut.models import Application as AggregatorApplication
+        from aggregator.wallnut.models import Application as Aggregator
         if not hasattr(self, 'application'):
-            AggregatorApplication.objects.create(
+            Aggregator.objects.create(
                 reference_app_id=self.id, insurance_type=self.application_type)
 
     def update_fields(self, **kw):
@@ -118,7 +120,7 @@ class Application(BaseModel):
             childrens=childrens
         )
         print(data)
-        for member in constants.RELATION_CHOICES:
+        for member in Constants.RELATION_CHOICES:
             members = self.active_members.filter(relation=member)
             if members.exists() and member not in ['son', 'daughter']:
                 data['%s_age' % (member)] = members.get().age
@@ -168,6 +170,15 @@ class Application(BaseModel):
             members.append(instance)
         Member.objects.bulk_create(members)
 
+    @property
+    def adults(self):
+        return self.active_members.filter(
+            dob__year__lte=(now().year - 18)).count()
+
+    @property
+    def childrens(self):
+        return self.active_members.count() - self.adults
+
     @cached_property
     def active_members(self):
         return self.member_set.filter(ignore=False)
@@ -205,15 +216,15 @@ class Member(BaseModel):
     application = models.ForeignKey(
         'sales.Application', on_delete=models.CASCADE)
     relation = models.CharField(
-        max_length=128, choices=get_choices(constants.RELATION_CHOICES),
+        max_length=128, choices=get_choices(Constants.RELATION_CHOICES),
         db_index=True)
     first_name = models.CharField(max_length=128, blank=True)
     last_name = models.CharField(max_length=128, blank=True)
     dob = models.DateField(null=True)
     gender = models.CharField(
-        choices=get_choices(constants.GENDER), max_length=16)
+        choices=get_choices(Constants.GENDER), max_length=16)
     occupation = models.CharField(
-        choices=get_choices(constants.OCCUPATION_CHOICES), max_length=32,
+        choices=get_choices(Constants.OCCUPATION_CHOICES), max_length=32,
         null=True, blank=True
     )
     height = models.FloatField(default=0.0)
@@ -264,7 +275,7 @@ class Nominee(BaseModel):
     application = models.ForeignKey(
         'sales.Application', on_delete=models.CASCADE)
     relation = models.CharField(
-        max_length=128, choices=get_choices(constants.RELATION_CHOICES),
+        max_length=128, choices=get_choices(Constants.RELATION_CHOICES),
         db_index=True)
     first_name = models.CharField(max_length=128)
     last_name = models.CharField(max_length=128)
@@ -294,44 +305,44 @@ class Insurance(BaseModel):
 
 class HealthInsurance(Insurance):
     gastrointestinal_disease = JSONField(
-        default=list, help_text=constants.GASTROINTESTINAL_DISEASE)
+        default=list, help_text=Constants.GASTROINTESTINAL_DISEASE)
     neuronal_diseases = JSONField(
-        default=list, help_text=constants.NEURONAL_DISEASES)
+        default=list, help_text=Constants.NEURONAL_DISEASES)
     oncology_disease = JSONField(
-        default=list, help_text=constants.ONCOLOGY_DISEASE)
+        default=list, help_text=Constants.ONCOLOGY_DISEASE)
     respiratory_diseases = JSONField(
-        default=list, help_text=constants.RESPIRATORY_DISEASES)
+        default=list, help_text=Constants.RESPIRATORY_DISEASES)
     cardiovascular_disease = JSONField(
-        default=list, help_text=constants.CARDIOVASCULAR_DISEASE)
+        default=list, help_text=Constants.CARDIOVASCULAR_DISEASE)
     ent_diseases = JSONField(
-        default=list, help_text=constants.ENT_DISEASE)
+        default=list, help_text=Constants.ENT_DISEASE)
     blood_diseases = JSONField(
-        default=list, help_text=constants.BLOOD_DISODER)
+        default=list, help_text=Constants.BLOOD_DISODER)
     alcohol_consumption = models.IntegerField(
-        default=0.0, help_text=constants.ALCOHOL_CONSUMPTION,
+        default=0.0, help_text=Constants.ALCOHOL_CONSUMPTION,
         null=True, blank=True)
     tobacco_consumption = models.IntegerField(
-        default=0.0, help_text=constants.TABBACO_CONSUMPTION,
+        default=0.0, help_text=Constants.TABBACO_CONSUMPTION,
         null=True, blank=True)
     cigarette_consumption = models.IntegerField(
-        default=0.0, help_text=constants.CIGARETTE_CONSUMPTION,
+        default=0.0, help_text=Constants.CIGARETTE_CONSUMPTION,
         null=True, blank=True)
     previous_claim = models.BooleanField(
-        default=False, help_text=constants.PREVIOUS_CLAIM,
+        default=False, help_text=Constants.PREVIOUS_CLAIM,
         null=True, blank=True)
     proposal_terms = models.BooleanField(
-        default=False, help_text=constants.PROPOSAL_TERMS,
+        default=False, help_text=Constants.PROPOSAL_TERMS,
         null=True, blank=True)
 
     def update_default_fields(self, kw):
-        for field in constants.HEALTHINSURANCE_FIELDS:
+        for field in Constants.HEALTHINSURANCE_FIELDS:
             setattr(self, field, kw)
         self.save()
 
     def get_summary(self):
         response = dict()
         for field in self._meta.fields:
-            if field.name in constants.INSURANCE_EXCLUDE_FIELDS:
+            if field.name in Constants.INSURANCE_EXCLUDE_FIELDS:
                 continue
             field_value = getattr(self, field.name)
             if isinstance(field_value, list):

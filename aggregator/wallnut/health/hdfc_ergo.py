@@ -6,7 +6,8 @@ import json
 
 
 class HDFCERGOHealthInsurance(object):
-    pass
+    proposal_url = 'health/proposal_hdfc_ergo/save_proposer_data'
+    check_proposal_date_url = 'check_proposal_date'
 
     def __init__(self, wallnut):
         self.wallnut = wallnut
@@ -14,7 +15,7 @@ class HDFCERGOHealthInsurance(object):
 
     def perform_creation(self):
         self.save_proposal_data()
-        self.submit_proposal()
+        #self.submit_proposal()
         self.wallnut.save()
         self.accept_terms()
 
@@ -27,10 +28,8 @@ class HDFCERGOHealthInsurance(object):
         response = requests.post(url, data=data).json()
         log.response = response
         log.save()
-        response = requests.post(url, data=data).json()
-        self.wallnut.proposal_id = next((
-            i for i in response['return_data'].split('&') if 'proposal_id' in i
-        ), None).split('=')[1]
+        self.wallnut.proposal_id = response['proposal_id']
+        self.wallnut.customer_id = response['customer_id']
         return response
 
     def submit_proposal(self):
@@ -50,127 +49,117 @@ class HDFCERGOHealthInsurance(object):
     def accept_terms(self):
         data = dict(
             customer_id=self.wallnut.customer_id,
-            proposal_id=self.wallnut.proposal_id2,
-            section='health', company='aditya_birla'
+            proposal_id=self.wallnut.proposal_id,
+            section='health', company='hdfc_ergo'
         )
         url = self.wallnut._host % self.check_proposal_date_url
         log = ApplicationRequestLog.objects.create(
             application_id=self.application.id, url=url, request_type='POST',
             payload=data)
-        response = requests.post(url, data=data).json()
-        log.response = response
+        response = requests.post(url, data=data)
+        import pdb; pdb.set_trace()
+        log.response = response.json()
         log.save()
         return response
 
     def get_data(self):
         data = dict(
-            city_id=self.wallnut.city_code, me=list(),
+            city_id=self.wallnut.city_code, me=self.wallnut.health_me,
             insu_id=self.wallnut.insurer_code,
             pay_mode=self.wallnut.pay_mode,
             pay_mode_text=self.wallnut.pay_mode_text,
-            policy_period=1, pay_type='', pay_type_text='',
-            premium=self.wallnut.all_premiums,
+            policy_period=1, pay_type=self.wallnut.health_pay_type,
+            pay_type_text=self.wallnut.health_pay_type_text,
+            premium=self.wallnut.raw_quote['all_premium'],
             quote=self.wallnut.quote_id,
             quote_refresh='N', state_id=self.wallnut.state_code,
             sum_insured=self.wallnut.suminsured,
             sum_insured_range=[
                 self.wallnut.suminsured, self.wallnut.suminsured],
-            user_id=self.wallnut.user_id,
-            proposer_FirstName=self.wallnut.proposer.first_name,
-            proposer_MiddleName='',
-            proposer_LastName=self.wallnut.proposer.last_name,
-            proposer_GenderCode=Constant.GENDER.get(
-                self.wallnut.proposer.gender),
-            proposer_MaritalStatusCode=self.wallnut.proposer.marital_status,
-            proposer_BirthDate=self.wallnut.proposer.dob.strftime('%d-%m-%Y'),
-            proposer_Email=self.application.client.email,
-            proposer_Number=self.application.client.phone_no,
-            proposer_Height=self.wallnut.proposer.height,
-            proposer_Weight=self.wallnut.proposer.weight,
-            proposer_OccupationCode=Constant.OCCUPATION_CODE[
-                self.wallnut.proposer.occupation],
-            proposer_AnnualIncome=Constant.INCOME.get(
-                self.application.client.annual_income) or 500000,
-            proposer_PanNumber=self.application.client.kycdocument_set.filter(
-                document_type='pancard').last() or '',
-            proposer_AadhaarNo=self.application.client.kycdocument_set.filter(
+            user_id=self.wallnut.user_id, Address2='', Address3='',
+            ApplFirstName=self.wallnut.proposer.first_name,
+            ApplLastName=self.wallnut.proposer.last_name,
+            ApplGender=Constant.GENDER.get(self.wallnut.proposer.gender),
+            ApplDOB=self.wallnut.proposer.dob.strftime('%d-%m-%Y'),
+            UIDNo=self.application.client.kycdocument_set.filter(
                 document_type='aadhaar_card').last() or '000000000000',
-            proposer_AddressLine1=self.application.client.address.full_address,
-            proposer_AddressLine2='', proposer_AddressLine3='',
-            proposer_PinCode=self.application.client.address.pincode.pincode,
-            proposer_Country='Indian', proposer_StateCode=self.wallnut.state,
-            proposer_TownCode=self.wallnut.city,
-            self_insured=self.wallnut.self_insured,
-            SumAssured=self.wallnut.suminsured,
-            health_insu_id=self.wallnut.insurer_code,
-            health_pay_mode=self.wallnut.pay_mode,
-            insured_pattern='', customer_id='', proposal_id='',
-            pincode=self.application.client.address.pincode.pincode,
+            EmailId=self.application.client.email,
+            MobileNo=self.application.client.phone_no,
+            PhoneNo='', Address1='ST bed Layout, Kormamongala',
+            Pincode=self.application.client.address.pincode.pincode,
+            State=self.wallnut.state, City=self.city_mapper(self.wallnut.city),
             local_data_values=json.dumps(dict(
                 health_city_id=self.wallnut.city_code,
                 health_insu_id=self.wallnut.insurer_code,
-                health_me=[], health_pay_mode=self.wallnut.pay_mode,
+                health_me=self.wallnut.health_me,
+                health_pay_mode=self.wallnut.pay_mode,
                 health_pay_mode_text=self.wallnut.pay_mode_text,
-                health_pay_type='', health_policy_period=1,
-                health_premium=self.wallnut.premium,
+                health_pay_type=self.wallnut.health_pay_type,
+                health_policy_period=1,
+                health_premium=self.wallnut.raw_quote['all_premium'],
                 health_quote=self.wallnut.quote_id,
                 health_quote_refresh='N',
                 health_state_id=self.wallnut.state_code,
                 health_sum_insured=self.wallnut.suminsured,
-                health_sum_insured_range=self.wallnut.all_premiums,
+                health_sum_insured_range=[
+                    self.wallnut.suminsured, self.wallnut.suminsured],
                 health_user_id=self.wallnut.user_id,
-                gender_age=self.wallnut.gender_ages
+                gender_age=self.wallnut.gender_ages,
+                pincode=self.application.client.address.pincode.pincode,
             )),
-            nominee_add_same_as_proposer_add='Y',
-            nominee_AddressLine1=self.application.client.address.full_address,
-            nominee_AddressLine2='',
-            nominee_AddressLine3='',
-            nominee_PinCode=self.wallnut.pincode,
-            nominee_Country='IN',
-            nominee_StateCode=self.wallnut.state,
-            nominee_TownCode=self.wallnut.city,
-            Namefor80D='R001', super_ncb='N',
-            reload_sum_insured='N', room_upgrade='N', disease1='N',
-            Doctorname='', ContactDetails='', lifestyle_ques='')
+            disease1='N',
+            insured_pattern=self.get_insurance_pattern(),
+            TypeOfPlan='NF' if self.wallnut.pay_mode == 'I' else 'WF',
+            coverType=self.wallnut.raw_quote['product_name'].replace(
+                'Health Suraksha ', '').replace('Regain ', '')
+        )
         nominee = self.application.nominee_set.filter(ignore=False).last()
         data.update(dict(
+            NomineeRelationship=self.get_relationship_code(nominee.relation),
             NomineeName=nominee.get_full_name(),
-            RelationToProposerCode=Constant.RELATION_CODE[nominee.relation]))
+            NomineeRelationship_text=self.get_relationship_text(
+                nominee.relation))
+        )
         count = 1
-        for member in self.application.active_members:
+        for member in self.application.active_members.exclude(relation='self'):
             data.update(self.get_memeber_info(member, count))
             count += 1
-        while count <= 6:
+        while count <= 3:
             data.update({
-                'FirstName_%s' % count: '', 'MiddleName_%s' % count: '',
-                'LastName_%s' % count: '', 'GenderCode_%s' % count: '',
-                'RelationshipCode_%s' % count: '',
-                'MaritalStatusCode_%s' % count: '',
-                'OccupationCode_%s' % count: '', 'Height_%s' % count: '',
-                'Weight_%s' % count: '', 'Alcohol_%s' % count: '',
-                'Smoking_%s' % count: '', 'Pouches_%s' % count: '',
+                'FirstName_%s' % count: '', 'LastName_%s' % count: '',
+                'RelationShip_%s' % count: '', 'DOB_%s' % count: ''
             })
             count += 1
 
         return data
 
+    def get_insurance_pattern(self):
+        return {
+            "I": "1000", "2A0C": "1100", "2A1C": "1110", "2A2C": "1120",
+            "1A1C": "1010", "1A2C": "1020"}.get(
+                self.wallnut.health_pay_type, '1000')
+
     def get_memeber_info(self, member, count):
         return {
             'FirstName_%s' % count: member.first_name,
-            'MiddleName_%s' % count: '',
             'LastName_%s' % count: member.last_name,
-            'GenderCode_%s' % count: Constant.GENDER.get(member.gender),
-            'BirthDate_%s' % count: member.dob.strftime('%d-%m-%Y'),
-            'RelationshipCode_%s' % count: Constant.RELATION_CODE[
-                member.relation],
-            'MaritalStatusCode_%s' % count: Constant.get_marital_status(
-                member.relation) or self.wallnut.proposer.marital_status,
-            'OccupationCode_%s' % count: Constant.OCCUPATION_CODE[
-                member.occupation],
-            'Height_%s' % count: member.height,
-            'Weight_%s' % count: member.weight,
-            'Alcohol_%s' % count: '',
-            'Smoking_%s' % count: '',
-            'Pouches_%s' % count: '',
+            'RelationShip_%s' % count: self.get_relationship_code(
+                member.relation),
+            'DOB_%s' % count: member.dob.strftime('%d-%m-%Y'),
         }
 
+    def get_relationship_code(self, relation):
+        return dict(
+            son='S', daughter='D', spouse='S', mother='P', father='P',
+            sister='B', brother='B', cousin='B',
+        )[relation]
+
+    def get_relationship_text(self, relation):
+        return dict(
+            son='Child', daughter='Child', spouse='Spouse',
+            mother='Parent', father='Parent',
+            sister='Sibling', brother='Sibling', cousin='Sibling',
+        )[relation]
+
+    def city_mapper(self, city):
+        return dict(Bangalore='BENGALURU').get(city, city)
