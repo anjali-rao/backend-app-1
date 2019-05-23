@@ -75,7 +75,6 @@ class LeadSerializer(serializers.ModelSerializer):
     category = serializers.ReadOnlyField(source='category.name')
     full_name = serializers.ReadOnlyField(source='contact.get_full_name')
     stage = serializers.ReadOnlyField(source='get_stage_display')
-    bookmark = serializers.ReadOnlyField(source='bookmark')
 
     class Meta:
         model = Lead
