@@ -15,7 +15,6 @@ class HDFCERGOHealthInsurance(object):
 
     def perform_creation(self):
         self.save_proposal_data()
-        #self.submit_proposal()
         self.wallnut.save()
         self.accept_terms()
 
@@ -32,20 +31,6 @@ class HDFCERGOHealthInsurance(object):
         self.wallnut.customer_id = response['customer_id']
         return response
 
-    def submit_proposal(self):
-        data = self.get_data()
-        data['proposal_id'] = self.wallnut.proposal_id
-        url = self.wallnut._host % self.proposal_submit_url
-        log = ApplicationRequestLog.objects.create(
-            application_id=self.application.id, url=url, request_type='POST',
-            payload=data)
-        response = requests.post(url, data=data).json()
-        log.response = response
-        log.save()
-        self.wallnut.proposal_id2 = response['proposal_id']
-        self.wallnut.customer_id = response['customer_id']
-        return response
-
     def accept_terms(self):
         data = dict(
             customer_id=self.wallnut.customer_id,
@@ -56,9 +41,8 @@ class HDFCERGOHealthInsurance(object):
         log = ApplicationRequestLog.objects.create(
             application_id=self.application.id, url=url, request_type='POST',
             payload=data)
-        response = requests.post(url, data=data)
-        import pdb; pdb.set_trace()
-        log.response = response.json()
+        response = requests.post(url, data=data).json()
+        log.response = response
         log.save()
         return response
 

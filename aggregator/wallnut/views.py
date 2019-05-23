@@ -12,11 +12,14 @@ class AdityaBirlaPaymentGateway(views.View):
     _secSignature = 'fed47b72baebd4f5f98a3536b8537dc4e17f60beeb98c77c97dadc917004b3bb' # noqa
     return_url = 'http://payment.localhost:8000/health/adityabirla/capture?application_id=%s' # noqa
     _summary_url = 'https://wallnut.in/health/proposal/proposal_summary/aditya_birla/1?proposal_id=%s&customer_id=%s' # noqa
+    company_name = 'AdityaBirlaHealthInsurance'
 
     def get(self, request, *args, **kwargs):
         try:
             from aggregator.wallnut.models import Application
             app = Application.objects.get(id=kwargs['pk'])
+            if app.company_name != self.company_name:
+                raise PermissionDenied()
             context = dict(
                 email=app.reference_app.client.email,
                 phone_no=app.reference_app.client.phone_no,
@@ -77,20 +80,23 @@ class AdityaBirlaPaymentCapture(views.View):
 class HDFCPaymentGateway(views.View):
     template_name = 'hdfc_ergo_health.html'
     _summary_url = 'https://wallnut.in/health/proposal/proposal_summary/hdfc_ergo/4?proposal_id=%s&customer_id=%s' # noqa
+    company_name = 'HDFCERGOGeneralInsuranceCoLtd'
 
     def get(self, request, *args, **kwargs):
         from aggregator.wallnut.models import Application
         try:
             app = Application.objects.get(id=kwargs['pk'])
+            if app.company_name != self.company_name:
+                raise PermissionDenied()
             context = self.get_paramaters(app)
             context.update(dict(
-                email=app.reference_app.client.email,
-                phone_no=app.reference_app.client.full_name,
-                premium=1
+                customer_email=app.reference_app.client.email,
+                customer_name=app.reference_app.client.get_full_name(),
+                premium=int(app.premium)
             ))
             ApplicationRequestLog.objects.create(
                 application_id=app.reference_app.id,
-                url=self.return_url, payload=context
+                payload=context, request_type='POST'
             )
             return render(request, self.template_name, context)
         except (KeyError, Application.DoesNotExist):
@@ -100,18 +106,19 @@ class HDFCPaymentGateway(views.View):
     def get_paramaters(self, app):
         import re
         import requests
-        url = self._summary_url % (app.proposal_id2, app.customer_id)
+        url = self._summary_url % (app.proposal_id, app.customer_id)
         res = requests.get(url)
         page_content = str(res.content)
-        import pdb; pdb.set_trace()
         patterns = dict(
-            customer_id=re.compile(r'id="CustomerID" value="(\w*)'),
+            customer_code=re.compile(r'id="CustomerID" value="(\w*)'),
             additionalInfo1=re.compile(r'id="AdditionalInfo1" value="(\w*)'),
             additionalInfo2=re.compile(r'id="AdditionalInfo2" value="(\w*)'),
             additionalInfo3=re.compile(r'id="AdditionalInfo3" value="(\w*)'),
-            productCd=re.compile(r'id="ProductCd" value="(\w*)'),
-            producerCd=re.compile(r'id="ProducerCd" value="(\w*)')
+            product_code=re.compile(r'id="ProductCd" value="(\w*)'),
+            producer_code=re.compile(r'id="ProducerCd" value="(\w*)')
         )
         for pattern in patterns.keys():
             patterns[pattern] = patterns[pattern].findall(page_content)[0]
+            setattr(app, pattern, patterns[pattern])
+        app.save()
         return patterns

@@ -13,15 +13,15 @@
 				<option value="CC">Credit/Debit Card</option>
 				<option value="DD">Internet Banking</option>
 			</select>
-			<input type="hidden" name="CustomerID" id="CustomerID" value="{{customer_id}}">
+			<input type="hidden" name="CustomerID" id="CustomerID" value="{{customer_code}}">
 			<input type="hidden" name="TxnAmount" id="TxnAmount" value="{{premium}}">
 			<input type="hidden" name="AdditionalInfo1" id="AdditionalInfo1" value="{{additionalInfo1}}">
 			<input type="hidden" name="AdditionalInfo2" id="AdditionalInfo2" value="{{additionalInfo2}}">
 			<input type="hidden" name="AdditionalInfo3" id="AdditionalInfo3" value="{{additionalInfo3}}">
-			<input type="hidden" name="ProducerCd" id="ProducerCd" value="{{producerCd}}">
-			<input type="hidden" name="UserName" id="UserName" value="customer_name">
-			<input type="hidden" name="UserMailId" id="UserMailId" value="customer_emnail">
-			<input type="hidden" name="ProductCd" id="ProductCd" value="{{productCd}}">
+			<input type="hidden" name="ProducerCd" id="ProducerCd" value="{{producer_code}}">
+			<input type="hidden" name="UserName" id="UserName" value="{{customer_name}}">
+			<input type="hidden" name="UserMailId" id="UserMailId" value="{{customer_email}}">
+			<input type="hidden" name="ProductCd" id="ProductCd" value="{{product_code}}">
 			<span class="input-group-btn">
 				<button type="submit" name="submit_modal_payment" id="submit_modal_payment" class="btn-u btn-u-orange">
 					<i class="ace-icon fa fa-lightbulb-o bigger-110"></i> Make Payment </button>
