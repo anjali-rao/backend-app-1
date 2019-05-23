@@ -104,7 +104,7 @@ class ApplicationAdmin(admin.ModelAdmin):
             self.message_user(request, msz, message_class)
 
     def aggregator_operation(self, obj):
-        filename = 'Yes' if hasattr(obj, 'application') else 'No'
+        filename = 'yes' if hasattr(obj, 'application') else 'no'
         return format_html(
             '<img src="/static/admin/img/icon-{0}.svg" alt="True">', filename)
 
@@ -116,7 +116,7 @@ class ApplicationAdmin(admin.ModelAdmin):
                     obj.application.id)
                 return format_html('<a href="{0}">{0}</a>', link)
             return format_html(
-                '<img src="/static/admin/img/icon-No.svg" alt="True">')
+                '<img src="/static/admin/img/icon-no.svg" alt="True">')
         return None
 
 
