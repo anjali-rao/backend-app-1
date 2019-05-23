@@ -15,8 +15,8 @@ class HDFCERGOHealthInsurance(object):
 
     def perform_creation(self):
         self.save_proposal_data()
-        self.wallnut.save()
         self.accept_terms()
+        self.wallnut.save()
 
     def save_proposal_data(self):
         data = self.get_data()
@@ -44,6 +44,7 @@ class HDFCERGOHealthInsurance(object):
         response = requests.post(url, data=data).json()
         log.response = response
         log.save()
+        self.wallnut.payment_ready = True
         return response
 
     def get_data(self):

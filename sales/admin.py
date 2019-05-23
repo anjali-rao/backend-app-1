@@ -50,7 +50,7 @@ class QuoteAdmin(admin.ModelAdmin):
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = (
         'reference_no', 'application_type', 'status', 'terms_and_conditions',
-        'payment_link', 'created')
+        'aggregator_operation', 'payment_link', 'created')
     list_filter = ('application_type', 'terms_and_conditions', 'status')
     raw_id_fields = ('client', 'quote')
     search_fields = (
@@ -103,12 +103,20 @@ class ApplicationAdmin(admin.ModelAdmin):
                 message_class = messages.ERROR
             self.message_user(request, msz, message_class)
 
+    def aggregator_operation(self, obj):
+        filename = 'Yes' if hasattr(obj, 'application') else 'No'
+        return format_html(
+            '<img src="/static/admin/img/icon-{0}.svg" alt="True">', filename)
+
     def payment_link(self, obj):
         if hasattr(obj, 'application'):
-            link = 'https://payment.goplannr.com/health/%s/%s' % (
-                PAYMENT_LINK_MAPPER.get(obj.application.company_name),
-                obj.application.id)
-            return format_html('<a href="{0}">{0}</a>', link)
+            if obj.application.payment_ready:
+                link = 'https://payment.goplannr.com/health/%s/%s' % (
+                    PAYMENT_LINK_MAPPER.get(obj.application.company_name),
+                    obj.application.id)
+                return format_html('<a href="{0}">{0}</a>', link)
+            return format_html(
+                '<img src="/static/admin/img/icon-No.svg" alt="True">')
         return None
 
 

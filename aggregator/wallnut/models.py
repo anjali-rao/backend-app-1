@@ -33,6 +33,7 @@ class Application(BaseModel):
     city = models.CharField(max_length=16, null=True)
     state = models.CharField(max_length=16, null=True)
     pincode = models.CharField(max_length=16, null=True)
+    payment_ready = models.BooleanField(default=False)
     raw_quote = JSONField(default=dict)
     insurer_product = None
 
