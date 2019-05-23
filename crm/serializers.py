@@ -74,15 +74,18 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
 class LeadSerializer(serializers.ModelSerializer):
     category = serializers.ReadOnlyField(source='category.name')
     full_name = serializers.ReadOnlyField(source='contact.get_full_name')
-    status = serializers.ReadOnlyField(source='get_status_display')
+    stage = serializers.ReadOnlyField(source='get_stage_display')
+    bookmark = serializers.ReadOnlyField(source='bookmark')
 
     class Meta:
         model = Lead
-        fields = ('id', 'category', 'full_name', 'status', 'created')
+        fields = (
+            'id', 'category', 'full_name', 'stage', 'bookmark', 'created')
 
 
 class QuoteSerializer(serializers.ModelSerializer):
     quote_id = serializers.ReadOnlyField(source='id')
+    status = serializers.ReadOnlyField(source='get_status_display')
     sum_insured = serializers.ReadOnlyField(source='premium.sum_insured')
     premium = serializers.ReadOnlyField(source='premium.amount')
     product = serializers.ReadOnlyField(
@@ -92,7 +95,7 @@ class QuoteSerializer(serializers.ModelSerializer):
         model = Quote
         fields = (
             'quote_id', 'lead_id', 'sum_insured', 'premium',
-            'product', 'recommendation_score'
+            'product', 'recommendation_score', 'status'
         )
 
 
@@ -221,15 +224,15 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
 
 class LeadDetailSerializer(serializers.ModelSerializer):
     lead_id = serializers.ReadOnlyField(source='id')
+    stage = serializers.ReadOnlyField(source='get_stage_display')
     phone_no = serializers.ReadOnlyField(source='contact.phone_no')
     address = serializers.ReadOnlyField(source='contact.address.full_address')
     quotes = serializers.SerializerMethodField()
 
     def get_quotes(self, obj):
         return QuoteSerializer(
-            obj.quote_set.filter(ignore=False, status='accepted'),
-            many=True).data
+            obj.quote_set.filter(ignore=False), many=True).data
 
     class Meta:
         model = Lead
-        fields = ('lead_id', 'phone_no', 'address', 'status', 'quotes')
+        fields = ('lead_id', 'phone_no', 'address', 'stage', 'quotes')
