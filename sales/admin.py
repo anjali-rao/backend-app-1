@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.contrib import admin, messages
+from django.utils.html import format_html
 
 from sales.models import (
     Quote, Application, HealthInsurance, Member,
@@ -9,6 +10,7 @@ from sales.models import (
 )
 
 from payment.models import ApplicationRequestLog
+from aggregator import PAYMENT_LINK_MAPPER
 
 from utils import constants as Constants
 
@@ -48,7 +50,7 @@ class QuoteAdmin(admin.ModelAdmin):
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = (
         'reference_no', 'application_type', 'status', 'terms_and_conditions',
-        'created')
+        'aggregator_operation', 'payment_link', 'created')
     list_filter = ('application_type', 'terms_and_conditions', 'status')
     raw_id_fields = ('client', 'quote')
     search_fields = (
@@ -80,8 +82,7 @@ class ApplicationAdmin(admin.ModelAdmin):
         for query in queryset:
             try:
                 query.aggregator_operation()
-                msz = Constants.SEND_TO_AGGREGATOR % (
-                    query.reference_no)
+                msz = Constants.SEND_TO_AGGREGATOR % (query.reference_no)
                 message_class = messages.SUCCESS
             except Exception as e:
                 msz = Constants.FAILED_TO_SEND_TO_AGGREGATOR % (
@@ -101,6 +102,22 @@ class ApplicationAdmin(admin.ModelAdmin):
                     query.reference_no, str(e))
                 message_class = messages.ERROR
             self.message_user(request, msz, message_class)
+
+    def aggregator_operation(self, obj):
+        filename = 'Yes' if hasattr(obj, 'application') else 'No'
+        return format_html(
+            '<img src="/static/admin/img/icon-{0}.svg" alt="True">', filename)
+
+    def payment_link(self, obj):
+        if hasattr(obj, 'application'):
+            if obj.application.payment_ready:
+                link = 'https://payment.goplannr.com/health/%s/%s' % (
+                    PAYMENT_LINK_MAPPER.get(obj.application.company_name),
+                    obj.application.id)
+                return format_html('<a href="{0}">{0}</a>', link)
+            return format_html(
+                '<img src="/static/admin/img/icon-No.svg" alt="True">')
+        return None
 
 
 @admin.register(Member)

@@ -100,10 +100,8 @@ class RetrieveUpdateApplicationMembers(
                 from sales.tasks import update_insurance_fields
                 # To Dos' Use Celery
                 update_insurance_fields(application_id=application.id)
-                adults = application.active_members.filter(
-                    dob__year__lte=(now().year - 18)).count()
                 application.switch_premium(
-                    adults, application.active_members.count() - adults)
+                    application.adults, application.childrens)
                 application.member_set.filter(ignore=None).update(ignore=True)
         except (IntegrityError, mixins.RecommendationException) as e:
             raise mixins.APIException(e)
