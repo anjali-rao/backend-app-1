@@ -29,6 +29,7 @@ class Lead(BaseModel):
         choices=constants.LEAD_STAGE_CHOICES, default='new', max_length=32)
     # notes = models.ManyToManyField(Note)
     final_score = models.FloatField(default=0.0, db_index=True)
+    bookmark = models.BooleanField(default=False)
     effective_age = models.IntegerField(default=0)
     tax_saving = models.FloatField(default=0.30)
     wellness_rewards = models.FloatField(default=0.10)
@@ -39,11 +40,15 @@ class Lead(BaseModel):
     childrens = models.IntegerField(default=0)
     family = JSONField(default=dict)
 
+    class Meta:
+        ordering = ('-bookmark',)
+
     def save(self, *args, **kwargs):
         try:
             current = self.__class__.objects.get(pk=self.id)
             if self.final_score != current.final_score:
                 self.refresh_quote_data()
+                self.stage = 'inprogress'
             if not current.family and self.family:
                 self.parse_family_json()
         except Lead.DoesNotExist:
