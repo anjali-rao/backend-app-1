@@ -217,11 +217,8 @@ class GetPlaylist(generics.ListAPIView):
 
 
 class UpdateUser(generics.UpdateAPIView):
-    #authentication_classes = (UserAuthentication,)
+    authentication_classes = (UserAuthentication,)
     serializer_class = UpdateUserSerializer
-    queryset = User.objects.all()
 
     def get_object(self):
-        import pdb; pdb.set_trace()
-        return User.objects.last()
         return self.request.user
