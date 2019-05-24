@@ -11,9 +11,8 @@ from sales.serializers import (
     Application, UpdateContactDetailsSerializer, Contact,
     GetApplicationMembersSerializer, CreateMemberSerializers,
     CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
-    TravalInsuranceSerializer, TermsSerializer, get_insurance_serializer,
-    ExistingPolicySerializer, GetInsuranceFieldsSerializer,
-    ApplicationSummarySerializer
+    TravalInsuranceSerializer, TermsSerializer, ExistingPolicySerializer,
+    GetInsuranceFieldsSerializer, ApplicationSummarySerializer
 )
 
 from django.core.exceptions import ValidationError

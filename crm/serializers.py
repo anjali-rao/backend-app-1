@@ -72,7 +72,8 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
         fields = dict.fromkeys(Constants.CATEGORY_LEAD_FIELDS_MAPPER[
             self.instance.category_name], None)
         for field in fields.keys():
-            fields[field] = validated_data.get(field, None)
+            fields[field] = validated_data.get(field, getattr(
+                category_lead, field))
         category_lead.update_fields(**fields)
         return category_lead
 
