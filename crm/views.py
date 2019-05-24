@@ -5,11 +5,10 @@ from rest_framework import generics
 from utils import mixins, constants
 
 from users.decorators import UserAuthentication
-from crm.models import Lead
 from crm.serializers import (
     QuoteSerializer, QuoteDetailsSerializer, Quote,
     QuotesCompareSerializer, QuoteRecommendationSerializer,
-    CreateUpdateLeadSerializer, LeadDetailSerializer
+    CreateUpdateLeadSerializer, LeadDetailSerializer, Lead
 )
 
 from django.db import transaction, IntegrityError
@@ -38,8 +37,11 @@ class GetQuotes(generics.ListAPIView):
         try:
             lead = Lead.objects.get(id=self.request.query_params['lead'])
             if 'suminsured' in self.request.query_params:
-                lead.final_score = self.request.query_params['suminsured']
-                lead.save()
+                category_lead = lead.category_lead
+                category_lead.predicted_suminsured = self.request.query_params[
+                    'suminsured']
+                category_lead.save()
+            lead.refresh_from_db()
             queryset = lead.get_quotes()
             if not queryset.exists():
                 raise mixins.NotFound(constants.NO_QUOTES_FOUND)

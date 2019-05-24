@@ -33,10 +33,10 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     suminsured=quote.premium.sum_insured)
                 lead = quote.lead
                 contact, created = Contact.objects.get_or_create(
-                    phone_no=validated_data['contact_no'])
+                    phone_no=validated_data['contact_no'],
+                    user_id=lead.user.id)
                 if created:
-                    contact.update_fields(**dict(
-                        user_id=lead.user.id, first_name=full_name[0]))
+                    contact.update_fields(**dict(first_name=full_name[0]))
                 lead.update_fields(**dict(
                     contact_id=contact.id, status='inprogress', stage='cart'))
             return instance
@@ -130,12 +130,13 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                 application_id=app.id, relation='self')
             if self.instance.phone_no != validated_data['phone_no']:
                 instances = self.Meta.model.objects.filter(
-                    phone_no=validated_data['phone_no'])
+                    phone_no=validated_data['phone_no'],
+                    user_id=validated_data['user_id'])
                 if instances.exists():
                     self.instance = instances.latest('modified')
                 else:
                     self.instance = None
-                    update_fields['user_id'] = app.quote.lead.user.id
+                    update_fields['user_id'] = validated_data['user_id']
             elif members.exists():
                 member = members.get()
                 member.update_fields(**dict(
@@ -152,7 +153,8 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             kycdocument.save()
             self.instance.update_fields(**update_fields)
             app.update_fields(**dict(
-                status='pending', client_id=self.instance.id))
+                status='pending', client_id=self.instance.id,
+                stage='insured_members'))
 
     def create(self, valid_data):
         """

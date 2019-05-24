@@ -124,3 +124,7 @@ class Coverages(BaseModel):
         'product.CompanyCategory', on_delete=models.CASCADE)
     name = models.CharField(max_length=64)
     description = models.TextField()
+
+
+class Notes(BaseModel):
+    text = models.TextField()

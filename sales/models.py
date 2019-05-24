@@ -111,31 +111,8 @@ class Application(BaseModel):
                     reference_no=self.reference_no).exists():
                 self.reference_no = genrate_random_string(10)
 
-    def switch_premium(self, adults, childrens):
-        lead = self.quote.lead
-        data = dict(
-            effective_age=now().year - self.active_members.aggregate(
-                s=models.Max('dob'))['s'].year, adults=adults,
-            product_variant_id=self.quote.premium.product_variant_id,
-            childrens=childrens
-        )
-        print(data)
-        for member in Constants.RELATION_CHOICES:
-            members = self.active_members.filter(relation=member)
-            if members.exists() and member not in ['son', 'daughter']:
-                data['%s_age' % (member)] = members.get().age
-        data['customer_segment_id'] = lead.get_customer_segment(**data).id
-        self.quote.lead.refresh_quote_data(**data)
-        quote = lead.get_quotes().first()
-        if not quote:
-            raise RecommendationException('No quote found for this creteria')
-        self.quote_id = quote.id
-        self.premium = quote.premium.amount
-        self.suminsured = quote.premium.sum_insured
-        self.save()
-
     def add_default_members(self):
-        lead = self.quote.lead
+        lead = self.quote.lead.category_lead
         today = now()
         members = list()
 
@@ -338,6 +315,29 @@ class HealthInsurance(Insurance):
         for field in Constants.HEALTHINSURANCE_FIELDS:
             setattr(self, field, kw)
         self.save()
+
+    def switch_premium(self, adults, childrens):
+        lead = self.application.quote.lead
+        data = dict(
+            effective_age=now().year - self.application.active_members.aggregate(
+                s=models.Max('dob'))['s'].year, adults=adults,
+            product_variant_id=self.application.quote.premium.product_variant_id,
+            childrens=childrens
+        )
+        for member in Constants.RELATION_CHOICES:
+            members = self.application.active_members.filter(relation=member)
+            if members.exists() and member not in ['son', 'daughter']:
+                data['%s_age' % (member)] = members.get().age
+        data['customer_segment_id'] = lead.category_lead.get_customer_segment(
+            **data).id
+        lead.refresh_quote_data(**data)
+        quote = lead.get_quotes().first()
+        if not quote:
+            raise RecommendationException('No quote found for this creteria')
+        self.application.quote_id = quote.id
+        self.application.premium = quote.premium.amount
+        self.application.suminsured = quote.premium.sum_insured
+        self.application.save()
 
     def get_summary(self):
         response = dict()

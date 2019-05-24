@@ -219,7 +219,6 @@ class GetPlaylist(generics.ListAPIView):
 class UpdateUser(generics.UpdateAPIView):
     authentication_classes = (UserAuthentication,)
     serializer_class = UpdateUserSerializer
-    queryset = User.objects.all()
 
     def get_object(self):
         return self.request.user

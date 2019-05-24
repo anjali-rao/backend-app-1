@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from django.contrib.postgres.fields import JSONField
 
 from utils.models import BaseModel, models
 from utils import constants, get_choices, get_kyc_upload_path
 
-from sales.models import Quote
-from product.models import (
-    Premium, FeatureCustomerSegmentScore, Feature
-)
-import math
+from django.contrib.contenttypes.models import ContentType
+from django.db.models.signals import post_save
+from django.utils.timezone import now
+from django.dispatch import receiver
 
 
 class Lead(BaseModel):
@@ -17,169 +15,38 @@ class Lead(BaseModel):
     contact = models.ForeignKey(
         'crm.Contact', null=True, blank=True, on_delete=models.CASCADE)
     category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
-    customer_segment = models.ForeignKey(
-        'product.CustomerSegment', null=True, blank=True,
-        on_delete=models.CASCADE)
     campaign = models.ForeignKey(
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
-    amount = models.FloatField(default=0.0)
     status = models.CharField(
         choices=constants.LEAD_STATUS_CHOICES, default='fresh', max_length=32)
     stage = models.CharField(
         choices=constants.LEAD_STAGE_CHOICES, default='new', max_length=32)
-    # notes = models.ManyToManyField(Note)
-    final_score = models.FloatField(default=0.0, db_index=True)
-    bookmark = models.BooleanField(default=False)
-    effective_age = models.IntegerField(default=0)
-    tax_saving = models.FloatField(default=0.30)
-    wellness_rewards = models.FloatField(default=0.10)
-    health_checkups = models.FloatField(default=0.0)
     pincode = models.CharField(max_length=6, null=True)
-    adults = models.IntegerField(default=0)
-    gender = models.CharField(max_length=12, null=True)
-    childrens = models.IntegerField(default=0)
-    family = JSONField(default=dict)
+    notes = models.ManyToManyField('content.Notes', null=True, blank=True)
+    bookmark = models.BooleanField(default=False)
+    details = None
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        self.category_name = self.category.name.replace(' ', '').lower()
+        if hasattr(self, self.category_name):
+            self.category_lead = getattr(self, self.category_name)
 
     class Meta:
         ordering = ('-bookmark',)
 
-    def save(self, *args, **kwargs):
-        try:
-            current = self.__class__.objects.get(pk=self.id)
-            if self.final_score != current.final_score:
-                self.refresh_quote_data()
-                self.stage = 'inprogress'
-            if not current.family and self.family:
-                self.parse_family_json()
-        except Lead.DoesNotExist:
-            if self.family:
-                self.parse_family_json()
-        super(Lead, self).save(*args, **kwargs)
-
-    def parse_family_json(self):
-        ages = list(map(int, self.family.values()))
-        if 'daughter_total' in self.family:
-            self.childrens += self.family['daughter_total']
-            ages.remove(int(self.family['daughter_total']))
-        if 'son_total' in self.family:
-            self.childrens += self.family['son_total']
-            ages.remove(int(self.family['son_total']))
-        self.effective_age = int(max(ages))
-        self.adults = len(ages)
-        self.customer_segment_id = self.get_customer_segment().id
-
-    def calculate_final_score(self):
-        from questionnaire.models import Response
-        self.final_score = math.ceil(
-            Response.objects.select_related('answer').filter(
-                lead_id=self.id).aggregate(
-                s=models.Sum('answer__score'))['s'])
-        if self.final_score <= 3:
-            self.final_score = 3
-        elif self.final_score <= 5:
-            self.final_score = 5
-        elif self.final_score <= 7:
-            self.final_score = 7
-        elif self.final_score <= 10:
-            self.final_score = 10
-        elif self.final_score <= 20:
-            self.final_score = 20
-        else:
-            self.final_score = 50
-        self.final_score *= 100000
-        self.save()
+    def calculate_predicted_suminsured(self):
+        self.category_lead.calculate_predicted_suminsured()
 
     def get_premiums(self, **kw):
-        query = dict()
-        queryset = Premium.objects.select_related('product_variant').filter(
-            sum_insured=kw.get('score', self.final_score),
-            adults=kw.get('adults', self.adults),
-            citytier__in=kw.get('citytier', self.citytier)
-        )
-        if 'product_variant_id' in kw:
-            query['product_variant_id'] = kw['product_variant_id']
-        if 'category_id' in kw:
-            query['product_variant__company_category__category_id'] = kw['category_id'] # noqa
-        if kw.get('childrens', self.childrens) <= 4:
-            query['childrens'] = kw.get('childrens', self.childrens)
-        query.update(dict(
-            age_range__contains=kw.get('effective_age', self.effective_age),
-            product_variant__company_category__company_id__in=self.companies_id
-        ))
-        premiums = queryset.filter(**query)
-        if not premiums.exists():
-            query.pop('product_variant__company_category__company_id__in')
-            premiums = queryset.filter(**query)
-        return premiums or queryset[:5]
+        return self.category_lead.get_premiums()
 
     def refresh_quote_data(self, **kw):
-        quotes = self.get_quotes()
-        if quotes.exists():
-            quotes.update(ignore=True)
-        for premium in self.get_premiums(**kw):
-            feature_masters = premium.product_variant.feature_set.values_list(
-                'feature_master_id', flat=True)
-            quote = Quote.objects.create(
-                lead_id=self.id, premium_id=premium.id)
-            changed_made = False
-            for feature_master_id in feature_masters:
-                feature_score = FeatureCustomerSegmentScore.objects.only(
-                    'score', 'feature_master_id').filter(
-                        feature_master_id=feature_master_id,
-                        customer_segment_id=kw.get(
-                            'customer_segment_id', self.customer_segment.id)
-                ).last()
-                if feature_score is not None:
-                    if not changed_made:
-                        changed_made = False
-                    quote.recommendation_score += float(Feature.objects.filter(
-                        feature_master_id=feature_master_id).aggregate(
-                            s=models.Sum('rating'))['s'] * feature_score.score)
-            if changed_made:
-                quote.save()
-
-    def get_customer_segment(self, **kw):
-        from product.models import CustomerSegment
-        from questionnaire.models import Response
-        responses = Response.objects.select_related(
-            'answer', 'question').filter(lead_id=self.id)
-        segment_name = 'young_adult'
-        effective_age = kw.get('effective_age', self.effective_age)
-        childrens = kw.get('childrens', self.childrens)
-        if 'self_age' in kw:
-            age = int(kw['self_age'])
-            if age <= 35:
-                segment_name = 'young_adult'
-            if any(x in kw for x in ['mother_age', 'father_age']) and age < 35:
-                segment_name = 'young_adult_with_dependent_parents'
-            if age > 50:
-                segment_name = 'senior_citizens'
-            if 'spouse_age' in kw:
-                if age < 35:
-                    segment_name = 'young_couple'
-                if age > 50:
-                    segment_name = 'senior_citizens'
-                if childrens >= 1 and age < 40:
-                    segment_name = 'young_family'
-                if childrens >= 1 and age < 60:
-                    segment_name = 'middle_aged_family'
-            emp_resp = responses.filter(question__title='Occupation')
-            if emp_resp.exists() and emp_resp.filter(
-                    answer__answer='Self Employed or Business').exists():
-                segment_name = 'self_employed'
-        if effective_age < 40 and effective_age >= 1:
-            segment_name = 'young_family'
-        elif effective_age <= 35 and kw.get('adults', self.adults) == 1:
-            segment_name = 'young_adult'
-        elif effective_age <= 35 and kw.get('adults', self.adults) == 2:
-            segment_name = 'young_couple'
-        elif effective_age < 60 and childrens >= 1:
-            segment_name = 'middle_aged_family'
-        elif effective_age >= 50:
-            segment_name = 'senior_citizens'
-        return CustomerSegment.objects.only('id').get(name=segment_name)
+        return self.category_lead.refresh_quote_data()
 
     def get_quotes(self):
+        self.stage = 'quote'
+        self.save()
         return self.quote_set.filter(ignore=False)
 
     def get_recommendated_quotes(self):
@@ -211,6 +78,11 @@ class Lead(BaseModel):
         return "%s - %s" % (
             self.contact.first_name if self.contact else 'Contact Pending',
             self.category.name)
+
+    def create_category_lead(self):
+        ContentType.objects.get(
+            model=self.category_name, app_label='crm'
+        ).model_class().objects.create(base_id=self.id)
 
 
 class Contact(BaseModel):
@@ -265,3 +137,9 @@ class KYCDocument(BaseModel):
         choices=get_choices(constants.KYC_DOC_TYPES), max_length=16)
     file = models.FileField(
         upload_to=get_kyc_upload_path, null=True, blank=True)
+
+
+@receiver(post_save, sender=Lead, dispatch_uid="action%s" % str(now()))
+def lead_post_save(sender, instance, created, **kwargs):
+    if created:
+        instance.create_category_lead()
