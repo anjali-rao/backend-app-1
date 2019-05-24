@@ -20,7 +20,6 @@ from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.db import transaction, IntegrityError
 from django.shortcuts import get_object_or_404 as _get_object_or_404
-from django.utils.timezone import now
 
 
 class CreateApplication(generics.CreateAPIView):
@@ -64,7 +63,9 @@ class RetrieveUpdateProposerDetails(
         return self._obj
 
     def perform_update(self, serializer):
-        serializer.save(application_id=self.kwargs['pk'])
+        serializer.save(
+            application_id=self.kwargs['pk'],
+            user_id=self.request.user.id)
 
 
 class RetrieveUpdateApplicationMembers(
@@ -100,9 +101,12 @@ class RetrieveUpdateApplicationMembers(
                 from sales.tasks import update_insurance_fields
                 # To Dos' Use Celery
                 update_insurance_fields(application_id=application.id)
-                application.switch_premium(
+                getattr(
+                    application, application.application_type).switch_premium(
                     application.adults, application.childrens)
                 application.member_set.filter(ignore=None).update(ignore=True)
+                application.refresh_from_db()
+                application.update_fields(**dict(stage='nominee_details'))
         except (IntegrityError, mixins.RecommendationException) as e:
             raise mixins.APIException(e)
         return Response(dict(
@@ -119,7 +123,10 @@ class CreateApplicationNominee(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         with transaction.atomic():
-            serializer.save(application_id=self.get_object().id)
+            app = self.get_object()
+            serializer.save(application_id=app.id)
+            app.refresh_from_db()
+            app.update_fields(**dict(stage='health_details'))
 
 
 class CreateExistingPolicies(generics.CreateAPIView):
@@ -150,12 +157,14 @@ class UpdateInsuranceFields(generics.UpdateAPIView):
         )
         filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
         try:
-            application = _get_object_or_404(queryset, **filter_kwargs)
-            self.application_type = application.application_type
-            if not hasattr(application, application.application_type):
+            self.application = _get_object_or_404(queryset, **filter_kwargs)
+            self.application_type = self.application.application_type
+            if not hasattr(
+                    self.application, self.application.application_type):
                 self._obj = Http404
             else:
-                self._obj = getattr(application, application.application_type)
+                self._obj = getattr(
+                    self.application, self.application.application_type)
         except (TypeError, ValueError, ValidationError):
             self._obj = Http404
         # May raise a permission denied
@@ -169,6 +178,12 @@ class UpdateInsuranceFields(generics.UpdateAPIView):
             return serializer_cls
 
         raise mixins.APIException(constants.APPLICATION_UNMAPPED)
+
+    def perform_update(self, serializer):
+        with transaction.atomic():
+            serializer.save()
+            self.application.stage = 'summary'
+            self.application.save()
 
 
 class GetInsuranceFields(generics.RetrieveAPIView):
@@ -227,3 +242,11 @@ class SubmitApplication(generics.UpdateAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = Application.objects.all()
     serializer_class = TermsSerializer
+
+    def perform_update(self, serializer):
+        with transaction.atomic():
+            serializer.save()
+            application = self.get_object()
+            application.refresh_from_db()
+            application.stage = 'completed'
+            application.save()

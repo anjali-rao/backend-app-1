@@ -45,6 +45,8 @@ class Lead(BaseModel):
         return self.category_lead.refresh_quote_data()
 
     def get_quotes(self):
+        self.stage = 'quote'
+        self.save()
         return self.quote_set.filter(ignore=False)
 
     def get_recommendated_quotes(self):

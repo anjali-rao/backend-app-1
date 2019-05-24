@@ -5,12 +5,12 @@ from crm.models import Lead, Contact
 from sales.models import Quote
 from utils import constants as Constants
 
-from django.db import transaction, IntegrityError
+from django.db import transaction
 
 
 class CreateUpdateLeadSerializer(serializers.ModelSerializer):
     category_id = serializers.IntegerField(required=True)
-    pincode = serializers.CharField(required=True, max_length=6)
+    pincode = serializers.CharField(required=False, max_length=6)
     gender = serializers.CharField(required=False)
     family = serializers.JSONField(required=False)
     stage = serializers.CharField(required=False)
