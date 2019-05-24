@@ -57,13 +57,15 @@ class AdityaBirlaPaymentCapture(views.View):
             request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        from aggregator.wallnut.models import Application
+        app = Application.objects.get(id=request.GET['application_id'])
         ApplicationRequestLog.objects.create(
-            application_id=kwargs.get('application_id'),
-            url=request.url, response=request.POST.dict(),
-            request_type=request.METHOD
+            application_id=app.reference_app.id,
+            url=request.build_absolute_uri(), response=request.POST.dict(),
+            request_type=request.method
         )
         Payment.objects.create(
-            application_id=kwargs.get('application_id'),
+            application_id=app.reference_app.id,
             merchant_txn_id=request.POST['merchantTxnId'],
             amount=request.POST['amount'],
             payment_mode=request.POST['paymentMode'],
@@ -73,7 +75,8 @@ class AdityaBirlaPaymentCapture(views.View):
             response=request.POST.dict()
         )
         import requests
-        requests.post(self.capture_url, data=request.POST)
+        response = requests.post(
+            self.capture_url, data=request.POST)
         return HttpResponse("Payment successfully processed.")
 
 

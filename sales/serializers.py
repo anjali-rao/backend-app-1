@@ -33,7 +33,8 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     suminsured=quote.premium.sum_insured)
                 lead = quote.lead
                 contact, created = Contact.objects.get_or_create(
-                    phone_no=validated_data['contact_no'])
+                    phone_no=validated_data['contact_no'],
+                    user_id=lead.user.id)
                 if created:
                     contact.update_fields(**dict(
                         user_id=lead.user.id, first_name=full_name[0]))

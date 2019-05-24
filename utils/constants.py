@@ -1,4 +1,5 @@
 # Choices  ==================================
+
 GENDER = ('male', 'female', 'transgender')
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
 OCCUPATION_CHOICES = (
@@ -157,6 +158,7 @@ INVALID_LEAD_STAGE = 'Invalid lead stage'
 PASSWORD_NOT_SET = 'Password is not set.'
 PAYMENT_LINK_GENERATION_FAILED = 'Failed to generate payment link for application (%s), due to exception:%s' # noqa
 FAILED_TO_SEND_TO_AGGREGATOR = 'Failed to send application (%s) to aggregator due to exception: %s' # noqa
+CONTACT_DETAILS_REQUIRED = 'Contact name and Contact phone_no is required'
 
 
 # Creation Fields  ==================================
@@ -166,13 +168,12 @@ ACCOUNT_CREATION_FIELDS = (
     'address_id', 'pan_no', 'fcm_id'
 )
 ACCOUNT_UPDATION_FIELDS = (
-    'first_name', 'last_name', 'email', 'address_id', 'pan_no',
-)
+    'first_name', 'last_name', 'email', 'address_id', 'pan_no')
 ADDRESS_UPDATE_FIELDS = ['flat_no', 'street', 'landmark']
 CONTACT_CREATION_FIELDS = (
     'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
-    'occupation', 'marital_status', 'email'
-)
+    'occupation', 'marital_status', 'email')
+GENERIC_LEAD_FIELDS = ('category_id', 'pincode', 'bookmark', 'user_id')
 
 
 # Upload paths  ==================================
@@ -198,3 +199,9 @@ ENT_DISEASE = 'Disease of Eye, Ear, Nose, Throat, Thyroid'
 CARDIOVASCULAR_DISEASE = 'Tuberculosis (TB), any Respiratory / Lung disease'
 RESPIRATORY_DISEASES = 'Any form of Heart Disease, Peripheral Vascular Disease, procedures like Angioplasty/PTCA/By Pass Surgery, valve replacement etc' # noqa
 BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Blood disorder (whether treated or not)' # noqa
+
+
+# Category Lead - Mapper  ==================================
+CATEGORY_LEAD_FIELDS_MAPPER = dict(
+    healthinsurance=['gender', 'family', 'effective_age']
+)

@@ -5,11 +5,10 @@ from rest_framework import generics
 from utils import mixins, constants
 
 from users.decorators import UserAuthentication
-from crm.models import Lead
 from crm.serializers import (
     QuoteSerializer, QuoteDetailsSerializer, Quote,
     QuotesCompareSerializer, QuoteRecommendationSerializer,
-    CreateUpdateLeadSerializer, LeadDetailSerializer
+    CreateUpdateLeadSerializer, LeadDetailSerializer, Lead
 )
 
 from django.db import transaction, IntegrityError

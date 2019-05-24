@@ -43,12 +43,13 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
                         data=response)
                     ans_serializer.is_valid(raise_exception=True)
                     ans_serializer.save(lead_id=lead.id)
-                lead.calculate_final_score()
+                lead.calculate_predicted_suminsured()
             return Response(
                 QuoteRecommendationSerializer(
                     lead.get_recommendated_quotes(), many=True).data,
                 status=status.HTTP_201_CREATED)
-        except IntegrityError:
+        except IntegrityError as e:
+            print(e)
             pass
         raise APIException(
             'Unable to process request currently. Please try again')
