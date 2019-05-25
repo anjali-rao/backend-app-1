@@ -43,7 +43,7 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
                         data=response)
                     ans_serializer.is_valid(raise_exception=True)
                     ans_serializer.save(lead_id=lead.id)
-                lead.calculate_predicted_suminsured()
+                lead.calculate_suminsured()
             return Response(
                 QuoteRecommendationSerializer(
                     lead.get_recommendated_quotes(), many=True).data,

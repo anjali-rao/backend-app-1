@@ -7,7 +7,7 @@ import math
 
 from questionnaire.models import Response
 from product.models import (
-    Premium, FeatureCustomerSegmentScore, Feature
+    HealthPremium, FeatureCustomerSegmentScore, Feature
 )
 from sales.models import Quote
 
@@ -55,7 +55,7 @@ class HealthInsurance(models.Model):
         self.adults = len(ages)
         self.customer_segment_id = self.get_customer_segment().id
 
-    def calculate_predicted_suminsured(self):
+    def calculate_suminsured(self):
         score = math.ceil(
             Response.objects.select_related('answer').filter(
                 lead_id=self.base_id).aggregate(
@@ -117,7 +117,8 @@ class HealthInsurance(models.Model):
 
     def get_premiums(self, **kw):
         query = dict()
-        queryset = Premium.objects.select_related('product_variant').filter(
+        queryset = HealthPremium.objects.select_related(
+            'product_variant').filter(
             sum_insured=kw.get('score', self.predicted_suminsured),
             adults=kw.get('adults', self.adults),
             citytier__in=kw.get('citytier', self.base.citytier)
