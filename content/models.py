@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
-from utils import get_choices, constants
+from utils import get_choices, constants as Constants
 from product.models import Category
 
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -31,9 +31,9 @@ class HelpFile(BaseModel):
     title = models.CharField(max_length=62, null=True, blank=True)
     product_variant = models.ForeignKey(
         'product.ProductVariant', on_delete=models.CASCADE)
-    file = models.FileField(upload_to=constants.HELP_FILES_PATH)
+    file = models.FileField(upload_to=Constants.HELP_FILES_PATH)
     file_type = models.CharField(
-        choices=get_choices(constants.HELP_FILES_TYPE),
+        choices=get_choices(Constants.HELP_FILES_TYPE),
         default="all", max_length=32
     )
 
@@ -83,7 +83,7 @@ class PromoBook(BaseModel):
 
     def save(self, *args, **kwargs):
         from users.tasks import send_sms
-        send_sms(self.phone_no, constants.PROMO_MESSAGE % self.phone_no)
+        send_sms(self.phone_no, Constants.PROMO_MESSAGE % self.phone_no)
         super(PromoBook, self).save(*args, **kwargs)
 
 
@@ -91,7 +91,7 @@ class Playlist(BaseModel):
     name = models.CharField(max_length=32)
     url = models.URLField()
     playlist_type = models.CharField(
-        max_length=32, choices=get_choices(constants.PLAYLIST_CHOICES))
+        max_length=32, choices=get_choices(Constants.PLAYLIST_CHOICES))
 
     def __str__(self):
         return '%s | %s: %s' % (self.name, self.playlist_type, self.url)

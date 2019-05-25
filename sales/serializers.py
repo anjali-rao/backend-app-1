@@ -6,7 +6,7 @@ from sales.models import (
 )
 from crm.models import Contact, KYCDocument
 from users.models import Pincode, Address
-from utils import constants, mixins
+from utils import constants as Constants, mixins
 
 from django.db import transaction, IntegrityError
 
@@ -19,7 +19,7 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
 
     def validate_quote_id(self, value):
         if not Quote.objects.filter(id=value).exists():
-            raise serializers.ValidationError(constants.INVALID_QUOTE_ID)
+            raise serializers.ValidationError(Constants.INVALID_QUOTE_ID)
         return value
 
     def create(self, validated_data):
@@ -42,9 +42,9 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
             return instance
         except IntegrityError as e:
             raise mixins.NotAcceptable(
-                constants.APPLICATION_ALREAY_EXISTS)
+                Constants.APPLICATION_ALREAY_EXISTS)
         raise mixins.NotAcceptable(
-            constants.FAILED_APPLICATION_CREATION)
+            Constants.FAILED_APPLICATION_CREATION)
 
     class Meta:
         model = Application
@@ -109,7 +109,7 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
 
     def validate_pincode(self, value):
         if not Pincode.get_pincode(value):
-            raise serializers.ValidationError(constants.INVALID_PINCODE)
+            raise serializers.ValidationError(Constants.INVALID_PINCODE)
         return value
 
     def save(self, **kwargs):
@@ -190,7 +190,7 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                 many_to_many[field_name] = valid_data.pop(field_name)
         validated_data = dict()
         for field_name in valid_data.keys():
-            if field_name in constants.CONTACT_CREATION_FIELDS:
+            if field_name in Constants.CONTACT_CREATION_FIELDS:
                 validated_data[field_name] = valid_data[field_name]
         try:
             instance = ModelClass._default_manager.create(**validated_data)
@@ -407,7 +407,7 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
     def get_insured_members(self, obj):
         members = sorted(
             self.instance.active_members,
-            key=lambda member: constants.MEMBER_ORDER.get(
+            key=lambda member: Constants.MEMBER_ORDER.get(
                 member.relation, 0))
         return GetApplicationMembersSerializer(
             members, many=True).data

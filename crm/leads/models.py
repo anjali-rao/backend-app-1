@@ -149,7 +149,8 @@ class HealthInsurance(models.Model):
             feature_masters = premium.product_variant.feature_set.values_list(
                 'feature_master_id', flat=True)
             quote = Quote.objects.create(
-                lead_id=self.base.id, premium_id=premium.id, content_type_id=content_id)
+                lead_id=self.base.id, premium_id=premium.id,
+                content_type_id=content_id)
             changed_made = False
             for feature_master_id in feature_masters:
                 feature_score = FeatureCustomerSegmentScore.objects.only(

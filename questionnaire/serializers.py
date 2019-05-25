@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from questionnaire.models import Question, Answer, Response
-from utils import constants
+from utils import constants as Constants
 
 
 class QuestionnSerializers(serializers.ModelSerializer):
@@ -34,20 +34,20 @@ class ResponseSerializer(serializers.Serializer):
     def validate_lead_id(self, value):
         from crm.models import Lead
         if not Lead.objects.filter(id=value).exists():
-            raise serializers.ValidationError(constants.INVALID_LEAD_ID)
+            raise serializers.ValidationError(Constants.INVALID_LEAD_ID)
         return value
 
     def validate_customer_segment_id(self, value):
         from product.models import CustomerSegment
         if not CustomerSegment.objects.filter(id=value).exists():
             raise serializers.ValidationError(
-                constants.INVALID_CUSTOMER_SEGMENT)
+                Constants.INVALID_CUSTOMER_SEGMENT)
         return value
 
     def validate_answers(self, value):
         if not value or not isinstance(value, list):
             raise serializers.ValidationError(
-                constants.ANSWER_CANNOT_BE_LEFT_BLANK
+                Constants.ANSWER_CANNOT_BE_LEFT_BLANK
             )
         serializer = QuestionnaireResponseSerializer(data=value, many=True)
         if not serializer.is_valid():
@@ -68,13 +68,13 @@ class QuestionnaireResponseSerializer(serializers.ModelSerializer):
     def validate_answer_id(self, value):
         if not Answer.objects.filter(id=value).exists():
             raise serializers.ValidationError(
-                constants.INVALID_ANSWER_ID % value)
+                Constants.INVALID_ANSWER_ID % value)
         return value
 
     def validate_question_id(self, value):
         if not Question.objects.filter(id=value).exists():
             raise serializers.ValidationError(
-                constants.INVALID_QUESTION_ID % value)
+                Constants.INVALID_QUESTION_ID % value)
         return value
 
     class Meta:
