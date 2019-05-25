@@ -7,6 +7,7 @@ from utils import constants, get_choices
 from django.utils.functional import cached_property
 from django.contrib.postgres.fields import IntegerRangeField
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.contenttypes.fields import GenericRelation
 
 
 class Category(BaseModel):
@@ -202,6 +203,9 @@ class HealthPremium(BaseModel):
     base_premium = models.FloatField(default=constants.DEFAULT_BASE_PREMIUM)
     gst = models.FloatField(default=constants.DEFAULT_GST)
     commission = models.FloatField(default=constants.DEFAULT_COMMISSION)
+    premium = GenericRelation(
+        'sales.quote', related_query_name='healthinsurance',
+        object_id_field='premium_id')
 
     def get_details(self):
         return {

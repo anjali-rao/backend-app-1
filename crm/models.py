@@ -47,7 +47,8 @@ class Lead(BaseModel):
     def get_quotes(self):
         self.stage = 'quote'
         self.save()
-        return self.quote_set.filter(ignore=False)
+        return self.quote_set.filter(ignore=False).order_by(
+            '%s__base_premium' % self.category_name)
 
     def get_recommendated_quotes(self):
         return self.get_quotes()[:5]
