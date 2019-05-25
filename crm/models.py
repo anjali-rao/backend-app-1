@@ -35,8 +35,8 @@ class Lead(BaseModel):
     class Meta:
         ordering = ('-bookmark',)
 
-    def calculate_predicted_suminsured(self):
-        self.category_lead.calculate_predicted_suminsured()
+    def calculate_suminsured(self):
+        self.category_lead.calculate_suminsured()
 
     def get_premiums(self, **kw):
         return self.category_lead.get_premiums()

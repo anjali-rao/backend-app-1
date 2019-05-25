@@ -186,7 +186,7 @@ class DeductibleMaster(BaseModel):
         return self.text
 
 
-class Premium(BaseModel):
+class HealthPremium(BaseModel):
     product_variant = models.ForeignKey(
         'product.ProductVariant', null=True, blank=True,
         on_delete=models.CASCADE)

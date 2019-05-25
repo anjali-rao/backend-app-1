@@ -88,10 +88,12 @@ class GetRecommendatedQuotes(generics.ListAPIView):
             lead = Lead.objects.get(id=self.request.query_params['lead'])
             with transaction.atomic():
                 if self.request.query_params.get('suminsured'):
-                    lead.final_score = self.request.query_params['suminsured']
-                    lead.save()
+                    lead.category_lead.update_fields(**dict(
+                        predicted_suminsured=self.request.query_params[
+                            'suminsured']))
                 elif self.request.query_params.get('reset'):
-                    lead.calculate_final_score()
+                    lead.calculate_suminsured()
+                lead.refresh_from_db()
                 return lead.get_recommendated_quotes()
         except (KeyError, Lead.DoesNotExist):
             raise mixins.APIException(constants.LEAD_ERROR)

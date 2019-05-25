@@ -23,7 +23,8 @@ class Quote(BaseModel):
         max_length=16, choices=Constants.STATUS_CHOICES,
         default='pending')
     premium = models.ForeignKey(
-        'product.Premium', null=True, blank=True, on_delete=models.CASCADE)
+        'product.HealthPremium', null=True, blank=True,
+        on_delete=models.CASCADE)
     recommendation_score = models.FloatField(default=0.0)
     ignore = models.BooleanField(default=False)
 
