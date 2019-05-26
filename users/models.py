@@ -3,8 +3,7 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import (
-    constants, get_choices, get_upload_path, genrate_random_string
-)
+    constants as Constants, get_choices, get_upload_path, genrate_random_string)
 
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.contrib.auth.models import AbstractUser
@@ -32,7 +31,7 @@ class Account(AbstractUser):
     fcm_id = models.CharField(max_length=256, null=True)
     dob = models.DateField(null=True, blank=True)
     gender = models.CharField(
-        choices=get_choices(constants.GENDER), max_length=8,
+        choices=get_choices(Constants.GENDER), max_length=8,
         null=True, blank=True)
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
@@ -70,7 +69,7 @@ class Account(AbstractUser):
         from users.tasks import send_sms
         return send_sms(
             phone_no,
-            constants.OTP_MESSAGE % cls.generate_otp(phone_no))
+            Constants.OTP_MESSAGE % cls.generate_otp(phone_no))
 
     @staticmethod
     def generate_otp(phone_no):
@@ -78,7 +77,7 @@ class Account(AbstractUser):
         otp = cache.get('OTP:%s' % phone_no)
         if not otp:
             otp = random.randint(1000, 9999)
-            cache.set('OTP:%s' % phone_no, otp, constants.OTP_TTL)
+            cache.set('OTP:%s' % phone_no, otp, Constants.OTP_TTL)
         return otp
 
     @staticmethod
@@ -119,11 +118,11 @@ class User(BaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     account = models.ForeignKey('users.Account', on_delete=models.CASCADE)
     user_type = models.CharField(
-        choices=get_choices(constants.USER_TYPE), max_length=16,
-        default=constants.DEFAULT_USER_TYPE)
+        choices=get_choices(Constants.USER_TYPE), max_length=16,
+        default=Constants.DEFAULT_USER_TYPE)
     campaign = models.ForeignKey(
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
-    flag = JSONField(default=constants.USER_FLAG)
+    flag = JSONField(default=Constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
     manager_id = models.CharField(max_length=48, null=True)
     rating = models.IntegerField(default=5)
@@ -191,10 +190,10 @@ class User(BaseModel):
                 id=category.id, hexa_code=category.hexa_code,
                 name=category.name.split(' ')[0], is_active=category.is_active,
                 logo=(
-                    constants.DEBUG_HOST if DEBUG else '') + category.logo.url
+                    Constants.DEBUG_HOST if DEBUG else '') + category.logo.url
             ))
         categories = sorted(
-            categories, key=lambda category: constants.CATEGORY_ORDER.get(
+            categories, key=lambda category: Constants.CATEGORY_ORDER.get(
                 category['name'], 1))
         return categories
 
@@ -214,16 +213,16 @@ class User(BaseModel):
         referrals = Referral.objects.filter(referral_code=code)
         if not referrals.exists():
             return {
-                'user_type': constants.DEFAULT_USER_TYPE,
+                'user_type': Constants.DEFAULT_USER_TYPE,
                 'enterprise_id': SubcriberEnterprise.objects.get(
-                    name=constants.DEFAULT_ENTERPRISE).id
+                    name=Constants.DEFAULT_ENTERPRISE).id
             }
         referral = referrals.get()
         Earning.objects.create(
             user_id=referral.user.id, earning_type='referral', amount=100)
         return {
             'enterprise_id': (referral.enterprise or SubcriberEnterprise.objects.get( # noqa
-                name=constants.DEFAULT_ENTERPRISE)).id,
+                name=Constants.DEFAULT_ENTERPRISE)).id,
         }
 
     @property
@@ -250,8 +249,8 @@ class Enterprise(BaseModel):
     categories = models.ManyToManyField('product.Category', blank=True)
     hexa_code = models.CharField(max_length=8, default='#005db1')
     logo = models.ImageField(
-        upload_to=constants.ENTERPRISE_UPLOAD_PATH,
-        default=constants.DEFAULT_LOGO)
+        upload_to=Constants.ENTERPRISE_UPLOAD_PATH,
+        default=Constants.DEFAULT_LOGO)
     person = GenericRelation(
         'users.User', related_query_name='enterprise_user',
         object_id_field='enterprise_id')
@@ -268,13 +267,13 @@ class Enterprise(BaseModel):
 
 class SubcriberEnterprise(BaseModel):
     name = models.CharField(
-        max_length=64, default=constants.DEFAULT_ENTERPRISE)
+        max_length=64, default=Constants.DEFAULT_ENTERPRISE)
     companies = models.ManyToManyField('product.Company', blank=True)
     categories = models.ManyToManyField('product.Category', blank=True)
     hexa_code = models.CharField(max_length=8, default='#005db1')
     logo = models.ImageField(
-        upload_to=constants.ENTERPRISE_UPLOAD_PATH,
-        default=constants.DEFAULT_LOGO)
+        upload_to=Constants.ENTERPRISE_UPLOAD_PATH,
+        default=Constants.DEFAULT_LOGO)
     person = GenericRelation(
         'users.User', related_query_name='subscriber_enterprise_user',
         object_id_field='enterprise_id')
@@ -318,7 +317,7 @@ class Referral(BaseModel):
 class Document(BaseModel):
     account = models.ForeignKey('users.Account', on_delete=models.CASCADE)
     doc_type = models.CharField(
-        choices=get_choices(constants.DOC_TYPES), max_length=16)
+        choices=get_choices(Constants.DOC_TYPES), max_length=16)
     file = models.FileField(upload_to=get_upload_path)
 
     def __str__(self):
@@ -422,7 +421,7 @@ class Earning(BaseModel):
         'sales.Quote', on_delete=models.CASCADE, null=True, blank=True)
     amount = models.FloatField(default=0.0)
     earning_type = models.CharField(
-        choices=get_choices(constants.EARNING_TYPES), max_length=16)
+        choices=get_choices(Constants.EARNING_TYPES), max_length=16)
     sub_type = models.CharField(max_length=32, null=True)
     paid = models.BooleanField(default=False)
 
@@ -458,7 +457,7 @@ def user_post_save(sender, instance, created, **kwargs):
 def account_post_save(sender, instance, created, **kwargs):
     if created:
         message = {
-            'message': constants.USER_CREATION_MESSAGE % (
+            'message': Constants.USER_CREATION_MESSAGE % (
                 instance.phone_no), 'type': 'sms'
         }
         instance.send_notification(**message)

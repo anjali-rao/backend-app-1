@@ -2,21 +2,22 @@
 from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
-from utils import constants, get_choices
+from utils import constants as Constants, get_choices
 
 from django.utils.functional import cached_property
 from django.contrib.postgres.fields import IntegerRangeField
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.contenttypes.fields import GenericRelation
 
 
 class Category(BaseModel):
     name = models.CharField(max_length=128, db_index=True)
     description = models.TextField(null=True, blank=True)
     logo = models.ImageField(
-        upload_to=constants.CATEGORY_UPLOAD_PATH,
-        default=constants.DEFAULT_LOGO)
+        upload_to=Constants.CATEGORY_UPLOAD_PATH,
+        default=Constants.DEFAULT_LOGO)
     hexa_code = models.CharField(
-        max_length=8, default=constants.DEFAULT_HEXA_CODE)
+        max_length=8, default=Constants.DEFAULT_HEXA_CODE)
     is_active = models.BooleanField(default=False)
 
     def __str__(self):
@@ -28,10 +29,10 @@ class Company(BaseModel):
     short_name = models.CharField(max_length=128)
     categories = models.ManyToManyField('product.Category')
     logo = models.ImageField(
-        upload_to=constants.COMPANY_UPLOAD_PATH,
-        default=constants.DEFAULT_LOGO)
+        upload_to=Constants.COMPANY_UPLOAD_PATH,
+        default=Constants.DEFAULT_LOGO)
     hexa_code = models.CharField(
-        max_length=8, default=constants.DEFAULT_HEXA_CODE)
+        max_length=8, default=Constants.DEFAULT_HEXA_CODE)
     website = models.URLField(null=True, blank=True)
     spoc = models.TextField(null=True, blank=True)
     toll_free_number = ArrayField(
@@ -86,7 +87,7 @@ class ProductVariant(BaseModel):
     def logo(self):
         from goplannr.settings import DEBUG
         return (
-            constants.DEBUG_HOST if DEBUG else ''
+            Constants.DEBUG_HOST if DEBUG else ''
         ) + self.company_category.company.logo.url
 
     @cached_property
@@ -126,7 +127,7 @@ class FeatureMaster(BaseModel):
     order = models.IntegerField(default=1)
     feature_type = models.CharField(
         max_length=32, default='Others',
-        choices=get_choices(constants.FEATURE_TYPES))
+        choices=get_choices(Constants.FEATURE_TYPES))
     short_description = models.CharField(max_length=128, null=True, blank=True)
     long_description = models.TextField(null=True, blank=True)
 
@@ -199,9 +200,12 @@ class HealthPremium(BaseModel):
     childrens = models.IntegerField(null=True, blank=True, db_index=True)
     citytier = models.CharField(
         max_length=256, null=True, blank=True)
-    base_premium = models.FloatField(default=constants.DEFAULT_BASE_PREMIUM)
-    gst = models.FloatField(default=constants.DEFAULT_GST)
-    commission = models.FloatField(default=constants.DEFAULT_COMMISSION)
+    base_premium = models.FloatField(default=Constants.DEFAULT_BASE_PREMIUM)
+    gst = models.FloatField(default=Constants.DEFAULT_GST)
+    commission = models.FloatField(default=Constants.DEFAULT_COMMISSION)
+    premium = GenericRelation(
+        'sales.quote', related_query_name='healthinsurance',
+        object_id_field='premium_id')
 
     def get_details(self):
         return {

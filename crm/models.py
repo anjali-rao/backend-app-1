@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
-from utils import constants, get_choices, get_kyc_upload_path
+from utils import constants as Constants, get_choices, get_kyc_upload_path
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
@@ -18,9 +18,9 @@ class Lead(BaseModel):
     campaign = models.ForeignKey(
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
     status = models.CharField(
-        choices=constants.LEAD_STATUS_CHOICES, default='fresh', max_length=32)
+        choices=Constants.LEAD_STATUS_CHOICES, default='fresh', max_length=32)
     stage = models.CharField(
-        choices=constants.LEAD_STAGE_CHOICES, default='new', max_length=32)
+        choices=Constants.LEAD_STAGE_CHOICES, default='new', max_length=32)
     pincode = models.CharField(max_length=6, null=True)
     notes = models.ManyToManyField('content.Notes', null=True, blank=True)
     bookmark = models.BooleanField(default=False)
@@ -47,7 +47,8 @@ class Lead(BaseModel):
     def get_quotes(self):
         self.stage = 'quote'
         self.save()
-        return self.quote_set.filter(ignore=False)
+        return self.quote_set.filter(ignore=False).order_by(
+            '%s__base_premium' % self.category_name)
 
     def get_recommendated_quotes(self):
         return self.get_quotes()[:5]
@@ -67,8 +68,8 @@ class Lead(BaseModel):
     @property
     def citytier(self):
         if self.pincode in constants.NCR_PINCODES or self.city in constants.MUMBAI_AREA_TIER: # noqa
-            return constants.MUMBAI_NCR_TIER
-        return constants.ALL_INDIA_TIER
+            return Constants.MUMBAI_NCR_TIER
+        return Constants.ALL_INDIA_TIER
 
     @property
     def companies_id(self):
@@ -91,7 +92,7 @@ class Contact(BaseModel):
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
     gender = models.CharField(
-        max_length=16, choices=get_choices(constants.GENDER))
+        max_length=16, choices=get_choices(Constants.GENDER))
     phone_no = models.CharField(max_length=20, null=True, blank=True)
     first_name = models.CharField(max_length=32, blank=True)
     middle_name = models.CharField(max_length=32, blank=True)
@@ -99,11 +100,11 @@ class Contact(BaseModel):
     email = models.EmailField(max_length=64, null=True, blank=True)
     dob = models.DateField(null=True, blank=True)
     occupation = models.CharField(
-        choices=get_choices(constants.OCCUPATION_CHOICES), null=True,
-        default=constants.OCCUPATION_DEFAULT_CHOICE, blank=True, max_length=32)
+        choices=get_choices(Constants.OCCUPATION_CHOICES), null=True,
+        default=Constants.OCCUPATION_DEFAULT_CHOICE, blank=True, max_length=32)
     marital_status = models.CharField(
         choices=get_choices(
-            constants.MARITAL_STATUS), max_length=32, null=True, blank=True)
+            Constants.MARITAL_STATUS), max_length=32, null=True, blank=True)
     annual_income = models.CharField(max_length=48, null=True, blank=True)
 
     def __str__(self):
@@ -134,7 +135,7 @@ class KYCDocument(BaseModel):
         'crm.Contact', on_delete=models.CASCADE, null=True, blank=True)
     document_number = models.CharField(max_length=64)
     document_type = models.CharField(
-        choices=get_choices(constants.KYC_DOC_TYPES), max_length=16)
+        choices=get_choices(Constants.KYC_DOC_TYPES), max_length=16)
     file = models.FileField(
         upload_to=get_kyc_upload_path, null=True, blank=True)
 

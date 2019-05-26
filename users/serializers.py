@@ -13,7 +13,7 @@ from users.models import (
 from sales.serializers import SalesApplicationSerializer
 from django.db import transaction
 
-from utils import constants, genrate_random_string
+from utils import constants as Constants, genrate_random_string
 
 
 class OTPGenrationSerializer(serializers.Serializer):
@@ -22,14 +22,14 @@ class OTPGenrationSerializer(serializers.Serializer):
     def validate_phone_no(self, value):
         if not value.isdigit() or len(value) != 10:
             raise serializers.ValidationError(
-                constants.INVALID_PHONE_NO)
+                Constants.INVALID_PHONE_NO)
         Account.send_otp(value)
         return value
 
     @property
     def response(self):
         return {
-            'message': constants.OTP_GENERATED,
+            'message': Constants.OTP_GENERATED,
         }
 
 
@@ -40,21 +40,21 @@ class OTPVerificationSerializer(serializers.Serializer):
     def validate_phone_no(self, value):
         if not value.isdigit() or len(value) != 10:
             raise serializers.ValidationError(
-                constants.INVALID_PHONE_NO)
+                Constants.INVALID_PHONE_NO)
         return value
 
     def validate_otp(self, value):
         if not Account.verify_otp(
                 self.initial_data.get('phone_no'), value):
             raise serializers.ValidationError(
-                constants.OTP_VALIDATION_FAILED)
+                Constants.OTP_VALIDATION_FAILED)
         return value
 
     def get_transaction_id(self):
         txn_id = genrate_random_string(12)
         cache.set(
             'TXN:%s' % self.validated_data['phone_no'], txn_id,
-            constants.TRANSACTION_TTL)
+            Constants.TRANSACTION_TTL)
         return txn_id
 
     @property
@@ -62,7 +62,7 @@ class OTPVerificationSerializer(serializers.Serializer):
         cache.delete(self.validated_data['phone_no'])
         return {
             'transaction_id': self.get_transaction_id(),
-            'message': constants.OTP_SUCCESS
+            'message': Constants.OTP_SUCCESS
         }
 
 
@@ -91,27 +91,27 @@ class CreateUserSerializer(serializers.ModelSerializer):
         validate_referral = User.validate_referral_code(value)
         if not validate_referral:
             raise serializers.ValidationError(
-                constants.REFERRAL_CODE_EXCEPTION)
+                Constants.REFERRAL_CODE_EXCEPTION)
         return value
 
     def validate_phone_no(self, value):
         if not value.isdigit() or len(value) != 10:
             raise serializers.ValidationError(
-                constants.INVALID_PHONE_NO)
+                Constants.INVALID_PHONE_NO)
         return value
 
     def validate_transaction_id(self, value):
         if not cache.get(
                 'TXN:%s' % self.initial_data.get('phone_no')) == value:
             raise serializers.ValidationError(
-                constants.INVALID_TRANSACTION_ID)
+                Constants.INVALID_TRANSACTION_ID)
         return value
 
     def validate_pincode(self, value):
         pincodes = Pincode.objects.filter(pincode=value)
         if not pincodes.exists():
             raise serializers.ValidationError(
-                constants.INVALID_PINCODE)
+                Constants.INVALID_PINCODE)
         return pincodes.get().id
 
     def create(self, validated_data):
@@ -127,17 +127,17 @@ class CreateUserSerializer(serializers.ModelSerializer):
         )
         self.instance = User.objects.create(**data)
         self.instance.generate_referral(validated_data.get('referral_code'))
-        if any(x in validated_data.keys() for x in constants.USER_FILE_UPLOAD):
+        if any(x in validated_data.keys() for x in Constants.USER_FILE_UPLOAD):
             account.upload_docs(
                 validated_data, set(validated_data).intersection(
-                    set(constants.USER_FILE_UPLOAD)))
+                    set(Constants.USER_FILE_UPLOAD)))
         return self.instance
 
     def get_account(self, validated_data):
         validated_data['address_id'] = Address.objects.create(
             pincode_id=validated_data['pincode']).id
         acc = Account.get_account(validated_data['phone_no'])
-        for field_name in constants.ACCOUNT_CREATION_FIELDS:
+        for field_name in Constants.ACCOUNT_CREATION_FIELDS:
             setattr(acc, field_name, validated_data.get(field_name))
         acc.save()
         return acc
@@ -147,7 +147,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         cache.delete('TXN:%s' % self.validated_data['phone_no'])
         return {
             'phone_no': self.validated_data['phone_no'],
-            'message': constants.USER_CREATED_SUCESS,
+            'message': Constants.USER_CREATED_SUCESS,
             'user_id': self.instance.id
         }
 
@@ -192,7 +192,7 @@ class EnterpriseSerializer(serializers.ModelSerializer):
 
     def get_logo(self, obj):
         from goplannr.settings import DEBUG
-        return (constants.DEBUG_HOST if DEBUG else '') + obj.logo.url
+        return (Constants.DEBUG_HOST if DEBUG else '') + obj.logo.url
 
     class Meta:
         model = Enterprise
@@ -245,17 +245,17 @@ class AuthorizationSerializer(serializers.Serializer):
         accounts = Account.objects.filter(phone_no=value)
         if not accounts.exists():
             raise serializers.ValidationError(
-                constants.INVALID_PHONE_NO)
+                Constants.INVALID_PHONE_NO)
         return value
 
     def validate_password(self, value):
         accounts = Account.objects.filter(
             phone_no=self.initial_data.get('phone_no'))
         if accounts.exists() and not accounts.get().password:
-            raise serializers.ValidationError(constants.PASSWORD_NOT_SET)
+            raise serializers.ValidationError(Constants.PASSWORD_NOT_SET)
         if not accounts.exists() or not accounts.get().check_password(value):
             raise serializers.ValidationError(
-                constants.INVALID_PASSWORD)
+                Constants.INVALID_PASSWORD)
         return value
 
     def validate_is_active(self, value):
@@ -263,7 +263,7 @@ class AuthorizationSerializer(serializers.Serializer):
             phone_no=self.initial_data.get('phone_no'))
         if accounts.exists() and not accounts.get().get_default_user():
             raise serializers.ValidationError(
-                constants.ACCOUNT_DISABLED)
+                Constants.ACCOUNT_DISABLED)
         return value
 
     def get_user(self):
@@ -275,7 +275,7 @@ class AuthorizationSerializer(serializers.Serializer):
     def response(self):
         return {
             'authorization': self.get_user().get_authorization_key(),
-            'message': constants.AUTHORIZATION_GENERATED,
+            'message': Constants.AUTHORIZATION_GENERATED,
             'details': UserSerializer(self.get_user()).data,
         }
 
@@ -289,7 +289,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         accounts = Account.objects.filter(phone_no=value)
         if not accounts.exists():
             raise serializers.ValidationError(
-                constants.INVALID_PHONE_NO)
+                Constants.INVALID_PHONE_NO)
         return value
 
     def validate_transaction_id(self, value):
@@ -298,7 +298,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         if not accounts.exists() or not cache.get(
                 'TXN:%s' % accounts.get().phone_no) == value:
             raise serializers.ValidationError(
-                constants.INVALID_TRANSACTION_ID)
+                Constants.INVALID_TRANSACTION_ID)
         return value
 
     def get_account(self):
@@ -309,13 +309,11 @@ class ChangePasswordSerializer(serializers.Serializer):
         account = self.get_account()
         account.set_password(self.validated_data['new_password'])
         account.save()
-        message = {
-            'message': constants.USER_PASSWORD_CHANGE, 'type': 'sms'
-        }
-        account.send_notification(**message)
+        account.send_notification(**dict(
+            message=Constants.USER_PASSWORD_CHANGE, type='sms'))
         cache.delete('TXN:%s' % self.validated_data.get('phone_no'))
         return {
-            'message': constants.PASSWORD_CHANGED
+            'message': Constants.PASSWORD_CHANGED
         }
 
 
@@ -436,14 +434,14 @@ class UpdateUserSerializer(serializers.ModelSerializer):
     def validate_phone_no(self, value):
         if not value.isdigit() or len(value) != 10:
             raise serializers.ValidationError(
-                constants.INVALID_PHONE_NO)
+                Constants.INVALID_PHONE_NO)
         return value
 
     def validate_pincode(self, value):
         pincodes = Pincode.objects.filter(pincode=value)
         if not pincodes.exists():
             raise serializers.ValidationError(
-                constants.INVALID_PINCODE)
+                Constants.INVALID_PINCODE)
         return pincodes.get().id
 
     def save(self, **kwargs):
@@ -456,19 +454,19 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         validated_data = dict(
             list(self.validated_data.items()) + list(kwargs.items()))
         acc = self.instance.account
-        address_fields = constants.ADDRESS_UPDATE_FIELDS + ['pincode']
+        address_fields = Constants.ADDRESS_UPDATE_FIELDS + ['pincode']
         if any(x in validated_data.keys() for x in address_fields):
             acc.address_id = self.get_address_id(acc, validated_data)
-        for field_name in constants.ACCOUNT_UPDATION_FIELDS:
+        for field_name in Constants.ACCOUNT_UPDATION_FIELDS:
             setattr(acc, field_name, validated_data.get(
                 field_name, getattr(acc, field_name)))
         acc.save()
         if any(
-            x in validated_data.keys() for x in constants.USER_FILE_UPLOAD
+            x in validated_data.keys() for x in Constants.USER_FILE_UPLOAD
         ):
             self.initial_data = acc.upload_docs(
                 validated_data, set(validated_data).intersection(
-                    set(constants.USER_FILE_UPLOAD)))
+                    set(Constants.USER_FILE_UPLOAD)))
 
     def get_address_id(self, acc, validated_data):
         if validated_data['pincode_id'] != acc.address.pincode_id:
@@ -478,7 +476,7 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         else:
             address = acc.address_id
         validated_data['address_id'] = address.id
-        for field_name in constants.ADDRESS_UPDATE_FIELDS:
+        for field_name in Constants.ADDRESS_UPDATE_FIELDS:
             setattr(address, field_name, validated_data.get(
                 field_name, getattr(address, field_name)))
         address.save()
@@ -488,8 +486,7 @@ class UpdateUserSerializer(serializers.ModelSerializer):
     def data(self):
         self._data = dict(
             message='User updated successfully',
-            updated_fields=self.initial_data
-        )
+            updated_fields=self.initial_data)
         return self._data
 
     class Meta:

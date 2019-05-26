@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
 from django.db import models
-import math
 
 from questionnaire.models import Response
 from product.models import (
-    HealthPremium, FeatureCustomerSegmentScore, Feature
-)
+    HealthPremium, FeatureCustomerSegmentScore, Feature)
 from sales.models import Quote
+import math
 
 
 class HealthInsurance(models.Model):
@@ -143,11 +143,14 @@ class HealthInsurance(models.Model):
         quotes = self.base.get_quotes()
         if quotes.exists():
             quotes.update(ignore=True)
-        for premium in self.base.get_premiums(**kw):
+        content_id = ContentType.objects.get(
+            app_label='product', model='healthpremium').id
+        for premium in self.get_premiums(**kw):
             feature_masters = premium.product_variant.feature_set.values_list(
                 'feature_master_id', flat=True)
             quote = Quote.objects.create(
-                lead_id=self.base.id, premium_id=premium.id)
+                lead_id=self.base.id, premium_id=premium.id,
+                content_type_id=content_id)
             changed_made = False
             for feature_master_id in feature_masters:
                 feature_score = FeatureCustomerSegmentScore.objects.only(

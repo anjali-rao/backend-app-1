@@ -1,4 +1,4 @@
-from utils import constants
+from utils import constants as Constants
 from rest_framework import serializers
 
 from content.models import (
@@ -36,7 +36,7 @@ class PromoBookSerializer(serializers.ModelSerializer):
     def validate_phone_no(self, value):
         if value[0] in range(0, 4):
             raise serializers.ValidationError(
-                constants.INVALID_PHONE_NO_FORMAT)
+                Constants.INVALID_PHONE_NO_FORMAT)
         return value
 
     class Meta:

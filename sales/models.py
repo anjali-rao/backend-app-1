@@ -12,6 +12,7 @@ from django.db.models.signals import post_save
 from django.db import IntegrityError
 from django.dispatch import receiver
 from django.utils.timezone import now
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 from questionnaire.models import Response
 from utils.mixins import RecommendationException
@@ -22,9 +23,11 @@ class Quote(BaseModel):
     status = models.CharField(
         max_length=16, choices=Constants.STATUS_CHOICES,
         default='pending')
-    premium = models.ForeignKey(
-        'product.HealthPremium', null=True, blank=True,
-        on_delete=models.CASCADE)
+    limit = models.Q(app_label='product', model='healthpremium')
+    content_type = models.ForeignKey(
+        ContentType, on_delete=models.CASCADE, limit_choices_to=limit)
+    premium_id = models.PositiveIntegerField()
+    premium = GenericForeignKey('content_type', 'premium_id')
     recommendation_score = models.FloatField(default=0.0)
     ignore = models.BooleanField(default=False)
 
@@ -40,7 +43,7 @@ class Quote(BaseModel):
             self.premium.product_variant.company_category.company.name)
 
     class Meta:
-        ordering = ['-recommendation_score', 'premium__base_premium']
+        ordering = ['-recommendation_score', ]
 
     def get_feature_details(self):
         return self.premium.product_variant.feature_set.values(
@@ -232,10 +235,10 @@ class Member(BaseModel):
 
     @property
     def age(self):
-        if not self.dob:
-            return
-        return int((
-            now().today().date() - self.dob).days / 365.2425)
+        if self.dob:
+            return int((
+                now().today().date() - self.dob
+            ).days / 365.2425)
 
     @property
     def height_foot(self):
@@ -376,7 +379,8 @@ class Policy(BaseModel):
 def application_post_save(sender, instance, created, **kwargs):
     if created:
         Quote.objects.filter(lead_id=instance.quote.lead.id).exclude(
-            id=instance.quote_id, status='accepted').update(status='rejected')
+            id=instance.quote_id, status__in=['accepted', 'rejected']
+        ).update(status='rejected')
         instance.quote.status = 'accepted'
         instance.quote.save()
         instance.add_default_members()
