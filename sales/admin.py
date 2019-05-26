@@ -44,6 +44,8 @@ class QuoteAdmin(admin.ModelAdmin):
     list_display = ('lead', 'status', 'premium')
     raw_id_fields = ('lead', )
     list_filter = ('status',)
+    readonly_fields = ('premium_id', 'content_type', 'ignore')
+    can_delete = False
 
 
 @admin.register(Application)

@@ -20,11 +20,11 @@ class HealthInsuranceInline(admin.StackedInline):
 class LeadAdmin(admin.ModelAdmin):
     list_display = ('user', 'category', 'pincode')
     search_fields = ('user__account__phone_no', 'id', 'category__id')
-    list_filter = ('category',)
     raw_id_fields = ('user', 'category', 'contact',)
     _inlines_class_set = dict(
         healthinsurance=HealthInsuranceInline
     )
+    list_filter = ('category',)
 
     def get_inline_instances(self, request, obj=None):
         inlines = list()
