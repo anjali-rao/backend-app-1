@@ -2,7 +2,7 @@ from django.urls import path
 
 from crm.views import (
     GetQuotes, QuoteDetails, QuotesComparision, GetRecommendatedQuotes,
-    CreateLead, UpdateLead, GetLeadDetails)
+    CreateLead, UpdateLead, GetLeadDetails, AddLeadNotes)
 
 urlpatterns = [
     path('quote/<int:pk>', QuoteDetails.as_view()),
@@ -12,4 +12,5 @@ urlpatterns = [
     path('lead/create', CreateLead.as_view()),
     path('lead/<int:pk>', GetLeadDetails.as_view()),
     path('lead/<int:pk>/update', UpdateLead.as_view()),
+    path('lead/<int:pk>/notes/create', AddLeadNotes.as_view()),
 ]

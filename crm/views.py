@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from rest_framework import generics
+from rest_framework import generics, status
+from rest_framework.response import Response
+
 from utils import mixins, constants
 
 from users.decorators import UserAuthentication
 from crm.serializers import (
     QuoteSerializer, QuoteDetailsSerializer, Quote,
     QuotesCompareSerializer, QuoteRecommendationSerializer,
-    CreateUpdateLeadSerializer, LeadDetailSerializer, Lead
+    CreateUpdateLeadSerializer, LeadDetailSerializer, Lead,
+    NotesSerializer
 )
 
 from django.db import transaction, IntegrityError
@@ -109,3 +112,28 @@ class GetLeadDetails(generics.RetrieveAPIView):
     authentication_classes = (UserAuthentication,)
     serializer_class = LeadDetailSerializer
     queryset = Lead.objects.all()
+
+
+class AddLeadNotes(generics.CreateAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = NotesSerializer
+    queryset = Lead.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                lead = self.get_object()
+                data = self.request.data
+                if isinstance(data, dict):
+                    data = [data]
+                for row in data:
+                    serializer = self.get_serializer(data=row)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save(lead_id=lead.id)
+            return Response(dict(
+                message='Notes added successfully', lead_id=lead.id
+            ), status=status.HTTP_201_CREATED)
+        except IntegrityError as e:
+            pass
+        raise mixins.APIException(
+            'Unable to process request currently. Please try again')
