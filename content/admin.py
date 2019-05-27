@@ -6,7 +6,7 @@ from django.contrib import admin
 from content.models import (
     Faq, HelpFile, ContactUs, NetworkHospital, NewsletterSubscriber,
     PromoBook, HelpLine, Playlist, EnterprisePlaylist, Article,
-    Coverages)
+    Coverages, Note)
 
 
 @admin.register(Faq)
@@ -89,3 +89,13 @@ class ArticleAdmin(admin.ModelAdmin):
 @admin.register(Coverages)
 class CoveragesAdmin(admin.ModelAdmin):
     list_display = ('company_category', 'name',)
+
+
+@admin.register(Note)
+class NoteAdmin(admin.ModelAdmin):
+    list_display = ('lead', 'title',)
+    search_fields = (
+        'title', 'lead__id', 'lead__user__phone_no', 'lead__contact__phone_no',
+        'lead__contact__email'
+    )
+    raw_id_fields = ('lead',)

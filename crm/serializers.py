@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from content.models import NetworkHospital
+from content.serializers import NotesSerializer
 from crm.models import Lead, Contact
 from sales.models import Quote
 from utils import constants as Constants
@@ -282,13 +283,17 @@ class LeadDetailSerializer(serializers.ModelSerializer):
     phone_no = serializers.ReadOnlyField(source='contact.phone_no')
     address = serializers.ReadOnlyField(source='contact.address.full_address')
     quotes = serializers.SerializerMethodField()
+    notes = serializers.SerializerMethodField()
 
     def get_quotes(self, obj):
         return QuoteSerializer(
             obj.quote_set.filter(ignore=False), many=True).data
 
+    def get_notes(self, obj):
+        return NotesSerializer(obj.note_set.all(), many=True).data
+
     class Meta:
         model = Lead
         fields = (
             'lead_id', 'phone_no', 'address', 'stage', 'quotes',
-            'created')
+            'created', 'notes')
