@@ -111,7 +111,7 @@ class GetRecommendatedQuotes(generics.ListAPIView):
 class GetLeadDetails(generics.RetrieveAPIView):
     authentication_classes = (UserAuthentication,)
     serializer_class = LeadDetailSerializer
-    queryset = Lead.objects.all()
+    queryset = Lead.objects.exclude(ignore=True)
 
 
 class AddLeadNotes(generics.CreateAPIView):
