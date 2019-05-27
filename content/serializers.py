@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from content.models import (
     Faq, ContactUs, NewsletterSubscriber, PromoBook,
-    NetworkHospital, EnterprisePlaylist)
+    NetworkHospital, EnterprisePlaylist, Note)
 
 from product.models import ProductVariant, Company
 
@@ -104,3 +104,10 @@ class EnterprisePlaylistSerializer(serializers.ModelSerializer):
     class Meta:
         model = EnterprisePlaylist
         fields = ('name', 'playlist_id', 'playlist_type')
+
+
+class NotesSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Note
+        fields = ('title', 'text', 'read', 'id')

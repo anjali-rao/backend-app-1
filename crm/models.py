@@ -22,7 +22,6 @@ class Lead(BaseModel):
     stage = models.CharField(
         choices=Constants.LEAD_STAGE_CHOICES, default='new', max_length=32)
     pincode = models.CharField(max_length=6, null=True)
-    notes = models.ManyToManyField('content.Notes', null=True, blank=True)
     bookmark = models.BooleanField(default=False)
     details = None
 
@@ -67,7 +66,7 @@ class Lead(BaseModel):
 
     @property
     def citytier(self):
-        if self.pincode in constants.NCR_PINCODES or self.city in constants.MUMBAI_AREA_TIER: # noqa
+        if self.pincode in Constants.NCR_PINCODES or self.city in Constants.MUMBAI_AREA_TIER: # noqa
             return Constants.MUMBAI_NCR_TIER
         return Constants.ALL_INDIA_TIER
 

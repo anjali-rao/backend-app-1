@@ -126,5 +126,12 @@ class Coverages(BaseModel):
     description = models.TextField()
 
 
-class Notes(BaseModel):
+class Note(BaseModel):
+    lead = models.ForeignKey('crm.Lead', on_delete=models.PROTECT)
+    title = models.CharField(max_length=128)
     text = models.TextField()
+    read = models.BooleanField(default=False)
+    ignore = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.title
