@@ -203,7 +203,7 @@ class Member(BaseModel):
     last_name = models.CharField(max_length=128, blank=True)
     dob = models.DateField(null=True)
     gender = models.CharField(
-        choices=get_choices(Constants.GENDER), max_length=16)
+        choices=get_choices(Constants.GENDER), max_length=16, null=True)
     occupation = models.CharField(
         choices=get_choices(Constants.OCCUPATION_CHOICES), max_length=32,
         null=True, blank=True

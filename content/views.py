@@ -62,7 +62,7 @@ class GetNetworkHospital(generics.ListAPIView):
     serializer_class = NetworkCoverageSerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = [
-        '=pincode__pincode', 'pincode__city', 'pincode__state__name']
+        'pincode__pincode', 'pincode__city', 'pincode__state__name']
     pagination_class = CustomPagination
 
     @method_decorator(cache_page(API_CACHE_TIME))

@@ -91,7 +91,8 @@ class Contact(BaseModel):
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
     gender = models.CharField(
-        max_length=16, choices=get_choices(Constants.GENDER))
+        max_length=16, choices=get_choices(Constants.GENDER),
+        null=True, blank=True)
     phone_no = models.CharField(max_length=20, null=True, blank=True)
     first_name = models.CharField(max_length=32, blank=True)
     middle_name = models.CharField(max_length=32, blank=True)
