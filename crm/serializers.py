@@ -61,7 +61,7 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
         fields = dict.fromkeys(Constants.GENERIC_LEAD_FIELDS, None)
         for field in fields.keys():
             fields[field] = validated_data.get(field, None)
-            if field == 'bookmark':
+            if field in ['bookmark', 'ignore']:
                 fields[field] = False
         self.instance = super(self.__class__, self).create(fields)
         self.update_category_lead(validated_data)
@@ -78,12 +78,12 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
         category_lead.update_fields(**fields)
         return category_lead
 
-    def update(self, validated_data):
+    def update(self, instance, validated_data):
         fields = dict.fromkeys(Constants.GENERIC_LEAD_FIELDS, None)
         for field in fields.keys():
             fields[field] = validated_data.get(
                 field, getattr(self.instance, field))
-        self.instance = super(self.__class__, self).update(fields)
+        self.instance = super(self.__class__, self).update(instance, fields)
         self.update_category_lead(validated_data)
         return self.instance
 
@@ -112,7 +112,7 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
         model = Lead
         fields = (
             'id', 'category_id', 'pincode', 'family', 'gender',
-            'contact_phone_no', 'stage', 'contact_name')
+            'contact_phone_no', 'stage', 'contact_name', 'ignore')
 
     @property
     def data(self):

@@ -23,6 +23,7 @@ class Lead(BaseModel):
         choices=Constants.LEAD_STAGE_CHOICES, default='new', max_length=32)
     pincode = models.CharField(max_length=6, null=True)
     bookmark = models.BooleanField(default=False)
+    ignore = models.BooleanField(default=False)
     details = None
 
     def __init__(self, *args, **kwargs):

@@ -173,7 +173,8 @@ ADDRESS_UPDATE_FIELDS = ['flat_no', 'street', 'landmark']
 CONTACT_CREATION_FIELDS = (
     'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
     'occupation', 'marital_status', 'email')
-GENERIC_LEAD_FIELDS = ('category_id', 'pincode', 'bookmark', 'user_id')
+GENERIC_LEAD_FIELDS = (
+    'category_id', 'pincode', 'bookmark', 'user_id', 'ignore')
 
 
 # Upload paths  ==================================

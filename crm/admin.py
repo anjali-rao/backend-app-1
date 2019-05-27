@@ -21,6 +21,9 @@ class NotesInline(admin.TabularInline):
     model = Note
     can_delete = False
 
+    def has_change_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
