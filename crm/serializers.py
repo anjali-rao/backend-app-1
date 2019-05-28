@@ -4,7 +4,7 @@ from content.models import NetworkHospital
 from content.serializers import NotesSerializer
 from crm.models import Lead, Contact
 from sales.models import Quote
-from utils import constants as Constants
+from utils import constants as Constants, mixins
 
 from django.db import transaction
 
@@ -57,15 +57,48 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(Constants.INVALID_LEAD_STAGE)
         return value
 
+    def save(self, **kwargs):
+        validated_data = dict(
+            list(self.validated_data.items()) + list(kwargs.items()))
+        with transaction.atomic():
+            if 'contact_name' in validated_data and (
+                    'contact_phone_no' in validated_data):
+                kwargs['contact_id'] = self.get_contact(
+                    validated_data, **kwargs).id
+            self.instance = super(
+                CreateUpdateLeadSerializer, self).save(**kwargs)
+
     def create(self, validated_data):
         fields = dict.fromkeys(Constants.GENERIC_LEAD_FIELDS, None)
         for field in fields.keys():
             fields[field] = validated_data.get(field, None)
             if field in ['bookmark', 'ignore']:
                 fields[field] = False
+        if 'contact_id' in validated_data and self.Meta.model.objects.filter(
+                contact_id=fields['contact_id']).exists():
+            raise mixins.APIException(Constants.DUPLICATE_LEAD)
         self.instance = super(self.__class__, self).create(fields)
         self.update_category_lead(validated_data)
         return self.instance
+
+    def update(self, instance, validated_data):
+        fields = dict.fromkeys(Constants.GENERIC_LEAD_FIELDS, None)
+        for field in fields.keys():
+            fields[field] = validated_data.get(
+                field, getattr(self.instance, field))
+        self.instance = super(self.__class__, self).update(instance, fields)
+        self.update_category_lead(validated_data)
+        return self.instance
+
+    def get_contact(self, validated_data, **kwargs):
+        instance, created = Contact.objects.get_or_create(
+            user_id=kwargs['user_id'],
+            phone_no=validated_data['contact_phone_no'])
+        name = validated_data['contact_name'].split(' ')
+        instance.update_fields(**dict(
+            first_name=name[0], middle_name=name[1] if len(name) == 3 else '',
+            last_name=name[2] if len(name) == 3 else name[1]))
+        return instance
 
     def update_category_lead(self, validated_data):
         self.instance.refresh_from_db()
@@ -77,36 +110,6 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
                 category_lead, field))
         category_lead.update_fields(**fields)
         return category_lead
-
-    def update(self, instance, validated_data):
-        fields = dict.fromkeys(Constants.GENERIC_LEAD_FIELDS, None)
-        for field in fields.keys():
-            fields[field] = validated_data.get(
-                field, getattr(self.instance, field))
-        self.instance = super(self.__class__, self).update(instance, fields)
-        self.update_category_lead(validated_data)
-        return self.instance
-
-    def save(self, **kwargs):
-        validated_data = dict(
-            list(self.validated_data.items()) +
-            list(kwargs.items()))
-        with transaction.atomic():
-            if 'contact_name' in validated_data and (
-                    'contact_phone_no' in validated_data):
-                self.create_or_update_contact(validated_data, **kwargs)
-            self.instance = super(
-                CreateUpdateLeadSerializer, self).save(**kwargs)
-
-    def create_or_update_contact(self, validated_data, **kwargs):
-        contact, created = Contact.objects.get_or_create(
-            user_id=kwargs['user.id'],
-            phone_no=validated_data['contact_phone_no'])
-        name = validated_data['contact_name'].split(' ')
-        contact.first_name = name[0]
-        contact.middle_name = name[1] if len(name) == 3 else ''
-        contact.last_name = name[2] if len(name) == 3 else name[1]
-        contact.save()
 
     class Meta:
         model = Lead
