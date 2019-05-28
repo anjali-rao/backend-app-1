@@ -6,8 +6,7 @@ from django.utils.html import format_html
 
 from sales.models import (
     Quote, Application, HealthInsurance, Member,
-    Nominee
-)
+    Nominee, Policy)
 
 from payment.models import ApplicationRequestLog
 from aggregator import PAYMENT_LINK_MAPPER
@@ -135,3 +134,13 @@ class NomineeAdmin(admin.ModelAdmin):
     list_display = ('application', 'first_name')
     search_fields = ('application__quote__id', 'application__reference_no')
     list_filter = ('ignore',)
+
+
+@admin.register(Policy)
+class PolicyAdmin(admin.ModelAdmin):
+    list_display = ('application', 'policy_number', 'policy_file', 'created')
+    search_fields = (
+        'application__quote__lead__user_phone_no',
+        'application__client_phone_no', 'application__client_email')
+    list_filter = ('application__quote__lead__category',)
+    raw_id_fields = ('application',)

@@ -64,7 +64,8 @@ INSTALLED_APPS = [
     'product',
     'sales',
     'questionnaire',
-    'aggregator.wallnut'
+    'aggregator.wallnut',
+    'earnings'
 ]
 
 if DEBUG:

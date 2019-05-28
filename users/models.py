@@ -3,7 +3,8 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import (
-    constants as Constants, get_choices, get_upload_path, genrate_random_string)
+    constants as Constants, get_choices, get_upload_path,
+    genrate_random_string)
 
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.contrib.auth.models import AbstractUser
@@ -204,6 +205,15 @@ class User(BaseModel):
             query['status'] = status
         return Application.objects.filter(**query)
 
+    def get_policies(self):
+        from sales.models import Policy
+        return Policy.objects.filter(
+            application__quote__lead__user_id=self.id)
+
+    def get_earnings(self, earning_type=None):
+        from earnings.models import Earning
+        return Earning.get_user_earnings(self.id, earning_type)
+
     @staticmethod
     def validate_referral_code(code):
         return Referral.objects.filter(referral_code=code).exists()
@@ -218,12 +228,14 @@ class User(BaseModel):
                     name=Constants.DEFAULT_ENTERPRISE).id
             }
         referral = referrals.get()
+        from earnings.models import Earning
         Earning.objects.create(
             user_id=referral.user.id, earning_type='referral', amount=100)
-        return {
-            'enterprise_id': (referral.enterprise or SubcriberEnterprise.objects.get( # noqa
-                name=Constants.DEFAULT_ENTERPRISE)).id,
-        }
+        return dict(
+            enterprise_id=(
+                referral.enterprise or SubcriberEnterprise.objects.get(
+                    name=Constants.DEFAULT_ENTERPRISE)).id,
+        )
 
     @property
     def account_no(self):
@@ -251,6 +263,7 @@ class Enterprise(BaseModel):
     logo = models.ImageField(
         upload_to=Constants.ENTERPRISE_UPLOAD_PATH,
         default=Constants.DEFAULT_LOGO)
+    commission = models.FloatField(default=0.0)
     person = GenericRelation(
         'users.User', related_query_name='enterprise_user',
         object_id_field='enterprise_id')
@@ -277,6 +290,7 @@ class SubcriberEnterprise(BaseModel):
     person = GenericRelation(
         'users.User', related_query_name='subscriber_enterprise_user',
         object_id_field='enterprise_id')
+    commission = models.FloatField(default=0.0)
     playlist = GenericRelation(
         'content.EnterprisePlaylist', related_query_name='enterprise_playlist',
         object_id_field='enterprise_id')
@@ -413,27 +427,6 @@ class IPAddress(BaseModel):
     def _get_whitelisted_networks(cls):
         return cls.objects.filter(
             blocked=False).values_list('ip_address', flat=True)
-
-
-class Earning(BaseModel):
-    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
-    quote = models.ForeignKey(
-        'sales.Quote', on_delete=models.CASCADE, null=True, blank=True)
-    amount = models.FloatField(default=0.0)
-    earning_type = models.CharField(
-        choices=get_choices(Constants.EARNING_TYPES), max_length=16)
-    sub_type = models.CharField(max_length=32, null=True)
-    paid = models.BooleanField(default=False)
-
-    @classmethod
-    def get_user_earnings(cls, user_id, earning_type=None, sub_type=None):
-        query = dict(user_id=user_id)
-        if earning_type:
-            query['earning_type'] = earning_type
-        if sub_type:
-            query['sub_type'] = sub_type
-        return cls.objects.filter(**query).annotate(
-            s=models.Sum('amount'))['s']
 
 
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))

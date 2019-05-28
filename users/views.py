@@ -10,8 +10,9 @@ from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
     AccountSearchSerializers, User, PincodeSerializer, Pincode,
-    SalesSerializer, SalesApplicationSerializer, UpdateUserSerializer
+    UpdateUserSerializer, UserEarningSerializer
 )
+from sales.serializers import SalesApplicationSerializer
 from users.decorators import UserAuthentication
 from utils import constants
 from utils.mixins import APIException
@@ -166,10 +167,13 @@ class PincodeSearch(APIView):
         return cleaned_list
 
 
-class GetSales(generics.RetrieveAPIView):
+class GetEarnings(generics.RetrieveAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = User.objects.all()
-    serializer_class = SalesSerializer
+    serializer_class = UserEarningSerializer
+
+    def get_object(self):
+        return self.request.user
 
 
 class GetCart(generics.ListAPIView):

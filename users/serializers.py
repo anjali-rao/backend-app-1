@@ -2,15 +2,14 @@ from rest_framework import serializers
 
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
-from django.utils.timezone import now
-
-from dateutil.relativedelta import relativedelta
 
 from users.models import (
     User, Account, Enterprise, AccountDetail, Pincode,
-    Address, BankAccount, BankBranch
-)
-from sales.serializers import SalesApplicationSerializer
+    Address, BankAccount, BankBranch)
+from sales.models import Policy
+
+from earnings.serializers import EarningSerializer
+
 from django.db import transaction
 
 from utils import constants as Constants, genrate_random_string
@@ -345,46 +344,6 @@ class PincodeSerializer(serializers.ModelSerializer):
         fields = ('pincode', 'city', 'state')
 
 
-class SalesSerializer(serializers.ModelSerializer):
-    all_applications = serializers.SerializerMethodField()
-    pending_applications = serializers.SerializerMethodField()
-    submitted_applications = serializers.SerializerMethodField()
-    _current_week = [now() - relativedelta(days=6), now()]
-    _current_month = [
-        now() - relativedelta(days=30), now() - relativedelta(days=6)]
-    _past_months = now() - relativedelta(days=30)
-
-    def get_data(self, apps):
-        data = SalesApplicationSerializer(
-            apps.filter(modified__range=self._current_week), many=True,
-            context=dict(section='current_week')).data
-        data.extend(SalesApplicationSerializer(
-            apps.filter(modified__range=self._current_month), many=True,
-            context=dict(section='current_month')).data)
-        data.extend(SalesApplicationSerializer(
-            apps.filter(modified__lte=self._past_months), many=True,
-            context=dict(section='past_months')).data)
-        return sorted(data, key=lambda i: i['last_updated'], reverse=True)
-
-    def get_all_applications(self, obj):
-        apps = obj.get_applications()
-        return self.get_data(apps)
-
-    def get_pending_applications(self, obj):
-        apps = obj.get_applications(status='pending')
-        return self.get_data(apps)
-
-    def get_submitted_applications(self, obj):
-        apps = obj.get_applications(status='submitted')
-        return self.get_data(apps)
-
-    class Meta:
-        model = User
-        fields = (
-            'all_applications', 'pending_applications',
-            'submitted_applications')
-
-
 class BankAccountSerializer(serializers.ModelSerializer):
     bank_name = serializers.ReadOnlyField(source='branch.bank.name')
     branch = serializers.ReadOnlyField(source='branch.branch_name')
@@ -496,3 +455,30 @@ class UpdateUserSerializer(serializers.ModelSerializer):
             'pincode', 'pan_no', 'cancelled_cheque', 'photo', 'street',
             'flat_no', 'landmark'
         )
+
+
+class UserEarningSerializer(serializers.ModelSerializer):
+    total_policies = serializers.SerializerMethodField()
+    total_earning = serializers.SerializerMethodField()
+    total_premium = serializers.SerializerMethodField()
+    earning_details = serializers.SerializerMethodField()
+
+    def get_total_policies(self, obj):
+        return obj.get_policies().count()
+
+    def get_total_earning(self, obj):
+        return obj.get_earnings()
+
+    def get_total_premium(self, obj):
+        return sum(obj.get_policies().values_list(
+            'application__premium', flat=True))
+
+    def get_earning_details(self, obj):
+        return EarningSerializer(
+            obj.earning_set.filter(ignore=False), many=True).data
+
+    class Meta:
+        model = User
+        fields = (
+            'total_premium', 'total_earning', 'total_policies',
+            'earning_details')

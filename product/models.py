@@ -19,6 +19,7 @@ class Category(BaseModel):
     hexa_code = models.CharField(
         max_length=8, default=Constants.DEFAULT_HEXA_CODE)
     is_active = models.BooleanField(default=False)
+    commission = models.FloatField(default=Constants.DEFAULT_COMMISSION)
 
     def __str__(self):
         return self.name
@@ -39,6 +40,7 @@ class Company(BaseModel):
         models.CharField(max_length=32), default=list, blank=True, null=True)
     long_description = models.TextField(null=True, blank=True)
     small_description = models.TextField(null=True, blank=True)
+    commission = models.FloatField(default=0.0)
 
     def __str__(self):
         return self.name
@@ -202,7 +204,7 @@ class HealthPremium(BaseModel):
         max_length=256, null=True, blank=True)
     base_premium = models.FloatField(default=Constants.DEFAULT_BASE_PREMIUM)
     gst = models.FloatField(default=Constants.DEFAULT_GST)
-    commission = models.FloatField(default=Constants.DEFAULT_COMMISSION)
+    commission = models.FloatField(default=0.0)
     premium = GenericRelation(
         'sales.quote', related_query_name='healthinsurance',
         object_id_field='premium_id')
@@ -216,7 +218,10 @@ class HealthPremium(BaseModel):
 
     @cached_property
     def commission_amount(self):
-        return self.amount * self.commission
+        company = self.product_variant.company_category.company
+        category = self.product_variant.company_category.category
+        return self.amount * (
+            self.commission + company.commission + category.commission)
 
     @cached_property
     def amount(self):
