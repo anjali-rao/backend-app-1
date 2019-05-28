@@ -3,11 +3,11 @@ from __future__ import unicode_literals
 
 from django.contrib import admin
 
-from payment.models import Payment, ApplicationRequestLog
+from payment.models import ApplicationPayment, ApplicationRequestLog
 
 
-@admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
+@admin.register(ApplicationPayment)
+class ApplicationPaymentAdmin(admin.ModelAdmin):
     list_display = (
         'application', 'transaction_reference_no', 'merchant_txn_id',
         'payment_mode')

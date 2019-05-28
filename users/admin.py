@@ -8,7 +8,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from users.models import (
     Account, User, Campaign, AccountDetail, Document, Bank, BankAccount,
     BankBranch, Enterprise, SubcriberEnterprise, State, Pincode, Address,
-    IPAddress, Referral, Earning)
+    IPAddress, Referral)
 
 
 @admin.register(Account)
@@ -134,11 +134,3 @@ class ReferralAdmin(admin.ModelAdmin):
     list_display = ('referral_code', 'referral_reference',)
     raw_id_fields = ('enterprise', 'user')
     search_fields = ('referral_code', 'referral_reference')
-
-
-@admin.register(Earning)
-class EarningAdmin(admin.ModelAdmin):
-    list_display = ('user', 'amount', 'earning_type', 'paid')
-    raw_id_fields = ('user', 'quote')
-    search_fields = ('user__account__phone_no', 'quote__id')
-    list_filter = ('paid',)

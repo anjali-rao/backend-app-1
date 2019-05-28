@@ -4,7 +4,7 @@ from django.utils.decorators import method_decorator
 from django import views
 from django.http import HttpResponse
 
-from payment.models import Payment, ApplicationRequestLog
+from payment.models import ApplicationPayment, ApplicationRequestLog
 
 
 class AdityaBirlaPaymentGateway(views.View):
@@ -64,7 +64,7 @@ class AdityaBirlaPaymentCapture(views.View):
             url=request.build_absolute_uri(), response=request.POST.dict(),
             request_type=request.method
         )
-        Payment.objects.create(
+        ApplicationPayment.objects.create(
             application_id=app.reference_app.id,
             merchant_txn_id=request.POST['merchantTxnId'],
             amount=request.POST['amount'],
@@ -75,7 +75,7 @@ class AdityaBirlaPaymentCapture(views.View):
             response=request.POST.dict()
         )
         import requests
-        response = requests.post(
+        requests.post(
             self.capture_url, data=request.POST)
         return HttpResponse("Payment successfully processed.")
 

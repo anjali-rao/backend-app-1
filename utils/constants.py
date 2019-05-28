@@ -46,6 +46,7 @@ PLAYLIST_CHOICES = ('marketing', 'training')
 USER_FILE_UPLOAD = ['cancelled_cheque', 'photo']
 REQUEST_CHOICES = ['GET', 'POST', 'PUT', 'PATCH']
 AGGREGATOR_CHOICES = ['offline', 'wallnut']
+EARNING_STATUS = ('paid', 'pending', 'processing')
 
 
 # ORDERS  ==================================
@@ -182,6 +183,7 @@ GENERIC_LEAD_FIELDS = (
 COMPANY_UPLOAD_PATH = 'company'
 ENTERPRISE_UPLOAD_PATH = 'enterprise'
 CATEGORY_UPLOAD_PATH = 'category'
+POLICY_UPLOAD_PATH = 'policy'
 DEBUG_HOST = 'http://localhost:8000'
 
 
@@ -200,6 +202,9 @@ ENT_DISEASE = 'Disease of Eye, Ear, Nose, Throat, Thyroid'
 CARDIOVASCULAR_DISEASE = 'Tuberculosis (TB), any Respiratory / Lung disease'
 RESPIRATORY_DISEASES = 'Any form of Heart Disease, Peripheral Vascular Disease, procedures like Angioplasty/PTCA/By Pass Surgery, valve replacement etc' # noqa
 BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Blood disorder (whether treated or not)' # noqa
+COMMISSION_TEXT = 'Commission for policy # %s issued on %s to %s'
+REFERRAL_TEXT = 'Referring to %s'
+INCENTIVE_TEXT = 'Incentive for %s'
 
 
 # Category Lead - Mapper  ==================================

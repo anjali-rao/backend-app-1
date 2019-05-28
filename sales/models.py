@@ -371,8 +371,11 @@ class TravelInsurance(Insurance):
 class Policy(BaseModel):
     application = models.OneToOneField(
         'sales.Application', on_delete=models.CASCADE)
-    contact = models.ForeignKey('crm.Contact', on_delete=models.CASCADE)
-    policy_data = JSONField()
+    policy_number = models.CharField(max_length=64, blank=True, null=True)
+    policy_data = JSONField(default=dict)
+    policy_file = models.FileField(
+        upload_to=Constants.POLICY_UPLOAD_PATH,
+        null=True, blank=True)
 
 
 @receiver(post_save, sender=Application, dispatch_uid="action%s" % str(now()))
