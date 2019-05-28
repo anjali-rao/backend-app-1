@@ -146,12 +146,18 @@ class QuoteSerializer(serializers.ModelSerializer):
     premium = serializers.ReadOnlyField(source='premium.amount')
     product = serializers.ReadOnlyField(
         source='premium.product_variant.get_product_details')
+    sale_stage = serializers.SerializerMethodField()
+
+    def get_sale_stage(self, obj):
+        if hasattr(obj, 'application'):
+            return obj.application.stage
+        return 'product_details'
 
     class Meta:
         model = Quote
         fields = (
             'quote_id', 'lead_id', 'sum_insured', 'premium',
-            'product', 'recommendation_score', 'status'
+            'product', 'recommendation_score', 'status', 'sale_stage'
         )
 
 
@@ -282,6 +288,7 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
 
 class LeadDetailSerializer(serializers.ModelSerializer):
     lead_id = serializers.ReadOnlyField(source='id')
+    logo = serializers.FileField(source='category.logo', default='')
     stage = serializers.ReadOnlyField(source='get_stage_display')
     phone_no = serializers.ReadOnlyField(source='contact.phone_no')
     address = serializers.ReadOnlyField(source='contact.address.full_address')
@@ -298,5 +305,5 @@ class LeadDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
         fields = (
-            'lead_id', 'phone_no', 'address', 'stage', 'quotes',
+            'lead_id', 'phone_no', 'logo', 'address', 'stage', 'quotes',
             'created', 'notes')
