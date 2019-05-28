@@ -196,7 +196,8 @@ class HealthPremium(BaseModel):
     deductible = models.ForeignKey(
         'product.DeductibleMaster', null=True, blank=True,
         on_delete=models.CASCADE)
-    sum_insured = models.IntegerField(default=0.0, db_index=True)
+    sum_insured = models.IntegerField(default=0.0)
+    suminsured_range = IntegerRangeField(default=(0, 300000), db_index=True)
     age_range = IntegerRangeField(default=(0, 100), db_index=True)
     adults = models.IntegerField(null=True, blank=True, db_index=True)
     childrens = models.IntegerField(null=True, blank=True, db_index=True)

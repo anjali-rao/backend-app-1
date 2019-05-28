@@ -94,13 +94,13 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             if 'contact_name' in validated_data and (
                     'contact_phone_no' in validated_data):
-                self.create_or_update_contact()
+                self.create_or_update_contact(validated_data, **kwargs)
             self.instance = super(
                 CreateUpdateLeadSerializer, self).save(**kwargs)
 
-    def create_or_update_contact(self, validated_data):
+    def create_or_update_contact(self, validated_data, **kwargs):
         contact, created = Contact.objects.get_or_create(
-            user_id=self.request.user.id,
+            user_id=kwargs['user.id'],
             phone_no=validated_data['contact_phone_no'])
         name = validated_data['contact_name'].split(' ')
         contact.first_name = name[0]

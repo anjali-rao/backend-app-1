@@ -119,7 +119,8 @@ class HealthInsurance(models.Model):
         query = dict()
         queryset = HealthPremium.objects.select_related(
             'product_variant').filter(
-            sum_insured=kw.get('score', self.predicted_suminsured),
+            suminsured_range__contains=int(kw.get(
+                'score', self.predicted_suminsured)),
             adults=kw.get('adults', self.adults),
             citytier__in=kw.get('citytier', self.base.citytier)
         )
@@ -131,7 +132,7 @@ class HealthInsurance(models.Model):
             query['childrens'] = kw.get('childrens', self.childrens)
         query.update(dict(
             age_range__contains=kw.get('effective_age', self.effective_age),
-            product_variant__company_category__company_id__in=self.base.companies_id
+            product_variant__company_category__company_id__in=self.base.companies_id # noqa
         ))
         premiums = queryset.filter(**query)
         if not premiums.exists():
