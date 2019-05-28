@@ -160,6 +160,7 @@ PASSWORD_NOT_SET = 'Password is not set.'
 PAYMENT_LINK_GENERATION_FAILED = 'Failed to generate payment link for application (%s), due to exception:%s' # noqa
 FAILED_TO_SEND_TO_AGGREGATOR = 'Failed to send application (%s) to aggregator due to exception: %s' # noqa
 CONTACT_DETAILS_REQUIRED = 'Contact name and Contact phone_no is required'
+DUPLICATE_LEAD = 'Lead already exists with similar contact_name and contact_phone_no' # noqa
 
 
 # Creation Fields  ==================================
@@ -175,7 +176,7 @@ CONTACT_CREATION_FIELDS = (
     'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
     'occupation', 'marital_status', 'email')
 GENERIC_LEAD_FIELDS = (
-    'category_id', 'pincode', 'bookmark', 'user_id', 'ignore')
+    'category_id', 'pincode', 'bookmark', 'user_id', 'ignore', 'contact_id')
 
 
 # Upload paths  ==================================
