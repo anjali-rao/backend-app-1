@@ -21,10 +21,10 @@ class Earning(BaseModel):
     ignore = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
-        if not self.__class__.objects.filter(pk=self.id).exists(): # noqa
+        if not self.__class__.objects.filter(pk=self.id).exists() and self.referral == 'referral': # noqa
             self.text = (getattr(
                 Constants, ('%s_TEXT' % self.earning_type).upper()
-            ) % self.get_text_paramaters()) or self.text
+            ) % self.get_text_paramaters())
         super(self.__class__, self).save(*args, **kwargs)
 
     def get_text_paramaters(self):
@@ -58,7 +58,7 @@ class Commission(BaseModel):
             self.earning = Earning.objects.create(
                 user_id=self.application.quote.lead.user_id,
                 amount=self.amount, earning_type='commission',
-                status='pending', text=earning_text, comment=self.comment,
+                status='pending', text=earning_text,
                 payable_date='2019-06-02')
         super(self.__class__, self).save(*args, **kwargs)
 

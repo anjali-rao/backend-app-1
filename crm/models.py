@@ -42,7 +42,7 @@ class Lead(BaseModel):
         return self.category_lead.get_premiums()
 
     def refresh_quote_data(self, **kw):
-        return self.category_lead.refresh_quote_data()
+        return self.category_lead.refresh_quote_data(**kw)
 
     def get_quotes(self):
         self.stage = 'quote'

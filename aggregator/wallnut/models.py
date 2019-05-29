@@ -215,7 +215,7 @@ class Application(BaseModel):
         if proposers.filter(relation='self').exists():
             self.self_insured = True
             proposer = proposers.get(relation='self')
-        elif proposers.filter(relation='spouse').exists:
+        elif proposers.filter(relation='spouse').exists():
             proposer = proposers.get(relation='spouse')
         else:
             proposer = proposers.first()
@@ -249,7 +249,8 @@ class Application(BaseModel):
 
     @cached_property
     def pay_mode_text(self):
-        return 'Individual' if len(self.reference_app.active_members) == 1 else 'Family'
+        return 'Individual' if len(
+            self.reference_app.active_members) == 1 else 'Family'
 
     @cached_property
     def gender_ages(self):

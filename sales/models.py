@@ -315,6 +315,9 @@ class HealthInsurance(Insurance):
         default=False, help_text=Constants.PROPOSAL_TERMS,
         null=True, blank=True)
 
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+
     def update_default_fields(self, kw):
         for field in Constants.HEALTHINSURANCE_FIELDS:
             setattr(self, field, kw)
@@ -323,11 +326,11 @@ class HealthInsurance(Insurance):
     def switch_premium(self, adults, childrens):
         lead = self.application.quote.lead
         data = dict(
-            effective_age=now().year - self.application.active_members.aggregate(
-                s=models.Max('dob'))['s'].year, adults=adults,
+            effective_age=(
+                now().year - self.application.active_members.aggregate(
+                    s=models.Min('dob'))['s'].year), adults=adults,
             product_variant_id=self.application.quote.premium.product_variant_id,
-            childrens=childrens
-        )
+            childrens=childrens)
         for member in Constants.RELATION_CHOICES:
             members = self.application.active_members.filter(relation=member)
             if members.exists() and member not in ['son', 'daughter']:
