@@ -108,6 +108,8 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
         for field in fields.keys():
             fields[field] = validated_data.get(field, getattr(
                 category_lead, field))
+            if isinstance(fields[field], str):
+                fields[field] = fields[field].lower()
         category_lead.update_fields(**fields)
         return category_lead
 
