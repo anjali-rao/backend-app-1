@@ -17,7 +17,8 @@ from sales.serializers import SalesApplicationSerializer
 from users.decorators import UserAuthentication
 from utils import constants
 from utils.mixins import APIException
-from content.serializers import EnterprisePlaylistSerializer
+from content.serializers import (
+    EnterprisePlaylistSerializer, AppoinmentSerializer, Appointment)
 
 from django.db.models import Q
 from django.db import transaction, IntegrityError
@@ -233,42 +234,23 @@ class GetUserDetails(generics.RetrieveAPIView):
     serializer_class = UserDetailSerializer
     queryset = User.objects.all()
 
-    def retrieve(self, request, *args, **kwargs):
-        data = {
-            "agent_id": "a7102e2f-7477-4576-a20d-1e5f4268f16d",
-            "phone_no": "6362843965",
-            "name": "Komal Gupta",
-            "categories": [
-                {
-                    "id": 1,
-                    "hexa_code": "#005db1",
-                    "name": "Health",
-                    "is_active": True,
-                    "logo": "http://localhost:8000/media/category/health_insurance.png",
-                    "icon_class": "fa-faplus"
-                },
-            ],
-            "profile_pic": "http://localhost:8000/media/documents/photo/2_download_2019-05-24_NEhyBbI.jpeg",
-            "certifications": [
-                {
-                    "certification": "Product Management",
-                    "image": "http://localhost:8000/media/documents/photo/2_download_2019-05-24_NEhyBbI.jpeg"
-                },
-            ],
-            "product_sold": [
-                {
-                    "name": "Health Guard",
-                    "company": "Bajaj Allianz GIC",
-                    "logo": "http://localhost:8000/media/company/Bajaj_Allianz.png",
-                    "variant_name": "Health Guard"
-                }
-            ],
-            "location": {
-                "state": "Karnataka",
-                "city": "Bengaluru",
-                "pincode": "560034"
-            },
-            "short_description": "This is short_description",
-            "long_description": "This will be long long_description"
-        }
-        return Response(data)
+
+class CreateAppointment(generics.CreateAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = AppoinmentSerializer
+
+    def create(self, request, *args, **kwargs):
+        with transaction.atomic():
+            data = request.data
+            if self.request.user.id:
+                data['user'] = self.request.user.id
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            if Appointment.objects.filter(
+                user_id=data['user'], date=data['date'],
+                    phone_no=data['phone_no']).exists():
+                raise APIException('Appointment already scheduled.')
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers)

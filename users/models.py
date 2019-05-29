@@ -318,9 +318,9 @@ class AccountDetail(BaseModel):
     languages = ArrayField(
         models.CharField(max_length=16), default=list, blank=True, null=True)
     certifications = ArrayField(
-        models.CharField(max_length=16), default=list, blank=True, null=True)
+        models.CharField(max_length=64), default=list, blank=True, null=True)
     qualifications = ArrayField(
-        models.CharField(max_length=16), default=list, blank=True, null=True)
+        models.CharField(max_length=128), default=list, blank=True, null=True)
     short_description = models.TextField(null=True, blank=True)
     long_description = models.TextField(null=True, blank=True)
 

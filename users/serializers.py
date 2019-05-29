@@ -485,8 +485,7 @@ class UserEarningSerializer(serializers.ModelSerializer):
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
-    certifications = serializers.JSONField(
-        source='account.accountdetail.certifications')
+    certifications = serializers.SerializerMethodField()
     agent_id = serializers.UUIDField(source='id')
     categories = serializers.SerializerMethodField()
     phone_no = serializers.ReadOnlyField(source='account.phone_no')
@@ -496,20 +495,38 @@ class UserDetailSerializer(serializers.ModelSerializer):
     long_description = serializers.ReadOnlyField(
         source='account.accountdetail.long_description', default='')
     profile_pic = serializers.FileField(source='account.profile_pic')
+    product_sold = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
 
+    def get_certifications(self, obj):
+        data = list()
+        for certificate in obj.account.accountdetail.certifications:
+            data.append(dict(
+                certificate=certificate,
+                image='/static/img/certificate.jpg'))
+        return data
+
     def get_categories(self, obj):
-        return obj.get_categories()
+        data = obj.get_categories()
+        for category in data:
+            category['icon_class'] = 'fa'
+        return data
 
     def get_location(self, obj):
         if obj.account.address:
             return PincodeSerializer(obj.account.address.pincode).data
         return dict(state='', city='', pincode='')
 
+    def get_product_sold(self, obj):
+        return dict(
+            name='Health Guard', company='Bajaj Allianz GIC',
+            logo='http://localhost:8000/media/company/Bajaj_Allianz.png',
+            variant_name='Health Guard')
+
     class Meta:
         model = User
         fields = (
             'agent_id', 'phone_no', 'name', 'categories', 'profile_pic',
             'certifications', 'location', 'short_description',
-            'long_description',
+            'long_description', 'product_sold'
         )
