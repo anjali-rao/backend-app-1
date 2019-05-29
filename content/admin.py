@@ -6,7 +6,7 @@ from django.contrib import admin
 from content.models import (
     Faq, HelpFile, ContactUs, NetworkHospital, NewsletterSubscriber,
     PromoBook, HelpLine, Playlist, EnterprisePlaylist, Article,
-    Coverages, Note)
+    Coverages, Note, Appointment)
 
 
 @admin.register(Faq)
@@ -99,3 +99,10 @@ class NoteAdmin(admin.ModelAdmin):
         'lead__contact__email'
     )
     raw_id_fields = ('lead',)
+
+
+@admin.register(Appointment)
+class AppointmentAdmin(admin.ModelAdmin):
+    list_display = ('name', 'phone_no', 'date', 'category')
+    raw_id_fields = ('lead', 'user')
+    search_fields = ('phone_no', 'name', 'user__phone_no')

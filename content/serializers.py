@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from content.models import (
     Faq, ContactUs, NewsletterSubscriber, PromoBook,
-    NetworkHospital, EnterprisePlaylist, Note)
+    NetworkHospital, EnterprisePlaylist, Note, Appointment)
 
 from product.models import ProductVariant, Company
 
@@ -111,3 +111,12 @@ class NotesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
         fields = ('title', 'text', 'read', 'id')
+
+
+class AppoinmentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Appointment
+        fields = (
+            'name', 'phone_no', 'address', 'date', 'category',
+            'lead_id', 'user')

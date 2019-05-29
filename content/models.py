@@ -135,3 +135,14 @@ class Note(BaseModel):
 
     def __str__(self):
         return self.title
+
+
+class Appointment(BaseModel):
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
+    lead = models.ForeignKey(
+        'crm.Lead', on_delete=models.CASCADE, null=True, blank=True)
+    name = models.CharField(max_length=128)
+    phone_no = models.CharField(max_length=10)
+    address = models.TextField()
+    date = models.DateField()

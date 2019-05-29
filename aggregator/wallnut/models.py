@@ -175,7 +175,8 @@ class Application(BaseModel):
         url = self._host % 'save_user_info'
         app = self.reference_app
         data = dict(
-            first_name=app.client.first_name, dob=app.client.dob,
+            first_name=app.client.first_name,
+            dob=app.client.dob.strftime('%d-%M-%Y'),
             last_name=app.client.last_name, email=app.client.email,
             gender=Constant.GENDER.get(app.client.gender, 'M'),
             mobile_no=app.client.phone_no, alternate_mobile='',

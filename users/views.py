@@ -17,7 +17,8 @@ from sales.serializers import SalesApplicationSerializer
 from users.decorators import UserAuthentication
 from utils import constants
 from utils.mixins import APIException
-from content.serializers import EnterprisePlaylistSerializer
+from content.serializers import (
+    EnterprisePlaylistSerializer, AppoinmentSerializer, Appointment)
 
 from django.db.models import Q
 from django.db import transaction, IntegrityError
@@ -232,3 +233,24 @@ class UpdateUser(generics.UpdateAPIView):
 class GetUserDetails(generics.RetrieveAPIView):
     serializer_class = UserDetailSerializer
     queryset = User.objects.all()
+
+
+class CreateAppointment(generics.CreateAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = AppoinmentSerializer
+
+    def create(self, request, *args, **kwargs):
+        with transaction.atomic():
+            data = request.data
+            if self.request.user.id:
+                data['user'] = self.request.user.id
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            if Appointment.objects.filter(
+                user_id=data['user'], date=data['date'],
+                    phone_no=data['phone_no']).exists():
+                raise APIException('Appointment already scheduled.')
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers)

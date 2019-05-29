@@ -5,7 +5,7 @@ import requests
 import json
 
 
-class AdityaBirlaHealthInsurance(object):
+class BajajAllianzGeneralInsurance(object):
     proposal_url = 'health/proposal_aditya_birla/save_proposal_data' # noqa
     proposal_submit_url = 'health/proposal_aditya_birla/proposal_submit'
     check_proposal_date_url = 'check_proposal_date'
@@ -17,8 +17,8 @@ class AdityaBirlaHealthInsurance(object):
 
     def perform_creation(self):
         self.save_proposal_data()
-        self.submit_proposal()
-        self.accept_terms()
+        #self.submit_proposal()
+        #self.accept_terms()
         self.wallnut.save()
 
     def save_proposal_data(self):
@@ -113,8 +113,7 @@ class AdityaBirlaHealthInsurance(object):
             local_data_values=json.dumps(dict(
                 health_city_id=self.wallnut.city_code,
                 health_insu_id=self.wallnut.insurer_code,
-                health_me=self.wallnut.health_me,
-                health_pay_mode=self.wallnut.pay_mode,
+                health_me=[], health_pay_mode=self.wallnut.pay_mode,
                 health_pay_mode_text=self.wallnut.pay_mode_text,
                 health_pay_type='', health_policy_period=1,
                 health_premium=self.wallnut.premium,
@@ -178,3 +177,111 @@ class AdityaBirlaHealthInsurance(object):
             'Smoking_%s' % count: '',
             'Pouches_%s' % count: '',
         }
+
+    def get_profession_code(self, profession):
+        dict(
+            Business=1, Doctor=2, Housewife=3, Professor=4,
+            Retired=5, Service=6, Student=7, Teacher=8, Unemployed=9,
+            Other=10)[profession]
+#
+#pay_mode: I
+#state_id: 4
+#quote_refresh: Y
+#sum_insured: 1000000
+#premium: 11569,22212,31930
+#quote: 9a3544cb40784b4a4933b17a6d4ba845
+#me: []
+#user_id: 14236
+#insu_id: 14
+#sum_insured_range: ["1000000","1000000"]
+#policy_period: 1
+#pay_type:
+#pay_mode_text: Individual
+#city_id: 4
+#pay_type_text:
+#pan_india: N
+#pan_india: N
+#firstName: Sauran
+#surname: Singla
+#sex: M
+#dateOfBirth: 21-04-1993
+#maritalstatus: UNMARRIED
+#profession: 2
+#email: sauran@gmail.com
+#mobile: 8970357244
+#addLine1: 62, Diamond district
+#addLine2: Koramongala
+#Pincode: 560034
+#addLine4: KARNATAKA
+#addLine3: BANGALORE
+#relation_1: SELF
+#FirstName_1: Sauran
+#LastName_1: Singla
+#gender_1: M
+#dateOfBirth_1: 21-04-1993
+#occupation_1: 2
+#monthlyIncome_1: 500000
+#heightCm_1: 160
+#weightKg_1: 58
+#NomineeName_1: No One Singla
+#NomineeRelationship_1: FATHER
+#relation_2: SPOUSE
+#FirstName_2:
+#LastName_2:
+#dateOfBirth_2:
+#occupation_2:
+#monthlyIncome_2:
+#heightCm_2:
+#weightKg_2:
+#NomineeName_2:
+#NomineeRelationship_2:
+#relation_3: CHILD 1
+#FirstName_3:
+#LastName_3:
+#dateOfBirth_3:
+#occupation_3:
+#monthlyIncome_3:
+#heightCm_3:
+#weightKg_3:
+#NomineeName_3:
+#NomineeRelationship_3:
+#relation_4: CHILD 2
+#FirstName_4:
+#LastName_4:
+#dateOfBirth_4:
+#occupation_4:
+#monthlyIncome_4:
+#heightCm_4:
+#weightKg_4:
+#NomineeName_4:
+#NomineeRelationship_4:
+#relation_5: CHILD 3
+#FirstName_5:
+#LastName_5:
+#dateOfBirth_5:
+#occupation_5:
+#monthlyIncome_5:
+#heightCm_5:
+#weightKg_5:
+#NomineeName_5:
+#NomineeRelationship_5:
+#relation_6: CHILD 4
+#FirstName_6:
+#LastName_6:
+#dateOfBirth_6:
+#occupation_6:
+#monthlyIncome_6:
+#heightCm_6:
+#weightKg_6:
+#NomineeName_6:
+#NomineeRelationship_6:
+#stringval8: N
+#stringval9: N
+#stringval10: N
+#stringval11: N
+#termStartDate: 03-07-2019
+#extraColumn3: 10
+#(empty)
+#policy_period: 1
+#health_insu_id: 14
+#local_data_values: health_pay_mode=I#health_state_id=4#health_quote_refresh=Y#health_sum_insured=1000000#health_premium=11569,22212,31930#health_quote=9a3544cb40784b4a4933b17a6d4ba845#health_me=[]#health_user_id=14236#health_insu_id=14#health_sum_insured_range=["1000000","1000000"]#health_policy_period=1#health_pay_type=#health_pay_mode_text=Individual#health_city_id=4#health_pay_type_text=#gender_age=[["M","26"]]#pincode=560034
