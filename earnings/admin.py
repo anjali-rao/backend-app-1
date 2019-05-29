@@ -38,10 +38,10 @@ class EarningAdmin(admin.ModelAdmin):
 @admin.register(Commission)
 class CommisionAdmin(admin.ModelAdmin):
     list_display = ('earning', 'updated')
-    raw_id_fields = ('earning',)
+    raw_id_fields = ('earning', 'application')
 
 
 @admin.register(Incentive)
 class Incentive(admin.ModelAdmin):
     list_display = ('amount', 'criteria', 'updated')
-    raw_id_fields = ('earning',)
+    raw_id_fields = ('earning', 'application')
