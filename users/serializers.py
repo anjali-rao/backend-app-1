@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from rest_framework import serializers
 
 from django.contrib.auth.hashers import make_password
@@ -6,7 +7,6 @@ from django.core.cache import cache
 from users.models import (
     User, Account, Enterprise, AccountDetail, Pincode,
     Address, BankAccount, BankBranch)
-from sales.models import Policy
 
 from earnings.serializers import EarningSerializer
 
@@ -482,3 +482,34 @@ class UserEarningSerializer(serializers.ModelSerializer):
         fields = (
             'total_premium', 'total_earning', 'total_policies',
             'earning_details')
+
+
+class UserDetailSerializer(serializers.ModelSerializer):
+    certifications = serializers.JSONField(
+        source='account.accountdetail.certifications')
+    agent_id = serializers.UUIDField(source='id')
+    categories = serializers.SerializerMethodField()
+    phone_no = serializers.ReadOnlyField(source='account.phone_no')
+    name = serializers.ReadOnlyField(source='account.get_full_name')
+    short_description = serializers.ReadOnlyField(
+        source='account.accountdetail.short_description', default='')
+    long_description = serializers.ReadOnlyField(
+        source='account.accountdetail.long_description', default='')
+    profile_pic = serializers.FileField(source='account.profile_pic')
+    location = serializers.SerializerMethodField()
+
+    def get_categories(self, obj):
+        return obj.get_categories()
+
+    def get_location(self, obj):
+        if obj.account.address:
+            return PincodeSerializer(obj.account.address.pincode).data
+        return dict(state='', city='', pincode='')
+
+    class Meta:
+        model = User
+        fields = (
+            'agent_id', 'phone_no', 'name', 'categories', 'profile_pic',
+            'certifications', 'location', 'short_description',
+            'long_description',
+        )
