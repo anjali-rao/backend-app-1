@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from rest_framework import permissions, status, generics
 from rest_framework.response import Response
@@ -10,7 +11,7 @@ from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
     AccountSearchSerializers, User, PincodeSerializer, Pincode,
-    UpdateUserSerializer, UserEarningSerializer
+    UpdateUserSerializer, UserEarningSerializer, UserDetailSerializer
 )
 from sales.serializers import SalesApplicationSerializer
 from users.decorators import UserAuthentication
@@ -226,3 +227,8 @@ class UpdateUser(generics.UpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class GetUserDetails(generics.RetrieveAPIView):
+    serializer_class = UserDetailSerializer
+    queryset = User.objects.all()

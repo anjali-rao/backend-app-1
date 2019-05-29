@@ -108,6 +108,12 @@ class Account(AbstractUser):
         days = (now().date() - self.dob).days
         return '%s years and %s months' % ((days % 365) / 30, days / 365)
 
+    @property
+    def profile_pic(self):
+        docs = Document.objects.filter(doc_type='photo')
+        if docs.exists():
+            return docs.last().file
+
     def __str__(self):
         return 'Account: %s' % self.phone_no
 
@@ -304,19 +310,19 @@ class SubcriberEnterprise(BaseModel):
 
 class AccountDetail(BaseModel):
     account = models.OneToOneField('users.Account', on_delete=models.CASCADE)
-    agent_code = models.CharField(max_length=16)
-    branch_code = models.CharField(max_length=16)
-    designation = models.CharField(max_length=16)
-    channel = models.CharField(max_length=16)
-    status = models.CharField(max_length=32)
+    agent_code = models.CharField(max_length=16, null=True, blank=True)
+    branch_code = models.CharField(max_length=16, null=True, blank=True)
+    designation = models.CharField(max_length=16, null=True, blank=True)
+    channel = models.CharField(max_length=16, null=True, blank=True)
+    status = models.CharField(max_length=32, null=True, blank=True)
     languages = ArrayField(
         models.CharField(max_length=16), default=list, blank=True, null=True)
     certifications = ArrayField(
         models.CharField(max_length=16), default=list, blank=True, null=True)
     qualifications = ArrayField(
         models.CharField(max_length=16), default=list, blank=True, null=True)
-    short_description = models.TextField()
-    long_description = models.TextField()
+    short_description = models.TextField(null=True, blank=True)
+    long_description = models.TextField(null=True, blank=True)
 
 
 class Referral(BaseModel):
@@ -449,8 +455,9 @@ def user_post_save(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Account, dispatch_uid="action%s" % str(now()))
 def account_post_save(sender, instance, created, **kwargs):
     if created:
-        message = {
-            'message': Constants.USER_CREATION_MESSAGE % (
-                instance.phone_no), 'type': 'sms'
-        }
+        message = dict(
+            message=(Constants.USER_CREATION_MESSAGE % (instance.phone_no)),
+            type='sms'
+        )
         instance.send_notification(**message)
+        AccountDetail.objects.create(account_id=instance.id)
