@@ -288,6 +288,7 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
 
 class LeadDetailSerializer(serializers.ModelSerializer):
     lead_id = serializers.ReadOnlyField(source='id')
+    full_name = serializers.ReadOnlyField(source='contact.get_full_name', default='')
     logo = serializers.FileField(source='category.logo', default='')
     stage = serializers.ReadOnlyField(source='get_stage_display')
     phone_no = serializers.ReadOnlyField(source='contact.phone_no')
@@ -306,4 +307,4 @@ class LeadDetailSerializer(serializers.ModelSerializer):
         model = Lead
         fields = (
             'lead_id', 'phone_no', 'logo', 'address', 'stage', 'quotes',
-            'created', 'notes')
+            'created', 'notes', 'full_name')

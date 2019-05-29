@@ -452,8 +452,7 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'reference_no', 'premium', 'suminsured', 'earning',
             'last_updated', 'logo', 'section', 'product_name', 'proposer_name',
-            'stage'
-        )
+            'stage')
 
 
 class ClientSerializer(serializers.ModelSerializer):
