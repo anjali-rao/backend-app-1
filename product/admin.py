@@ -76,7 +76,9 @@ class HealthPremiumAdmin(admin.ModelAdmin):
     search_fields = ('product_variant__id',)
     raw_id_fields = ('product_variant', 'deductible')
     ordering = ('sum_insured',)
-    list_filter = ('sum_insured', 'age_range')
+    list_filter = (
+        'sum_insured', 'age_range', 'adults', 'childrens',
+        'product_variant__company_category__company__name')
 
 
 @admin.register(FeatureCustomerSegmentScore)

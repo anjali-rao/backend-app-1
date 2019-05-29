@@ -20,6 +20,9 @@ class Earning(BaseModel):
     payable_date = models.DateField()
     ignore = models.BooleanField(default=False)
 
+    def __str__(self):
+        return self.user.__str__()
+
     def save(self, *args, **kwargs):
         if not self.__class__.objects.filter(
                 pk=self.id).exists() and self.earning_type == 'referral':
