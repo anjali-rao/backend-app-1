@@ -21,7 +21,8 @@ class Earning(BaseModel):
     ignore = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
-        if not self.__class__.objects.filter(pk=self.id).exists() and self.referral == 'referral': # noqa
+        if not self.__class__.objects.filter(
+                pk=self.id).exists() and self.earning_type == 'referral':
             self.text = (getattr(
                 Constants, ('%s_TEXT' % self.earning_type).upper()
             ) % self.get_text_paramaters())
@@ -40,7 +41,7 @@ class Earning(BaseModel):
         if earning_type:
             query['earning_type'] = earning_type
         return cls.objects.filter(**query).aggregate(
-            s=models.Sum('amount'))['s']
+            s=models.Sum('amount'))['s'] or 0
 
 
 class Commission(BaseModel):
