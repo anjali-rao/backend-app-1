@@ -197,7 +197,8 @@ class Application(BaseModel):
     def insurer_operation(self):
         self.user_id = self.get_user_id()
         self.save()
-        return self.insurer_product.perform_creation()
+        self.insurer_product.perform_creation()
+        return True
 
     @cached_property
     def health_me(self):

@@ -40,6 +40,8 @@ STATIC_URL = '/static/'
 SECRET_KEY = get_env_var('SECRET_KEY')
 JWT_SECRET = get_env_var('JWT_SECRET')
 
+ENV = get_env_var('ENV')
+
 DEFAULT_HOST = "www"
 ROOT_HOSTCONF = 'goplannr.hosts'
 ROOT_URLCONF = 'goplannr.urls'

@@ -17,6 +17,16 @@ class HDFCERGOHealthInsurance(object):
         self.save_proposal_data()
         self.accept_terms()
         self.wallnut.save()
+        from users.tasks import send_sms
+        from goplannr.settings import ENV
+        link = 'https://payment.%s/health/hdfcergo/%s' % (
+            ENV, self.wallnut.id)
+        message = Constant.PAYMENT_MESSAGE % (
+            self.wallnut.proposer.get_full_name(),
+            self.application.reference_no, self.wallnut.premium,
+            self.application.quote.premium.product_variant.__str__(),
+            link)
+        send_sms('6362843965', message)
 
     def save_proposal_data(self):
         data = self.get_data()

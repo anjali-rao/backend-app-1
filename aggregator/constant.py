@@ -55,3 +55,8 @@ def get_marital_status(relation):
     elif relation in 'self':
         return None
     return 'Married'
+
+
+# COMMUNICATIONS  ==============================================
+
+PAYMENT_MESSAGE = 'Hi %s. Thankyou for choosing OneCover.\nYour application(# %s) has been submitted successfully.\nYour payment of Rs.%s is due against your %s plan.\nClick on the link to pay now\n%s\n\nRegards\nTeam OneCover' # noqa
