@@ -254,9 +254,9 @@ class SubmitApplication(generics.UpdateAPIView):
             response = serializer.data
             try:
                 instance.aggregator_operation()
-                response['available_payment_modes'] = ['offline', 'online']
+                response['payment_status'] = 'online'
             except Exception:
-                response['available_payment_modes'] = ['offline']
+                response['payment_status'] = 'offline'
             instance.stage = 'completed'
             instance.save()
         return Response(response)
@@ -269,6 +269,7 @@ class GetApplicationPaymentLink(views.APIView):
         data = dict(success=False)
         try:
             app = Application.objects.get(id=pk)
+            app.application.insurer_operation()
             data['success'] = True
             data['payment_link'] = app.application.get_payment_link()
         except (Application.DoesNotExist, Exception):
