@@ -26,7 +26,7 @@ class HDFCERGOHealthInsurance(object):
             self.application.reference_no, self.wallnut.premium,
             self.application.quote.premium.product_variant.__str__(),
             link)
-        send_sms('6362843965', message)
+        send_sms(self.application.client.phone_no, message)
 
     def save_proposal_data(self):
         data = self.get_data()

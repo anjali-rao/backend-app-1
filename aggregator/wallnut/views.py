@@ -23,7 +23,7 @@ class AdityaBirlaPaymentGateway(views.View):
             context = dict(
                 email=app.reference_app.client.email,
                 phone_no=app.reference_app.client.phone_no,
-                source_code='WMGR0026', premium=1,  # app.premium,
+                source_code='WMGR0026', premium=app.premium,
                 secSignature=self._secSignature,
                 return_url=self.return_url % app.id,
                 source_txn_id=self.get_transaction_id(app)
