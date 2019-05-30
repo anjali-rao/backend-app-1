@@ -50,6 +50,18 @@ class Application(BaseModel):
             self.handle_creation()
         super(self.__class__, self).save(*args, **kwargs)
 
+    def get_payment_link(self):
+        return self.insurer_product.get_payment_link()
+
+    def send_payment_link(self):
+        from users.tasks import send_sms
+        message = Constant.PAYMENT_MESSAGE % (
+            self.proposer.get_full_name(),
+            self.reference_app.reference_no, self.premium,
+            self.reference_app.quote.premium.product_variant.__str__(),
+            self.get_payment_link())
+        send_sms(self.application.client.phone_no, message)
+
     def handle_creation(self):
         self.section = Constant.SECTION.get(
             self.reference_app.application_type)
@@ -198,6 +210,7 @@ class Application(BaseModel):
         self.user_id = self.get_user_id()
         self.save()
         self.insurer_product.perform_creation()
+        self.send_payment_link()
         return True
 
     @cached_property
