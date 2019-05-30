@@ -17,7 +17,7 @@ class Earning(BaseModel):
         choices=get_choices(Constants.EARNING_STATUS), max_length=16)
     transaction_allowed = models.BooleanField(default=False)
     text = models.CharField(max_length=512)
-    payable_date = models.DateField()
+    payable_date = models.DateTimeField()
     ignore = models.BooleanField(default=False)
 
     def __str__(self):
