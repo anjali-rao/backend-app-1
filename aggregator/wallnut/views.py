@@ -50,6 +50,7 @@ class AdityaBirlaPaymentGateway(views.View):
 
 class AdityaBirlaPaymentCapture(views.View):
     capture_url = 'https://wallnut.in/health/proposal/confirm/aditya_birla'
+    app = None
 
     @method_decorator(views.decorators.csrf.csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
@@ -58,27 +59,33 @@ class AdityaBirlaPaymentCapture(views.View):
 
     def post(self, request, *args, **kwargs):
         from aggregator.wallnut.models import Application
-        app = Application.objects.get(id=request.GET['application_id'])
+        self.app = Application.objects.get(id=request.GET['application_id'])
         ApplicationRequestLog.objects.create(
-            application_id=app.reference_app.id,
+            application_id=self.app.reference_app.id,
             url=request.build_absolute_uri(), response=request.POST.dict(),
-            request_type=request.method
-        )
+            request_type=request.method)
         ApplicationPayment.objects.create(
-            application_id=app.reference_app.id,
+            application_id=self.app.reference_app.id,
             merchant_txn_id=request.POST['merchantTxnId'],
             amount=request.POST['amount'],
             payment_mode=request.POST['paymentMode'],
             status=request.POST['TxStatus'],
             transaction_id=request.POST['SourceTxnId'],
             transaction_reference_no=request.POST['TxRefNo'],
-            response=request.POST.dict()
-        )
+            response=request.POST.dict())
+        self.create_commission()
         import requests
         data = request.POST.dict()
-        requests.post(
-            self.capture_url, data=data)
+        requests.post(self.capture_url, data=data)
         return HttpResponse("Payment successfully processed.")
+
+    def create_commission(self):
+        from earnings.models import Commission
+        cc = self.app.reference_app.quote.premium.product_variant.company_category # noqa
+        commission = self.app.reference_app.quote.premium.commission + cc.company.commission + cc.category.commission + self.app.reference_app.quote.lead.user.enterprise.commission # noqa
+        Commission.objects.create(
+            application_id=self.app.reference_app.id,
+            amount=self.app.premium * commission)
 
 
 class HDFCPaymentGateway(views.View):

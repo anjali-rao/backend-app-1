@@ -47,6 +47,8 @@ USER_FILE_UPLOAD = ['cancelled_cheque', 'photo']
 REQUEST_CHOICES = ['GET', 'POST', 'PUT', 'PATCH']
 AGGREGATOR_CHOICES = ['offline', 'wallnut']
 EARNING_STATUS = ('paid', 'pending', 'processing')
+ACTIVE_AGGREGATOR_COMPANIES = [
+    'Aditya Birla Health Insurance', 'HDFC ERGO General Insurance']
 
 
 # ORDERS  ==================================

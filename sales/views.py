@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from rest_framework import generics, status
+from rest_framework import generics, status, views
 from rest_framework.response import Response
 
 from users.decorators import UserAuthentication
@@ -242,10 +242,36 @@ class SubmitApplication(generics.UpdateAPIView):
     queryset = Application.objects.all()
     serializer_class = TermsSerializer
 
-    def perform_update(self, serializer):
+    def update(self, request, *args, **kwargs):
         with transaction.atomic():
-            serializer.save()
-            application = self.get_object()
-            application.refresh_from_db()
-            application.stage = 'completed'
-            application.save()
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+            serializer = self.get_serializer(
+                instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            instance.refresh_from_db()
+            response = serializer.data
+            try:
+                instance.aggregator_operation()
+                response['payment_status'] = 'online'
+            except Exception:
+                response['payment_status'] = 'offline'
+            instance.stage = 'completed'
+            instance.save()
+        return Response(response)
+
+
+class GetApplicationPaymentLink(views.APIView):
+    authentication_classes = (UserAuthentication,)
+
+    def get(self, request, pk, version):
+        data = dict(success=False)
+        try:
+            app = Application.objects.get(id=pk)
+            app.application.insurer_operation()
+            data['success'] = True
+            data['payment_link'] = app.application.get_payment_link()
+        except (Application.DoesNotExist, Exception):
+            data['message'] = 'Could not generate payment link. Please go with offline' # noqa
+        return Response(data)
