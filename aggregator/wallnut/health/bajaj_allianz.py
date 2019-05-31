@@ -17,8 +17,6 @@ class BajajAllianzGeneralInsurance(object):
 
     def perform_creation(self):
         self.save_proposal_data()
-        #self.submit_proposal()
-        #self.accept_terms()
         self.wallnut.save()
 
     def save_proposal_data(self):

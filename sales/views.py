@@ -273,5 +273,5 @@ class GetApplicationPaymentLink(views.APIView):
             data['success'] = True
             data['payment_link'] = app.application.get_payment_link()
         except (Application.DoesNotExist, Exception):
-            data['message'] = 'Could not generate payment link. Please go with offline' # noqa
+            data['message'] = 'Could not generate payment link. Please go with offline mode' # noqa
         return Response(data)
