@@ -518,10 +518,10 @@ class UserDetailSerializer(serializers.ModelSerializer):
         return dict(state='', city='', pincode='')
 
     def get_product_sold(self, obj):
-        return dict(
+        return [dict(
             name='Health Guard', company='Bajaj Allianz GIC',
             logo='http://localhost:8000/media/company/Bajaj_Allianz.png',
-            variant_name='Health Guard')
+            variant_name='Health Guard')]
 
     class Meta:
         model = User
