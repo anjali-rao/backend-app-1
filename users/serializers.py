@@ -491,7 +491,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     phone_no = serializers.ReadOnlyField(source='account.phone_no')
     name = serializers.ReadOnlyField(source='account.get_full_name')
     pan_no = serializers.ReadOnlyField(source='account.pan_no')
-    rating = serializers.ReadOnlyField(source='account.user.rating')
+    rating = serializers.ReadOnlyField(source='account.user.rating', default=4)
     bank_details = serializers.SerializerMethodField()
     short_description = serializers.ReadOnlyField(
         source='account.accountdetail.short_description', default='')
