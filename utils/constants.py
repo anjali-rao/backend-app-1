@@ -20,7 +20,7 @@ APPLICATION_STATUS = (
     ('approved', 'Approved'), ('cancelled', 'Cancelled'),
     ('completed', 'Completed'))
 APPLICATION_STAGES = (
-    'proposal_details', 'insured_members', 'nominee_details',
+    'proposer_details', 'insured_members', 'nominee_details',
     'health_details', 'summary', 'completed')
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
