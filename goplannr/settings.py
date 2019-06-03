@@ -1,4 +1,5 @@
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.timezone import now
 
 import json
 import os
@@ -188,3 +189,54 @@ CACHES = get_env_var('CACHING')
 # SMS API KEY
 SMS_API_KEY = get_env_var('SMS_API_KEY')
 SMS_API = get_env_var('SMS_API')
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'standard': {
+            'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt': "%d/%b/%Y %H:%M:%S"
+        },
+    },
+    'handlers': {
+        'db_logfile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': '../logs/db/%s.log' % now().strftime('%d_%B_%Y'),
+            'maxBytes': 50000,
+            'backupCount': 2,
+            'formatter': 'standard',
+        },
+        'logfile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': '../logs/project/%s.log' % now().strftime('%d_%B_%Y'),
+            'maxBytes': 50000,
+            'backupCount': 2,
+            'formatter': 'standard',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'logfile'],
+            'propagate': True,
+            'level': 'WARN',
+        },
+        'django.db.backends': {
+            'handlers': ['console', 'db_logfile'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'goplannr': {
+            'handlers': ['console', 'logfile'],
+            'level': 'DEBUG',
+        },
+    }
+}
