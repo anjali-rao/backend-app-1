@@ -13,7 +13,8 @@ LEAD_STAGE_CHOICES = (
     ('proposal', 'Proposal'), ('payment', 'Payment'),
     ('submitted', 'Submitted'), ('issued', 'Issued'))
 STATUS_CHOICES = (
-    ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'))
+    ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'),
+    ('completed', 'Completed'))
 APPLICATION_STATUS = (
     ('fresh', 'Fresh'), ('pending', 'Pending'), ('submitted', 'Submitted'),
     ('approved', 'Approved'), ('cancelled', 'Cancelled'),

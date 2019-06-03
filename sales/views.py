@@ -221,10 +221,10 @@ class ApplicationSummary(generics.RetrieveUpdateAPIView):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        nominee = instance.nominee_set.first()
-        if not nominee:
-            raise mixins.APIException(
-                constants.INCOMPLETE_APPLICATION % 'nominee details')
+#        nominee = instance.nominee_set.first()
+#        if not nominee:
+#            raise mixins.APIException(
+#                constants.INCOMPLETE_APPLICATION % 'nominee details')
         if not hasattr(instance, instance.application_type):
             raise mixins.APIException(constants.APPLICATION_UNMAPPED)
 
