@@ -73,7 +73,7 @@ class Application(BaseModel):
     status = models.CharField(
         max_length=32, choices=Constants.APPLICATION_STATUS, default='fresh')
     stage = models.CharField(
-        max_length=32, default='proposal_details',
+        max_length=32, default='proposer_details',
         choices=get_choices(Constants.APPLICATION_STAGES))
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
