@@ -490,6 +490,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
     categories = serializers.SerializerMethodField()
     phone_no = serializers.ReadOnlyField(source='account.phone_no')
     name = serializers.ReadOnlyField(source='account.get_full_name')
+    pan_no = serializers.ReadOnlyField(source='account.pan_no')
+    rating = serializers.ReadOnlyField(source='account.user.rating')
+    bank_details = serializers.SerializerMethodField()
     short_description = serializers.ReadOnlyField(
         source='account.accountdetail.short_description', default='')
     long_description = serializers.ReadOnlyField(
@@ -523,10 +526,15 @@ class UserDetailSerializer(serializers.ModelSerializer):
             logo='http://localhost:8000/media/company/Bajaj_Allianz.png',
             variant_name='Health Guard')]
 
+    def get_bank_details(self, obj):
+        return BankAccountSerializer(
+            obj.bankaccount_set.all(), many=True).data
+
     class Meta:
         model = User
         fields = (
             'agent_id', 'phone_no', 'name', 'categories', 'profile_pic',
             'certifications', 'location', 'short_description',
-            'long_description', 'product_sold'
+            'long_description', 'product_sold', 'user_type', 'pan_no',
+            'rating', 'bank_details'
         )

@@ -428,6 +428,7 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
 
 
 class SalesApplicationSerializer(serializers.ModelSerializer):
+    quote_id = serializers.ReadOnlyField(source='quote.id')
     proposer_name = serializers.SerializerMethodField()
     product_name = serializers.ReadOnlyField(
         source='quote.premium.product_variant.product_short_name')
@@ -452,7 +453,7 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'reference_no', 'premium', 'suminsured', 'earning',
             'last_updated', 'logo', 'section', 'product_name', 'proposer_name',
-            'stage')
+            'stage', 'quote_id')
 
 
 class ClientSerializer(serializers.ModelSerializer):
