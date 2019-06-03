@@ -491,7 +491,6 @@ class UserDetailSerializer(serializers.ModelSerializer):
     phone_no = serializers.ReadOnlyField(source='account.phone_no')
     name = serializers.ReadOnlyField(source='account.get_full_name')
     pan_no = serializers.ReadOnlyField(source='account.pan_no')
-    rating = serializers.ReadOnlyField(source='account.user.rating', default=4)
     bank_details = serializers.SerializerMethodField()
     short_description = serializers.ReadOnlyField(
         source='account.accountdetail.short_description', default='')
@@ -500,6 +499,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     profile_pic = serializers.FileField(source='account.profile_pic')
     product_sold = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
+    email = serializers.ReadOnlyField(source='account.email', default='')
 
     def get_certifications(self, obj):
         data = list()
@@ -536,5 +536,5 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'agent_id', 'phone_no', 'name', 'categories', 'profile_pic',
             'certifications', 'location', 'short_description',
             'long_description', 'product_sold', 'user_type', 'pan_no',
-            'rating', 'bank_details'
+            'rating', 'bank_details', 'email'
         )
