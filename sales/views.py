@@ -256,9 +256,10 @@ class SubmitApplication(generics.UpdateAPIView):
             try:
                 instance.aggregator_operation()
                 response['payment_status'] = True
+                instance.stage = 'payment_due'
             except Exception:
                 response['payment_status'] = False
-            instance.stage = 'completed'
+                instance.stage = 'completed'
             instance.save()
         return Response(response)
 
