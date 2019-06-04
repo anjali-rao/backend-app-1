@@ -4,7 +4,8 @@ from sales.views import (
     CreateApplication, RetrieveUpdateProposerDetails,
     RetrieveUpdateApplicationMembers, CreateApplicationNominee,
     UpdateInsuranceFields, ApplicationSummary, CreateExistingPolicies,
-    GetInsuranceFields, SubmitApplication, GetApplicationPaymentLink
+    GetInsuranceFields, SubmitApplication, GetApplicationPaymentLink,
+    UpdateApplicationStatus
 )
 
 urlpatterns = [
@@ -17,5 +18,6 @@ urlpatterns = [
     path('application/<int:pk>/policies', CreateExistingPolicies.as_view()),
     path('application/<int:pk>/summary', ApplicationSummary.as_view()),
     path('application/<int:pk>/submit', SubmitApplication.as_view()),
-    path('application/<int:pk>/paymentlink', GetApplicationPaymentLink.as_view()) # noqa
+    path('application/<int:pk>/paymentlink', GetApplicationPaymentLink.as_view()), # noqa
+    path('application/<int:pk>/update', UpdateApplicationStatus.as_view()) # noqa
 ]

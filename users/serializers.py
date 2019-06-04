@@ -73,6 +73,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     phone_no = serializers.CharField(required=True, max_length=10)
     transaction_id = serializers.CharField(required=True)
     password = serializers.CharField(required=False)
+    promo_code = serializers.CharField(required=False)
     referral_code = serializers.CharField(required=False)
     fcm_id = serializers.CharField(required=False)
     first_name = serializers.CharField(required=True)
@@ -118,11 +119,10 @@ class CreateUserSerializer(serializers.ModelSerializer):
             validated_data.get('referral_code')))
         account = self.get_account(validated_data)
         data = dict(
-            account_id=account.id,
+            account_id=account.id, is_active=True,
             user_type=validated_data['user_type'],
             enterprise_id=validated_data['enterprise_id'],
-            manager_id=validated_data.get('manager_id'),
-            is_active=True
+            manager_id=validated_data.get('manager_id')
         )
         self.instance = User.objects.create(**data)
         self.instance.generate_referral(validated_data.get('referral_code'))

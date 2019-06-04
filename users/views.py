@@ -183,7 +183,7 @@ class GetCart(generics.ListAPIView):
     serializer_class = SalesApplicationSerializer
 
     def get_queryset(self):
-        return self.request.user.get_applications()
+        return self.request.user.get_applications(status=['pending', 'fresh'])
 
 
 class GetLeads(generics.ListAPIView):
@@ -201,7 +201,8 @@ class GetClients(generics.ListAPIView):
     serializer_class = ClientSerializer
 
     def get_queryset(self):
-        return self.request.user.get_applications(status='submitted')
+        return self.request.user.get_applications(status=[
+            'submitted', 'approved', 'completed'])
 
 
 class GetPlaylist(generics.ListAPIView):
