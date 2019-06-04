@@ -207,7 +207,9 @@ class User(BaseModel):
     def get_applications(self, status=None):
         from sales.models import Application
         query = dict(quote__lead__user_id=self.id)
-        if status:
+        if status and isinstance(status, list):
+            query['status__in'] = status
+        elif status:
             query['status'] = status
         return Application.objects.filter(**query)
 
