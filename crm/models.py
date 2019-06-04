@@ -28,9 +28,10 @@ class Lead(BaseModel):
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
-        self.category_name = self.category.name.replace(' ', '').lower()
-        if hasattr(self, self.category_name):
-            self.category_lead = getattr(self, self.category_name)
+        if self.category:
+            self.category_name = self.category.name.replace(' ', '').lower()
+            if hasattr(self, self.category_name):
+                self.category_lead = getattr(self, self.category_name)
 
     class Meta:
         ordering = ('-bookmark',)

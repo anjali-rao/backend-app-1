@@ -76,6 +76,8 @@ class ProductVariant(BaseModel):
     parent_product = models.CharField(
         max_length=128, null=True, blank=True, default='GoPlannr')
     feature_variant = models.CharField(max_length=256, default='base')
+    short_description = models.CharField(max_length=128, null=True, blank=True)
+    long_description = models.TextField(null=True, blank=True)
     chronic = models.BooleanField(default=True)
 
     def get_product_details(self):
