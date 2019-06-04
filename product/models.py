@@ -100,7 +100,7 @@ class ProductVariant(BaseModel):
 
     def get_basic_details(self):
         return {
-            'toll_free_number': self.company_category.company.toll_free_number,
+            'toll_free_number': self.company_category.company.toll_free_number or '', # noqa
             'brochure': self.get_help_file('sales_brochure'),
             'claim_form': self.get_help_file('claim_form')
         }

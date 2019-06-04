@@ -473,3 +473,15 @@ class ClientSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'product_name', 'full_name', 'created', 'premium',
             'status', 'company_logo')
+
+
+class UpdateApplicationSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = Application
+        fields = ('status', )
+
+    @property
+    def data(self):
+        self._data = dict(message='Application updated successfully')
+        return self._data

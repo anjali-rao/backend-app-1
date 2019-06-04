@@ -12,7 +12,8 @@ from sales.serializers import (
     GetApplicationMembersSerializer, CreateMemberSerializers,
     CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
     TravalInsuranceSerializer, TermsSerializer, ExistingPolicySerializer,
-    GetInsuranceFieldsSerializer, ApplicationSummarySerializer
+    GetInsuranceFieldsSerializer, ApplicationSummarySerializer,
+    UpdateApplicationSerializers
 )
 
 from django.core.exceptions import ValidationError
@@ -275,3 +276,9 @@ class GetApplicationPaymentLink(views.APIView):
         except (Application.DoesNotExist, Exception):
             data['message'] = 'Could not generate payment link. Please go with offline mode' # noqa
         return Response(data)
+
+
+class UpdateApplicationStatus(generics.UpdateAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = UpdateApplicationSerializers
+    queryset = Application.objects.all()
