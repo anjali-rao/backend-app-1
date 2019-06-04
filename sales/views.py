@@ -254,9 +254,9 @@ class SubmitApplication(generics.UpdateAPIView):
             response = serializer.data
             try:
                 instance.aggregator_operation()
-                response['payment_status'] = 'online'
+                response['payment_status'] = True
             except Exception:
-                response['payment_status'] = 'offline'
+                response['payment_status'] = False
             instance.stage = 'completed'
             instance.save()
         return Response(response)
