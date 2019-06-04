@@ -73,7 +73,7 @@ class AdityaBirlaHealthInsurance(object):
 
     def get_data(self):
         data = dict(
-            city_id=self.wallnut.city_code, me=list(),
+            city_id=self.wallnut.city_code, me=self.wallnut.health_me,
             insu_id=self.wallnut.insurer_code,
             pay_mode=self.wallnut.pay_mode,
             pay_mode_text=self.wallnut.pay_mode_text,
@@ -122,7 +122,9 @@ class AdityaBirlaHealthInsurance(object):
                 health_me=self.wallnut.health_me,
                 health_pay_mode=self.wallnut.pay_mode,
                 health_pay_mode_text=self.wallnut.pay_mode_text,
-                health_pay_type='', health_policy_period=1,
+                health_pay_type=self.wallnut.health_pay_type,
+                health_pay_type_text=self.wallnut.health_pay_type_text,
+                health_policy_period=1,
                 health_premium=self.wallnut.premium,
                 health_quote=self.wallnut.quote_id,
                 health_quote_refresh='N',
