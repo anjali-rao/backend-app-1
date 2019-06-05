@@ -19,6 +19,7 @@ class BajajAllianzGeneralInsurance(object):
     def perform_creation(self):
         self.save_quote_data()
         self.save_proposal_data()
+        self.accept_terms()
         self.wallnut.save()
 
     def get_payment_link(self):
@@ -67,10 +68,10 @@ class BajajAllianzGeneralInsurance(object):
     def accept_terms(self):
         data = dict(
             customer_id=self.wallnut.customer_id,
-            proposal_id=self.wallnut.proposal_id2,
+            proposal_id=self.wallnut.proposal_id,
             section='health', company='aditya_birla'
         )
-        url = self.wallnut._host % self.check_proposal_date_url
+        url = self.wallnut._host % Constant.BAJAJ_ALLIANZ_GIC_CHECK_PROPOSAL_DATE_URL # noqa
         log = ApplicationRequestLog.objects.create(
             application_id=self.application.id, url=url, request_type='POST',
             payload=data)
