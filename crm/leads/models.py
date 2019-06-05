@@ -121,8 +121,8 @@ class HealthInsurance(models.Model):
             'product_variant').filter(
             suminsured_range__contains=int(kw.get(
                 'score', self.predicted_suminsured)),
-            adults=kw.get('adults', self.adults),
-            citytier__in=kw.get('citytier', self.base.citytier)
+            adults=kw.get('adults', self.adults), ignore=False,
+            citytier__in=kw.get('citytier', self.base.citytier),
         )
         if 'product_variant_id' in kw:
             query['product_variant_id'] = kw['product_variant_id']

@@ -211,6 +211,7 @@ class HealthPremium(BaseModel):
     premium = GenericRelation(
         'sales.quote', related_query_name='healthinsurance',
         object_id_field='premium_id')
+    ignore = models.BooleanField(default=False)
 
     def get_details(self):
         return {
