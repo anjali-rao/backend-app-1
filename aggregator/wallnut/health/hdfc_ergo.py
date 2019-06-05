@@ -6,8 +6,6 @@ import json
 
 
 class HDFCERGOHealthInsurance(object):
-    proposal_url = 'health/proposal_hdfc_ergo/save_proposer_data'
-    check_proposal_date_url = 'check_proposal_date'
 
     def __init__(self, wallnut):
         self.wallnut = wallnut
@@ -25,7 +23,7 @@ class HDFCERGOHealthInsurance(object):
 
     def save_proposal_data(self):
         data = self.get_data()
-        url = self.wallnut._host % self.proposal_url
+        url = self.wallnut._host % Constant.HDFC_ERGO_PROPOSAL_URL
         log = ApplicationRequestLog.objects.create(
             application_id=self.application.id, url=url, request_type='POST',
             payload=data)
@@ -42,7 +40,7 @@ class HDFCERGOHealthInsurance(object):
             proposal_id=self.wallnut.proposal_id,
             section='health', company='hdfc_ergo'
         )
-        url = self.wallnut._host % self.check_proposal_date_url
+        url = self.wallnut._host % Constant.HDFC_ERGO_CHECK_PROPOSAL_DATE_URL
         log = ApplicationRequestLog.objects.create(
             application_id=self.application.id, url=url, request_type='POST',
             payload=data)

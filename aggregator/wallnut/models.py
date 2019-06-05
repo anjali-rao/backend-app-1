@@ -74,10 +74,8 @@ class Application(BaseModel):
         self.get_quote_data()
 
     def get_state_city(self):
-        url = self._host % (
-            'health/proposal_aditya_birla/get_state_city?Pincode=%s') % (
-                self.reference_app.quote.lead.pincode
-        )
+        url = 'https://wallnut.in/health/proposal_aditya_birla/get_state_city?Pincode=%s' % ( # noqa
+            self.reference_app.quote.lead.pincode)
         request_log = ApplicationRequestLog.objects.create(
             application_id=self.reference_app.id, url=url, request_type='GET')
         response = requests.get(url).json()
@@ -255,7 +253,7 @@ class Application(BaseModel):
             pay_type_text += 'Spouse '
         if self.reference_app.active_members.filter(relation__in=['son', 'daughter']).exists(): # noqa
             pay_type_text += '%sChild' % self.reference_app.childrens
-        return pay_type_text
+        return pay_type_text.strip()
 
     @cached_property
     def pay_mode(self):

@@ -11,7 +11,6 @@ class BajajAllianzGeneralInsurance(object):
     proposal_url = 'health/proposal_aditya_birla/save_proposal_data' # noqa
     proposal_submit_url = 'health/proposal_aditya_birla/proposal_submit'
     check_proposal_date_url = 'check_proposal_date'
-    payment_url = 'https://pg-abhi.adityabirlahealth.com/ABHIPGIntegration/ABHISourceLanding.aspx' # noqa
 
     def __init__(self, wallnut):
         self.wallnut = wallnut
@@ -23,7 +22,7 @@ class BajajAllianzGeneralInsurance(object):
 
     def save_proposal_data(self):
         data = self.get_data()
-        url = self.wallnut._host % self.proposal_url
+        url = self.wallnut._host % Constant.BAJAJ_ALLIANZ_GIC_PROPOSAL_URL
         log = ApplicationRequestLog.objects.create(
             application_id=self.application.id, url=url, request_type='POST',
             payload=data)
@@ -39,7 +38,7 @@ class BajajAllianzGeneralInsurance(object):
     def submit_proposal(self):
         data = self.get_data()
         data['proposal_id'] = self.wallnut.proposal_id
-        url = self.wallnut._host % self.proposal_submit_url
+        url = self.wallnut._host % Constant.BAJAJ_ALLIANZ_GIC_CHECK_PROPOSAL_DATE_URL # noqa
         log = ApplicationRequestLog.objects.create(
             application_id=self.application.id, url=url, request_type='POST',
             payload=data)

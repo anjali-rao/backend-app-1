@@ -271,9 +271,12 @@ class GetApplicationPaymentLink(views.APIView):
         data = dict(success=False)
         try:
             app = Application.objects.get(id=pk)
-            app.application.insurer_operation()
-            data['success'] = True
-            data['payment_link'] = app.application.get_payment_link()
+            if not app.application.payment_ready:
+                app.application.insurer_operation()
+            data.update(dict(
+                success=True, payment_link=app.application.get_payment_link()))
+            app.stage = 'payment_due'
+            app.save()
         except (Application.DoesNotExist, Exception):
             data['message'] = 'Could not generate payment link. Please go with offline mode' # noqa
         return Response(data)
