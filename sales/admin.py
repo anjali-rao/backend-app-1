@@ -7,10 +7,7 @@ from django.utils.html import format_html
 from sales.models import (
     Quote, Application, HealthInsurance, Member,
     Nominee, Policy)
-
 from payment.models import ApplicationRequestLog
-from aggregator import PAYMENT_LINK_MAPPER
-
 from utils import constants as Constants
 
 
@@ -114,8 +111,8 @@ class ApplicationAdmin(admin.ModelAdmin):
         if hasattr(obj, 'application'):
             if obj.application.payment_ready:
                 return format_html(
-                    '<a href="{0}">{0}</a>', obj.application.get_payment_link()
-                )
+                    '<a href="{0}">{0}</a>',
+                    obj.application.get_payment_link())
             return format_html(
                 '<img src="/static/admin/img/icon-no.svg" alt="True">')
         return None

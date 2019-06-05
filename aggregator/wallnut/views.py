@@ -133,3 +133,29 @@ class HDFCPaymentGateway(views.View):
             setattr(app, pattern, patterns[pattern])
         app.save()
         return patterns
+
+
+class BajajAlianzGICGateway(views.View):
+    template_name = 'bajaj_allianz_gic_health.html'
+    _summary_url = 'https://wallnut.in/health/proposal/proposal_summary/bajaj_allianz/14?proposal_id=%s&customer_id=%s' # noqa
+    company_name = 'BajajAllianzGeneralInsuranceCoLtd'
+
+    def get(self, request, *args, **kwargs):
+        from aggregator.wallnut.models import Application
+        try:
+            app = Application.objects.get(id=kwargs['pk'])
+            if app.company_name != self.company_name:
+                raise PermissionDenied()
+            context = dict(payment_link=self.get_paramaters(app))
+            return render(request, self.template_name, context)
+        except (KeyError, Application.DoesNotExist):
+            pass
+        raise PermissionDenied()
+
+    def get_paramaters(self, app):
+        import re
+        import requests
+        url = self._summary_url % (app.proposal_id, app.customer_id)
+        res = requests.get(url)
+        page_content = str(res.content)
+        return re.compile(r'id="payment_link" value="(\w*)').findall(page_content)[0]
