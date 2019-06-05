@@ -5,12 +5,13 @@ from django import views
 from django.http import HttpResponse
 
 from payment.models import ApplicationPayment, ApplicationRequestLog
+from goplannr.settings import ENV
 
 
 class AdityaBirlaPaymentGateway(views.View):
     template_name = 'aditya_birla.html'
     _secSignature = 'fed47b72baebd4f5f98a3536b8537dc4e17f60beeb98c77c97dadc917004b3bb' # noqa
-    return_url = 'http://payment.localhost:8000/health/adityabirla/capture?application_id=%s' # noqa
+    return_url = 'https://payment.%s/health/adityabirla/capture?application_id=%s' # noqa
     _summary_url = 'https://wallnut.in/health/proposal/proposal_summary/aditya_birla/1?proposal_id=%s&customer_id=%s' # noqa
     company_name = 'AdityaBirlaHealthInsurance'
 
@@ -25,7 +26,7 @@ class AdityaBirlaPaymentGateway(views.View):
                 phone_no=app.reference_app.client.phone_no,
                 source_code='WMGR0026', premium=app.premium,
                 secSignature=self._secSignature,
-                return_url=self.return_url % app.id,
+                return_url=self.return_url % (ENV, app.id),
                 source_txn_id=self.get_transaction_id(app)
             )
             ApplicationRequestLog.objects.create(
