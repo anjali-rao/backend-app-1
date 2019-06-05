@@ -103,7 +103,8 @@ class Application(BaseModel):
         request_log = ApplicationRequestLog.objects.create(
             application_id=self.reference_app.id, url=url, request_type='POST',
             payload=data)
-        response = requests.get(url, data=data).json()
+        import pdb; pdb.set_trace()
+        response = requests.post(url, data=data)
         request_log.response = response
         request_log.save()
 

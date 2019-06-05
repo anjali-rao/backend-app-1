@@ -36,7 +36,8 @@ COMPANY_NAME = {
 
 INCOME = {
     '< 3 Lakhs': 300000, '3 - 5 lakhs': 500000, '5 - 10 lakhs': 1000000,
-    '10 - 20 lakhs': 2000000, '> 20 lakhs': 5000000
+    '10 - 20 lakhs': 2000000, '> 20 lakhs': 5000000, '10 to 20 lakhs': 2000000,
+    '5 to 10 lakhs': 1000000, '3 to 5 lakhs': 500000
 }
 
 
