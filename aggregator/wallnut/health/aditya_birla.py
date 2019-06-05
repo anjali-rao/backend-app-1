@@ -6,9 +6,6 @@ import json
 
 
 class AdityaBirlaHealthInsurance(object):
-    proposal_url = 'health/proposal_aditya_birla/save_proposal_data' # noqa
-    proposal_submit_url = 'health/proposal_aditya_birla/proposal_submit'
-    check_proposal_date_url = 'check_proposal_date'
     payment_url = 'https://pg-abhi.adityabirlahealth.com/ABHIPGIntegration/ABHISourceLanding.aspx' # noqa
 
     def __init__(self, wallnut):
@@ -28,14 +25,13 @@ class AdityaBirlaHealthInsurance(object):
 
     def save_proposal_data(self):
         data = self.get_data()
-        url = self.wallnut._host % self.proposal_url
+        url = self.wallnut._host % Constant.ADITYA_BIRAL_PROPOSAL_URL
         log = ApplicationRequestLog.objects.create(
             application_id=self.application.id, url=url, request_type='POST',
             payload=data)
         response = requests.post(url, data=data).json()
         log.response = response
         log.save()
-        response = requests.post(url, data=data).json()
         self.wallnut.proposal_id = next((
             i for i in response['return_data'].split('&') if 'proposal_id' in i
         ), None).split('=')[1]
@@ -44,7 +40,7 @@ class AdityaBirlaHealthInsurance(object):
     def submit_proposal(self):
         data = self.get_data()
         data['proposal_id'] = self.wallnut.proposal_id
-        url = self.wallnut._host % self.proposal_submit_url
+        url = self.wallnut._host % Constant.ADITYA_BIRAL_PROPOSAL_SUBMIT_URL
         log = ApplicationRequestLog.objects.create(
             application_id=self.application.id, url=url, request_type='POST',
             payload=data)
@@ -61,7 +57,7 @@ class AdityaBirlaHealthInsurance(object):
             proposal_id=self.wallnut.proposal_id2,
             section='health', company='aditya_birla'
         )
-        url = self.wallnut._host % self.check_proposal_date_url
+        url = self.wallnut._host % Constant.ADITYA_BIRLA_CHECK_PROPOSAL_DATE_URL # noqa
         log = ApplicationRequestLog.objects.create(
             application_id=self.application.id, url=url, request_type='POST',
             payload=data)
@@ -73,7 +69,7 @@ class AdityaBirlaHealthInsurance(object):
 
     def get_data(self):
         data = dict(
-            city_id=self.wallnut.city_code, me=list(),
+            city_id=self.wallnut.city_code, me=self.wallnut.health_me,
             insu_id=self.wallnut.insurer_code,
             pay_mode=self.wallnut.pay_mode,
             pay_mode_text=self.wallnut.pay_mode_text,
@@ -97,8 +93,8 @@ class AdityaBirlaHealthInsurance(object):
             proposer_Number=self.application.client.phone_no,
             proposer_Height=self.wallnut.proposer.height,
             proposer_Weight=self.wallnut.proposer.weight,
-            proposer_OccupationCode=Constant.OCCUPATION_CODE[
-                self.wallnut.proposer.occupation],
+            proposer_OccupationCode=Constant.OCCUPATION_CODE.get(
+                self.wallnut.proposer.occupation, 'O009'),
             proposer_AnnualIncome=Constant.INCOME.get(
                 self.application.client.annual_income) or 500000,
             proposer_PanNumber=self.application.client.kycdocument_set.filter(
@@ -122,7 +118,9 @@ class AdityaBirlaHealthInsurance(object):
                 health_me=self.wallnut.health_me,
                 health_pay_mode=self.wallnut.pay_mode,
                 health_pay_mode_text=self.wallnut.pay_mode_text,
-                health_pay_type='', health_policy_period=1,
+                health_pay_type=self.wallnut.health_pay_type,
+                health_pay_type_text=self.wallnut.health_pay_type_text,
+                health_policy_period=1,
                 health_premium=self.wallnut.premium,
                 health_quote=self.wallnut.quote_id,
                 health_quote_refresh='N',
@@ -176,8 +174,8 @@ class AdityaBirlaHealthInsurance(object):
                 member.relation],
             'MaritalStatusCode_%s' % count: Constant.get_marital_status(
                 member.relation) or self.wallnut.proposer.marital_status,
-            'OccupationCode_%s' % count: Constant.OCCUPATION_CODE[
-                member.occupation],
+            'OccupationCode_%s' % count: Constant.OCCUPATION_CODE.get(
+                member.occupation, 'O009'),
             'Height_%s' % count: member.height,
             'Weight_%s' % count: member.weight,
             'Alcohol_%s' % count: '',

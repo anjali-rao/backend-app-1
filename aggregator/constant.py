@@ -60,3 +60,19 @@ def get_marital_status(relation):
 # COMMUNICATIONS  ==============================================
 
 PAYMENT_MESSAGE = 'Hi %s. Thankyou for choosing OneCover.\nYour application(# %s) has been submitted successfully.\nYour payment of Rs.%s is due against your %s plan.\nClick on the link to pay now\n%s\n\nRegards\nTeam OneCover' # noqa
+
+# ENDPOINTS  ==============================================
+
+ADITYA_BIRLA_HEALTH_INSURANCE_STATE_CITY_API = 'health/proposal_aditya_birla/get_state_city?Pincode=%s' # noqa
+HDFC_ERGO_GENERAL_INSURANCE_STATE_CITY_API = ''
+BAJAJ_ALLIANZ_GIC = 'health/proposal_bajaj_allianz/get_state_and_city_from_pincode' # noqa
+
+ADITYA_BIRAL_PROPOSAL_URL = 'health/proposal_aditya_birla/save_proposal_data'
+ADITYA_BIRAL_PROPOSAL_SUBMIT_URL = 'health/proposal_aditya_birla/proposal_submit' # noqa
+ADITYA_BIRLA_CHECK_PROPOSAL_DATE_URL = 'check_proposal_date'
+
+HDFC_ERGO_PROPOSAL_URL = 'health/proposal_hdfc_ergo/save_proposer_data'
+HDFC_ERGO_CHECK_PROPOSAL_DATE_URL = 'check_proposal_date'
+
+BAJAJ_ALLIANZ_GIC_PROPOSAL_URL = 'health/proposal_bajaj_allianz/save_proposal'
+BAJAJ_ALLIANZ_GIC_CHECK_PROPOSAL_DATE_URL = 'check_proposal_date'
