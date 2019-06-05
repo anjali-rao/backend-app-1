@@ -30,7 +30,8 @@ SECTION = dict(healthinsurance='mediclaim')
 
 COMPANY_NAME = {
     'Aditya Birla Health Insurance': 'Aditya Birla Health Insurance',
-    'HDFC ERGO General Insurance': 'HDFC ERGO General Insurance Co. Ltd.'
+    'HDFC ERGO General Insurance': 'HDFC ERGO General Insurance Co. Ltd.',
+    'Bajaj Allianz GIC': 'Bajaj Allianz General Insurance Co. Ltd.'
 }
 
 INCOME = {
@@ -76,3 +77,4 @@ HDFC_ERGO_CHECK_PROPOSAL_DATE_URL = 'check_proposal_date'
 
 BAJAJ_ALLIANZ_GIC_PROPOSAL_URL = 'health/proposal_bajaj_allianz/save_proposal'
 BAJAJ_ALLIANZ_GIC_CHECK_PROPOSAL_DATE_URL = 'check_proposal_date'
+
