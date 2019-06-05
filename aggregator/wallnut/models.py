@@ -15,7 +15,7 @@ class Application(BaseModel):
     reference_app = models.OneToOneField(
         'sales.application', on_delete=models.PROTECT)
     section = models.CharField(max_length=16)
-    company_name = models.CharField(max_length=32, null=True)
+    company_name = models.CharField(max_length=64, null=True)
     suminsured = models.CharField(max_length=16)
     premium = models.FloatField(default=0.0)
     insurance_type = models.CharField(max_length=16)
