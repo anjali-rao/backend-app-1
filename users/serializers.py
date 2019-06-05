@@ -156,7 +156,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
             'first_name', 'last_name', 'email', 'password',
             'referral_code', 'user_type', 'pincode', 'pan_no',
             'phone_no', 'transaction_id', 'cancelled_cheque',
-            'photo', 'manager_id', 'user_type', 'fcm_id'
+            'photo', 'manager_id', 'user_type', 'fcm_id', 'promo_code'
         )
 
 

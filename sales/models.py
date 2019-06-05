@@ -331,7 +331,7 @@ class HealthInsurance(Insurance):
             effective_age=(
                 now().year - self.application.active_members.aggregate(
                     s=models.Min('dob'))['s'].year), adults=adults,
-            product_variant_id=self.application.quote.premium.product_variant_id,
+            product_variant_id=self.application.quote.premium.product_variant_id, # noqa
             childrens=childrens)
         for member in Constants.RELATION_CHOICES:
             members = self.application.active_members.filter(relation=member)
