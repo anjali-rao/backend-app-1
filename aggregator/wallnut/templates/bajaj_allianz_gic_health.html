@@ -2,8 +2,52 @@
 <html>
 <head>
 	<title>OneCover</title>
-</head>
-<body onload="window.location.href='{{payment_link}}'">
+	<meta charset="utf-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1">
+  	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+  	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+	<style>
+		.loader {
+			margin-top: 150px;
+	  		border: 16px solid #f3f3f3;
+		  	border-radius: 50%;
+		  	border-top: 16px solid #3498db;
+	  		width: 120px;
+		  	height: 120px;
+		  	-webkit-animation: spin 2s linear infinite; /* Safari */
+  			animation: spin 2s linear infinite;
+		}
 
+		@-webkit-keyframes spin {
+  			0% { -webkit-transform: rotate(0deg); }
+  			100% { -webkit-transform: rotate(360deg); }
+		}
+
+		@keyframes spin {
+  			0% { transform: rotate(0deg); }
+  			100% { transform: rotate(360deg); }
+		}
+		.header {
+			background: #005db1;
+		}
+	</style>
+	<script type="text/javascript">
+		window.onload=function(){ 
+    		window.setTimeout(function() { window.location.href='{{payment_link}}'; }, 2000);
+		};
+	</script>
+</head>
+<body>
+	<div class="col-sm-12 header">
+		<img src="/static/img/favicon.png" style="height: 50px;">
+	</div>
+	<div class="col-sm-12">
+		<center>
+			<div class="loader"></div>
+			<br>
+			Please wait while we take you to payment page....
+		</center>
+	</div>
 </body>
 </html>
