@@ -19,6 +19,7 @@ class HDFCERGOHealthInsurance(object):
     def perform_creation(self):
         self.save_proposal_data()
         self.accept_terms()
+        self.wallnut.regenerate_payment_link = False
         self.wallnut.save()
 
     def save_proposal_data(self):
