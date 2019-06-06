@@ -2,7 +2,6 @@ from django.shortcuts import render
 from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
 from django import views
-from django.http import HttpResponse
 
 from payment.models import ApplicationPayment, ApplicationRequestLog
 from goplannr.settings import ENV
@@ -80,6 +79,13 @@ class AdityaBirlaPaymentCapture(views.View):
         data = request.POST.dict()
         response = requests.post(self.capture_url, data=data)
         print(response.content)
+        reference_app = self.app.reference_app
+        reference_app.stage = 'completed'
+        reference_app.status = 'Completed'
+        reference_app.save()
+        policy = reference_app.create_policy()
+        policy.policy_data = data
+        policy.save()
         return render(request, self.template_name, dict(app=self.app))
 
     def create_commission(self):
@@ -102,17 +108,18 @@ class HDFCPaymentGateway(views.View):
             app = Application.objects.get(id=kwargs['pk'])
             if app.company_name != self.company_name:
                 raise PermissionDenied()
-            app.insurer_product.perform_creation()
+            if app.regenerate_payment_link:
+                app.insurer_product.perform_creation()
+                app.regenerate_payment_link = True
+                app.save()
             context = self.get_paramaters(app)
             context.update(dict(
                 customer_email=app.reference_app.client.email,
                 customer_name=app.reference_app.client.get_full_name(),
-                premium=int(app.premium)
-            ))
+                premium=int(app.premium)))
             ApplicationRequestLog.objects.create(
                 application_id=app.reference_app.id,
-                payload=context, request_type='POST'
-            )
+                payload=context, request_type='POST')
             return render(request, self.template_name, context)
         except (KeyError, Application.DoesNotExist):
             pass

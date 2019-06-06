@@ -34,6 +34,7 @@ class Application(BaseModel):
     state = models.CharField(max_length=16, null=True)
     pincode = models.CharField(max_length=16, null=True)
     payment_ready = models.BooleanField(default=False)
+    regenerate_payment_link = models.BooleanField(default=True)
     raw_quote = JSONField(default=dict)
     insurer_product = None
 

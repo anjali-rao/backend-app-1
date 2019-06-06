@@ -153,6 +153,9 @@ class Application(BaseModel):
             members.append(instance)
         Member.objects.bulk_create(members)
 
+    def create_policy(self):
+        return Policy.objects.create(application_id=self.id)
+
     @property
     def adults(self):
         return self.active_members.filter(

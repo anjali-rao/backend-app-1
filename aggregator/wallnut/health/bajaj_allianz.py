@@ -20,6 +20,7 @@ class BajajAllianzGeneralInsurance(object):
         self.save_quote_data()
         self.save_proposal_data()
         self.accept_terms()
+        self.wallnut.regenerate_payment_link = False
         self.wallnut.save()
 
     def get_payment_link(self):
