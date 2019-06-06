@@ -11,7 +11,7 @@ from goplannr.settings import ENV
 class AdityaBirlaPaymentGateway(views.View):
     template_name = 'aditya_birla.html'
     _secSignature = 'fed47b72baebd4f5f98a3536b8537dc4e17f60beeb98c77c97dadc917004b3bb' # noqa
-    return_url = 'https://payment.%s/health/adityabirla/capture?application_id=%s' # noqa
+    return_url = 'http://payment.%s/health/adityabirla/capture?application_id=%s' # noqa
     _summary_url = 'https://wallnut.in/health/proposal/proposal_summary/aditya_birla/1?proposal_id=%s&customer_id=%s' # noqa
     company_name = 'AdityaBirlaHealthInsurance'
 
@@ -24,7 +24,7 @@ class AdityaBirlaPaymentGateway(views.View):
             context = dict(
                 email=app.reference_app.client.email,
                 phone_no=app.reference_app.client.phone_no,
-                source_code='WMGR0026', premium=app.premium,
+                source_code='WMGR0026', premium=1,#app.premium,
                 secSignature=self._secSignature,
                 return_url=self.return_url % (ENV, app.id),
                 source_txn_id=self.get_transaction_id(app)
@@ -51,6 +51,7 @@ class AdityaBirlaPaymentGateway(views.View):
 
 class AdityaBirlaPaymentCapture(views.View):
     capture_url = 'https://wallnut.in/health/proposal/confirm/aditya_birla'
+    template_name = 'successful.html'
     app = None
 
     @method_decorator(views.decorators.csrf.csrf_exempt)
@@ -77,8 +78,9 @@ class AdityaBirlaPaymentCapture(views.View):
         self.create_commission()
         import requests
         data = request.POST.dict()
-        requests.post(self.capture_url, data=data)
-        return HttpResponse("Payment successfully processed.")
+        response = requests.post(self.capture_url, data=data)
+        print(response.content)
+        return render(request, self.template_name, dict(app=self.app))
 
     def create_commission(self):
         from earnings.models import Commission
