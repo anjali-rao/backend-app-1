@@ -100,6 +100,7 @@ class HDFCPaymentGateway(views.View):
             app = Application.objects.get(id=kwargs['pk'])
             if app.company_name != self.company_name:
                 raise PermissionDenied()
+            app.insurer_product.perform_creation()
             context = self.get_paramaters(app)
             context.update(dict(
                 customer_email=app.reference_app.client.email,
@@ -145,9 +146,9 @@ class BajajAlianzGICGateway(views.View):
         from aggregator.wallnut.models import Application
         try:
             app = Application.objects.get(id=kwargs['pk'])
-            app.insurer_product.perform_creation()
             if app.company_name != self.company_name:
                 raise PermissionDenied()
+            app.insurer_product.perform_creation()
             context = dict(payment_link=self.get_paramaters(app))
             return render(request, self.template_name, context)
         except (KeyError, Application.DoesNotExist):
