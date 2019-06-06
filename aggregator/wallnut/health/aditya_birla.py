@@ -14,7 +14,8 @@ class AdityaBirlaHealthInsurance(object):
 
     def get_payment_link(self):
         from goplannr.settings import ENV
-        return 'https://payment.%s/health/adityabirla/%s' % (
+        return '%s://payment.%s/health/adityabirla/%s' % (
+            'http' if ENV == 'localhost:8000' else 'https',
             ENV, self.wallnut.id)
 
     def perform_creation(self):

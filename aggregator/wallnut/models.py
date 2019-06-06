@@ -35,6 +35,7 @@ class Application(BaseModel):
     pincode = models.CharField(max_length=16, null=True)
     payment_ready = models.BooleanField(default=False)
     regenerate_payment_link = models.BooleanField(default=True)
+    payment_captured = models.BooleanField(default=False)
     raw_quote = JSONField(default=dict)
     insurer_product = None
 
