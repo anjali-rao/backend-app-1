@@ -171,7 +171,7 @@ class BajajAllianzGeneralInsurance(object):
         return dict(
             self_employed_or_business=1, doctor=2, Housewife=3, Professor=4,
             retired=5, salaried=6, Student=7, Teacher=8, unemployed=9,
-            others=10)[profession]
+            others=10).get(profession, 10)
 
     def get_marital_status(self, maritalstatus):
         return dict(
