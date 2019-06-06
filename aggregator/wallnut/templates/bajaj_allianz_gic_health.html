@@ -34,7 +34,7 @@
 	</style>
 	<script type="text/javascript">
 		window.onload=function(){ 
-    		window.setTimeout(function() { window.location.href='{{payment_link}}'; }, 2000);
+    		window.setTimeout(function() { window.location=$('#payment_link').val(); }, 2000);
 		};
 	</script>
 </head>
@@ -43,6 +43,7 @@
 		<img src="/static/img/favicon.png" style="height: 50px;">
 	</div>
 	<div class="col-sm-12">
+		<input type="hidden" name="payment_link" id="payment_link" value="{{payment_link}}">
 		<center>
 			<div class="loader"></div>
 			<br>

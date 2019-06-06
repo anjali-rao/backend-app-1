@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
 from django import views
@@ -20,6 +20,8 @@ class AdityaBirlaPaymentGateway(views.View):
             app = Application.objects.get(id=kwargs['pk'])
             if app.company_name != self.company_name:
                 raise PermissionDenied()
+            if app.payment_captured:
+                return render(request, 'successful.html', dict(app=app))
             context = dict(
                 email=app.reference_app.client.email,
                 phone_no=app.reference_app.client.phone_no,
@@ -77,15 +79,16 @@ class AdityaBirlaPaymentCapture(views.View):
         self.create_commission()
         import requests
         data = request.POST.dict()
-        response = requests.post(self.capture_url, data=data)
-        print(response.content)
+        requests.post(self.capture_url, data=data)
         reference_app = self.app.reference_app
         reference_app.stage = 'completed'
-        reference_app.status = 'Completed'
+        reference_app.status = 'completed'
         reference_app.save()
         policy = reference_app.create_policy()
         policy.policy_data = data
         policy.save()
+        self.app.payment_captured = True
+        self.app.save()
         return render(request, self.template_name, dict(app=self.app))
 
     def create_commission(self):
@@ -171,4 +174,5 @@ class BajajAlianzGICGateway(views.View):
         res = requests.get(url)
         page_content = str(res.content)
         p = re.compile(r'name="payment_link" id="payment_link" value="(.*)"/>')
-        return p.findall(str(page_content))[0]
+        payment_link = p.findall(page_content)[0]
+        return payment_link

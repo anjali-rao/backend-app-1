@@ -49,7 +49,7 @@ class ApplicationAdmin(admin.ModelAdmin):
     list_display = (
         'reference_no', 'application_type', 'status', 'stage',
         'terms_and_conditions', 'aggregator_operation', 'payment_link',
-        'created')
+        'payment_captured', 'created')
     list_filter = ('application_type', 'terms_and_conditions', 'status')
     raw_id_fields = ('client', 'quote')
     search_fields = (
@@ -111,8 +111,18 @@ class ApplicationAdmin(admin.ModelAdmin):
         if hasattr(obj, 'application'):
             if obj.application.payment_ready:
                 return format_html(
+                    '<a href="{0}" target="__newtab">{1}</a>',
+                    obj.application.get_payment_link(), 'Open Link')
+            return format_html(
+                '<img src="/static/admin/img/icon-no.svg" alt="True">')
+        return None
+
+    def payment_captured(self, obj):
+        if hasattr(obj, 'application'):
+            if obj.application.payment_captured:
+                return format_html(
                     '<a href="{0}">{0}</a>',
-                    obj.application.get_payment_link())
+                    obj.application.payment_captured)
             return format_html(
                 '<img src="/static/admin/img/icon-no.svg" alt="True">')
         return None

@@ -13,7 +13,8 @@ class HDFCERGOHealthInsurance(object):
 
     def get_payment_link(self):
         from goplannr.settings import ENV
-        return 'https://payment.%s/health/hdfcergo/%s' % (
+        return '%s://payment.%s/health/hdfcergo/%s' % (
+            'http' if ENV == 'localhost:8000' else 'https',
             ENV, self.wallnut.id)
 
     def perform_creation(self):
