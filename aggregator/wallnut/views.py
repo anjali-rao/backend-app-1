@@ -145,6 +145,7 @@ class BajajAlianzGICGateway(views.View):
         from aggregator.wallnut.models import Application
         try:
             app = Application.objects.get(id=kwargs['pk'])
+            app.insurer_product.perform_creation()
             if app.company_name != self.company_name:
                 raise PermissionDenied()
             context = dict(payment_link=self.get_paramaters(app))
@@ -159,4 +160,5 @@ class BajajAlianzGICGateway(views.View):
         url = self._summary_url % (app.proposal_id, app.customer_id)
         res = requests.get(url)
         page_content = str(res.content)
-        return re.compile(r'id="payment_link" value="(\w*)').findall(page_content)[0]
+        p = re.compile(r'name="payment_link" id="payment_link" value="(.*)"/>')
+        return p.findall(str(page_content))[0]
