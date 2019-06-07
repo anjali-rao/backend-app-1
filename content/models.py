@@ -5,9 +5,6 @@ from utils.models import BaseModel, models
 from utils import get_choices, constants as Constants
 from product.models import Category
 
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
-
 
 class Faq(BaseModel):
     category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
