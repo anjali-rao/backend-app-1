@@ -168,5 +168,5 @@ SMS_API = get_env_var('SMS_API')
 # REST_FRAMEWORK
 
 REST_FRAMEWORK = dict(
-    EXCEPTION_HANDLER='goplannr.custom_exception_handler'
+    EXCEPTION_HANDLER='utils.mixins.custom_exception_handler'
 )
