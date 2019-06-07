@@ -234,6 +234,7 @@ class UpdateUser(generics.UpdateAPIView):
 
 
 class GetUserDetails(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
     serializer_class = UserDetailSerializer
     queryset = User.objects.all()
 
