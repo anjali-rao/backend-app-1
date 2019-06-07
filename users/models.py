@@ -207,6 +207,16 @@ class User(BaseModel):
         from earnings.models import Earning
         return Earning.get_user_earnings(self.id, earning_type)
 
+    def get_rules(self):
+        rules = dict.fromkeys(Constants.PROMO_RULES_KEYS, False)
+        promo_code = self.enterprise.promocode_set.get().code.split('-')[1:] # noqa
+        print(promo_code)
+        for rule_code in promo_code:
+            if not rule_code.isdigit():
+                rule_code = 1
+            rules.update(Constants.PROMO_RULES[int(rule_code)])
+        return rules
+
     @staticmethod
     def validate_referral_code(code):
         return Referral.objects.filter(code=code).exists()

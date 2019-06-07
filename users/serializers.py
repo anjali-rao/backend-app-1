@@ -507,6 +507,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     product_sold = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
     email = serializers.ReadOnlyField(source='account.email', default='')
+    rules = serializers.ReadOnlyField(source='get_rules')
 
     def get_certifications(self, obj):
         data = list()
@@ -543,5 +544,5 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'agent_id', 'phone_no', 'name', 'categories', 'profile_pic',
             'certifications', 'location', 'short_description',
             'long_description', 'product_sold', 'user_type', 'pan_no',
-            'rating', 'bank_details', 'email'
+            'rating', 'bank_details', 'email', 'rules'
         )
