@@ -39,7 +39,7 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'user_type')
     search_fields = (
         'account__phone_no', 'account__alternate_no', 'account__aadhar_no')
-    raw_id_fields = ('account', 'campaign')
+    raw_id_fields = ('account', 'campaign', 'enterprise')
 
 
 @admin.register(AccountDetail)
