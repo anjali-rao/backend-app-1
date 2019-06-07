@@ -57,6 +57,9 @@ ACTIVE_AGGREGATOR_COMPANIES = [
 
 MEMBER_ORDER = {key: i for i, key in enumerate(['self', 'spouse', 'father', 'mother'])} # noqa
 CATEGORY_ORDER = {key: i for i, key in enumerate(['Health', 'Travel'])} # noqa
+RECOMMENDATION_FEATURE_ORDER = {key: i for i, key in enumerate([
+    'No Claim Bonus', 'Hospital Coverage', 'Day Care Procedures',
+    'Wellness Factors'])}
 
 
 # ROUGH HANDLING  ==================================
