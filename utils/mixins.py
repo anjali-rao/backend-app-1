@@ -1,6 +1,7 @@
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import (
     APIException, NotAcceptable, NotFound, MethodNotAllowed)
+from rest_framework.views import exception_handler
 
 
 class MethodSerializerView(object):
@@ -38,3 +39,14 @@ class InsuranceException(Exception):
 class CustomPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
+
+
+def custom_exception_handler(exc, context):
+    # Call REST framework's default exception handler first,
+    # to get the standard error response.
+    response = exception_handler(exc, context)
+
+    if response is not None:
+        response.data['detail'] = [str(exc)]
+
+    return response
