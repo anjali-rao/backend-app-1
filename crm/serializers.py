@@ -82,6 +82,8 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
         return self.instance
 
     def update(self, instance, validated_data):
+        if instance.contact_id and 'contact_id' in validated_data:
+            raise mixins.APIException(Constants.CONTACT_FORBIDDEN)
         fields = dict.fromkeys(Constants.GENERIC_LEAD_FIELDS, None)
         for field in fields.keys():
             fields[field] = validated_data.get(
@@ -97,7 +99,8 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
         name = validated_data['contact_name'].split(' ')
         instance.update_fields(**dict(
             first_name=name[0], middle_name=name[1] if len(name) == 3 else '',
-            last_name=name[2] if len(name) == 3 else name[1]))
+            last_name=name[2] if len(name) > 2 else (
+                name[1] if len(name) == 2 else '')))
         return instance
 
     def update_category_lead(self, validated_data):

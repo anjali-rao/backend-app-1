@@ -31,6 +31,10 @@ class UpdateLead(generics.UpdateAPIView):
     serializer_class = CreateUpdateLeadSerializer
     queryset = Lead.objects.all()
 
+    def perform_update(self, serializer):
+        with transaction.atomic():
+            serializer.save(user_id=self.request.user.id)
+
 
 class GetQuotes(generics.ListAPIView):
     authentication_classes = (UserAuthentication,)
