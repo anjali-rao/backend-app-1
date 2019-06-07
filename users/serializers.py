@@ -88,7 +88,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return make_password(value)
 
     def validate_promo_code(self, value):
-        validate_referral = User.validate_referral_code(value)
+        validate_referral = User.validate_promo_code(value)
         if not validate_referral:
             raise serializers.ValidationError(
                 Constants.REFERRAL_CODE_EXCEPTION)
