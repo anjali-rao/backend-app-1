@@ -13,9 +13,7 @@ from django.utils.timezone import now
 from django.dispatch import receiver
 from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
-from django.contrib.contenttypes.fields import (
-    GenericForeignKey, GenericRelation)
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
 
 from goplannr.settings import JWT_SECRET, DEBUG
 
@@ -176,11 +174,13 @@ class User(BaseModel):
 
     def get_categories(self):
         categories = list()
-        for category in self.enterprise.categories.only(
+        from product.models import Category
+        for category in Category.objects.only(
                 'name', 'id', 'hexa_code', 'logo', 'is_active'):
             categories.append(dict(
                 id=category.id, hexa_code=category.hexa_code,
-                name=category.name.split(' ')[0], is_active=category.is_active,
+                name=category.name.split(' ')[0],
+                is_active=(category.is_active or category.id in self.enterprise.categories.values_list('id', flat=True)), # noqa
                 logo=(
                     Constants.DEBUG_HOST if DEBUG else '') + category.logo.url
             ))
