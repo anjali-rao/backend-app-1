@@ -229,7 +229,7 @@ PROMO_RULES = {
     1: dict(
         contact=True, earnings=True, native_application_journey=True,
         client_application_journey=False),
-    2: dict(contact=False, earnings=False),
+    2: dict(contact=True, earnings=False),
     3: dict(native_application_journey=True, client_application_journey=False),
     4: dict(native_application_journey=False, client_application_journey=False),
     5: dict(native_application_journey=False, client_application_journey=True),
