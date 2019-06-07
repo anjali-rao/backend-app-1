@@ -502,7 +502,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
         source='account.accountdetail.short_description', default='')
     long_description = serializers.ReadOnlyField(
         source='account.accountdetail.long_description', default='')
-    profile_pic = serializers.FileField(source='account.profile_pic')
+    profile_pic = serializers.FileField(
+        source='account.profile_pic', default='')
     product_sold = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
     email = serializers.ReadOnlyField(source='account.email', default='')
