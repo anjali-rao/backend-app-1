@@ -103,9 +103,9 @@ class GetProposalDetailsSerializer(serializers.ModelSerializer):
 class UpdateContactDetailsSerializer(serializers.ModelSerializer):
     document_type = serializers.CharField(required=True)
     document_number = serializers.CharField(required=True)
-    pincode = serializers.CharField(required=True)
-    street = serializers.CharField(required=True)
-    flat_no = serializers.CharField(required=True)
+    pincode = serializers.CharField(required=True, max_length=6)
+    street = serializers.CharField(required=True, max_length=128)
+    flat_no = serializers.CharField(required=True, max_length=64)
 
     def validate_pincode(self, value):
         if not Pincode.get_pincode(value):
