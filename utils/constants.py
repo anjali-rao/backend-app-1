@@ -165,6 +165,7 @@ PAYMENT_LINK_GENERATION_FAILED = 'Failed to generate payment link for applicatio
 FAILED_TO_SEND_TO_AGGREGATOR = 'Failed to send application (%s) to aggregator due to exception: %s' # noqa
 CONTACT_DETAILS_REQUIRED = 'Contact name and Contact phone_no is required'
 DUPLICATE_LEAD = 'Lead already exists with similar contact_name and contact_phone_no' # noqa
+CONTACT_FORBIDDEN = 'Update conatct to lead is forbidden.'
 
 
 # Creation Fields  ==================================
