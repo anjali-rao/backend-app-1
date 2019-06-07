@@ -76,7 +76,7 @@ class PlaylistAdmin(admin.ModelAdmin):
 class EnterprisePlaylist(admin.ModelAdmin):
     list_display = ('enterprise', 'playlist')
     search_fields = ('enterprise_id',)
-    raw_id_fields = ('playlist',)
+    raw_id_fields = ('playlist', 'enterprise')
 
 
 @admin.register(Article)

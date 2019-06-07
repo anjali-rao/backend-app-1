@@ -8,7 +8,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from users.models import (
     Account, User, Campaign, AccountDetail, Document, Bank, BankAccount,
     BankBranch, Enterprise, SubcriberEnterprise, State, Pincode, Address,
-    IPAddress, Referral)
+    IPAddress, Referral, PromoCode)
 
 
 @admin.register(Account)
@@ -131,6 +131,13 @@ class IPAddressAdmin(admin.ModelAdmin):
 
 @admin.register(Referral)
 class ReferralAdmin(admin.ModelAdmin):
-    list_display = ('referral_code', 'referral_reference',)
-    raw_id_fields = ('enterprise', 'user')
-    search_fields = ('referral_code', 'referral_reference')
+    list_display = ('code', 'reference_code',)
+    raw_id_fields = ('user',)
+    search_fields = ('code', 'reference_code')
+
+
+@admin.register(PromoCode)
+class PromoCodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'enterprise')
+    raw_id_fields = ('enterprise',)
+    search_fields = ('code', 'enterprise_id',)
