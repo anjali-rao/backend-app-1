@@ -213,6 +213,23 @@ INCENTIVE_TEXT = 'Incentive for %s'
 
 
 # Category Lead - Mapper  ==================================
+
 CATEGORY_LEAD_FIELDS_MAPPER = dict(
     healthinsurance=['gender', 'family', 'effective_age']
 )
+
+# Promo code rules  ==================================
+
+PROMO_RULES_KEYS = [
+    'contact', 'earnings', 'native_application_journey',
+    'client_application_journey']
+
+PROMO_RULES = {
+    1: dict(
+        contact=True, earnings=True, native_application_journey=True,
+        client_application_journey=False),
+    2: dict(contact=False, earnings=False),
+    3: dict(native_application_journey=True, client_application_journey=False),
+    4: dict(native_application_journey=False, client_application_journey=False),
+    5: dict(native_application_journey=False, client_application_journey=True),
+}
