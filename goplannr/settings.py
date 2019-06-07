@@ -189,3 +189,9 @@ CACHES = get_env_var('CACHING')
 # SMS API KEY
 SMS_API_KEY = get_env_var('SMS_API_KEY')
 SMS_API = get_env_var('SMS_API')
+
+# REST_FRAMEWORK
+
+REST_FRAMEWORK = dict(
+    EXCEPTION_HANDLER='goplannr.custom_exception_handler'
+)

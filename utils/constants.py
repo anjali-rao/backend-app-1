@@ -57,6 +57,9 @@ ACTIVE_AGGREGATOR_COMPANIES = [
 
 MEMBER_ORDER = {key: i for i, key in enumerate(['self', 'spouse', 'father', 'mother'])} # noqa
 CATEGORY_ORDER = {key: i for i, key in enumerate(['Health', 'Travel'])} # noqa
+RECOMMENDATION_FEATURE_ORDER = {key: i for i, key in enumerate([
+    'No Claim Bonus', 'Hospital Coverage', 'Day Care Procedures',
+    'Wellness Factors'])}
 
 
 # ROUGH HANDLING  ==================================
@@ -93,7 +96,7 @@ HELP_FILES_PATH = 'contents'
 DEFAULT_HEXA_CODE = '#005db1'
 OCCUPATION_DEFAULT_CHOICE = 'others'
 DEFAULT_USER_TYPE = 'subscriber'
-DEFAULT_ENTERPRISE = 'GoPlannr'
+DEFAULT_ENTERPRISE = 'OneCover'
 DEFAULT_BASE_PREMIUM = 0.0
 DEFAULT_GST = 0.18
 DEFAULT_COMMISSION = 0.20
@@ -214,6 +217,23 @@ INCENTIVE_TEXT = 'Incentive for %s'
 
 
 # Category Lead - Mapper  ==================================
+
 CATEGORY_LEAD_FIELDS_MAPPER = dict(
     healthinsurance=['gender', 'family', 'effective_age']
 )
+
+# Promo code rules  ==================================
+
+PROMO_RULES_KEYS = [
+    'contact', 'earnings', 'native_application_journey',
+    'client_application_journey']
+
+PROMO_RULES = {
+    1: dict(
+        contact=True, earnings=True, native_application_journey=True,
+        client_application_journey=False),
+    2: dict(contact=True, earnings=False),
+    3: dict(native_application_journey=True, client_application_journey=False),
+    4: dict(native_application_journey=False, client_application_journey=False),
+    5: dict(native_application_journey=False, client_application_journey=True),
+}

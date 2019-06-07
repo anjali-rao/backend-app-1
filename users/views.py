@@ -211,8 +211,9 @@ class GetPlaylist(generics.ListAPIView):
     serializer_class = EnterprisePlaylistSerializer
 
     def get_queryset(self):
+        enterprise = self.request.user.enterprise
         data = self.request.query_params
-        playlists = self.request.user.enterprise.playlist.select_related(
+        playlists = enterprise.enterpriseplaylist_set.select_related(
             'playlist')
         if playlists.exists():
             if 'playlist_type' in data:
@@ -233,6 +234,7 @@ class UpdateUser(generics.UpdateAPIView):
 
 
 class GetUserDetails(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
     serializer_class = UserDetailSerializer
     queryset = User.objects.all()
 

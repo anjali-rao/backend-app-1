@@ -74,8 +74,7 @@ class RetrieveUpdateApplicationMembers(
     queryset = Application.objects.all()
     method_serializer_classes = {
         ('GET', ): GetApplicationMembersSerializer,
-        ('POST'): CreateMemberSerializers
-    }
+        ('POST'): CreateMemberSerializers}
 
     def get(self, request, *args, **kwargs):
         members = self.get_object().member_set.all()

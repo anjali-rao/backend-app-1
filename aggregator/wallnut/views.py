@@ -1,16 +1,16 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
 from django import views
 
 from payment.models import ApplicationPayment, ApplicationRequestLog
-from goplannr.settings import ENV
+from goplannr.settings import ENV, DEBUG
 
 
 class AdityaBirlaPaymentGateway(views.View):
     template_name = 'aditya_birla.html'
     _secSignature = 'fed47b72baebd4f5f98a3536b8537dc4e17f60beeb98c77c97dadc917004b3bb' # noqa
-    return_url = 'https://payment.%s/health/adityabirla/capture?application_id=%s' # noqa
+    return_url = '%s://payment.%s/health/adityabirla/capture?application_id=%s'
     _summary_url = 'https://wallnut.in/health/proposal/proposal_summary/aditya_birla/1?proposal_id=%s&customer_id=%s' # noqa
     company_name = 'AdityaBirlaHealthInsurance'
 
@@ -25,15 +25,14 @@ class AdityaBirlaPaymentGateway(views.View):
             context = dict(
                 email=app.reference_app.client.email,
                 phone_no=app.reference_app.client.phone_no,
-                source_code='WMGR0026', premium=1,#app.premium,
+                source_code='WMGR0026', premium=app.premium,
                 secSignature=self._secSignature,
-                return_url=self.return_url % (ENV, app.id),
-                source_txn_id=self.get_transaction_id(app)
-            )
+                return_url=self.return_url % (
+                    'http' if DEBUG else 'https', ENV, app.id),
+                source_txn_id=self.get_transaction_id(app))
             ApplicationRequestLog.objects.create(
                 application_id=app.reference_app.id,
-                url=self.return_url, payload=context
-            )
+                url=self.return_url, payload=context)
             return render(request, self.template_name, context)
         except (KeyError, Application.DoesNotExist):
             pass

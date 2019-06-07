@@ -5,9 +5,6 @@ from utils.models import BaseModel, models
 from utils import get_choices, constants as Constants
 from product.models import Category
 
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
-
 
 class Faq(BaseModel):
     category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
@@ -98,16 +95,12 @@ class Playlist(BaseModel):
 
 
 class EnterprisePlaylist(BaseModel):
-    limit = models.Q(app_label='users', model='enterprise') | \
-        models.Q(app_label='users', model='subcriberenterprise')
-    content_type = models.ForeignKey(
-        ContentType, on_delete=models.CASCADE, limit_choices_to=limit)
-    enterprise_id = models.PositiveIntegerField()
-    enterprise = GenericForeignKey('content_type', 'enterprise_id')
     playlist = models.ForeignKey('content.Playlist', on_delete=models.CASCADE)
+    enterprise = models.ForeignKey(
+        'users.Enterprise', on_delete=models.CASCADE)
 
     def __str__(self):
-        return '%s:%s' % (self.enterprise, self.playlist.name)
+        return '%s:%s' % (self.enterprise.__str__(), self.playlist.name)
 
 
 class Article(BaseModel):

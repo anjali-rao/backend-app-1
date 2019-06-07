@@ -13,9 +13,7 @@ from django.utils.timezone import now
 from django.dispatch import receiver
 from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
-from django.contrib.contenttypes.fields import (
-    GenericForeignKey, GenericRelation)
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
 
 from goplannr.settings import JWT_SECRET, DEBUG
 
@@ -129,30 +127,15 @@ class User(BaseModel):
         default=Constants.DEFAULT_USER_TYPE)
     campaign = models.ForeignKey(
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
+    rating = models.IntegerField(default=5)
+    enterprise = models.ForeignKey(
+        'users.Enterprise', on_delete=models.PROTECT)
     flag = JSONField(default=Constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
     manager_id = models.CharField(max_length=48, null=True)
-    rating = models.IntegerField(default=5)
-    limit = models.Q(app_label='users', model='enterprise') | \
-        models.Q(app_label='users', model='subcriberenterprise')
-    content_type = models.ForeignKey(
-        ContentType, on_delete=models.CASCADE, limit_choices_to=limit)
-    enterprise_id = models.PositiveIntegerField()
-    enterprise = GenericForeignKey('content_type', 'enterprise_id')
 
     class Meta:
-        unique_together = (
-            'user_type', 'enterprise_id', 'content_type', 'account')
-
-    def save(self, *args, **kwargs):
-        if not self.__class__.objects.filter(pk=self.id):
-            models_name = 'subcriberenterprise'
-            if self.user_type == 'enterprise' or self.user_type == 'pos':
-                models_name = 'enterprise'
-                self.is_active = False
-            self.content_type_id = ContentType.objects.get(
-                app_label='users', model=models_name).id
-        super(User, self).save(*args, **kwargs)
+        unique_together = ('user_type', 'enterprise', 'account')
 
     def __str__(self):
         return self.account.get_full_name()
@@ -178,24 +161,26 @@ class User(BaseModel):
     def generate_referral(self, referral_reference=None):
         import random
         code = ('%s%s' % (
-            self.account.first_name.lower()[:3], self.account.phone_no[-3:])
+            self.account.first_name.lower()[:3], self.account.phone_no[-5:])
         ).upper()
-        if Referral.objects.filter(referral_code=code).exists():
-            while Referral.objects.filter(referral_code=code).exists():
+        if Referral.objects.filter(code=code).exists():
+            while Referral.objects.filter(code=code).exists():
                 code = ('%s%s' % (
                     self.account.first_name.lower()[:3],
-                    random.randint(111, 999))).upper()
+                    random.randint(11111, 99999))).upper()
         return Referral.objects.create(
-            referral_code=code, referral_reference=referral_reference,
+            code=code, reference_code=referral_reference,
             user_id=self.id)
 
     def get_categories(self):
         categories = list()
-        for category in self.enterprise.categories.only(
+        from product.models import Category
+        for category in Category.objects.only(
                 'name', 'id', 'hexa_code', 'logo', 'is_active'):
             categories.append(dict(
                 id=category.id, hexa_code=category.hexa_code,
-                name=category.name.split(' ')[0], is_active=category.is_active,
+                name=category.name.split(' ')[0],
+                is_active=(category.is_active or category.id in self.enterprise.categories.values_list('id', flat=True)), # noqa
                 logo=(
                     Constants.DEBUG_HOST if DEBUG else '') + category.logo.url
             ))
@@ -222,13 +207,28 @@ class User(BaseModel):
         from earnings.models import Earning
         return Earning.get_user_earnings(self.id, earning_type)
 
+    def get_rules(self):
+        rules = dict.fromkeys(Constants.PROMO_RULES_KEYS, False)
+        promo_code = self.enterprise.promocode_set.get().code.split('-')[1:] # noqa
+        print(promo_code)
+        for rule_code in promo_code:
+            if not rule_code.isdigit():
+                rule_code = 1
+            rules.update(Constants.PROMO_RULES[int(rule_code)])
+        return rules
+
     @staticmethod
     def validate_referral_code(code):
-        return Referral.objects.filter(referral_code=code).exists()
+        return Referral.objects.filter(code=code).exists()
+
+    @staticmethod
+    def validate_promo_code(code):
+        return PromoCode.objects.filter(code=code).exists()
 
     @staticmethod
     def get_referral_details(code):
-        referrals = Referral.objects.filter(referral_code=code)
+        # To Dos: Remove this
+        referrals = Referral.objects.filter(code=code)
         if not referrals.exists():
             return {
                 'user_type': Constants.DEFAULT_USER_TYPE,
@@ -242,8 +242,14 @@ class User(BaseModel):
         return dict(
             enterprise_id=(
                 referral.enterprise or SubcriberEnterprise.objects.get(
-                    name=Constants.DEFAULT_ENTERPRISE)).id,
-        )
+                    name=Constants.DEFAULT_ENTERPRISE)).id)
+
+    @staticmethod
+    def get_promo_code_details(code):
+        promo_code = PromoCode.objects.get(code=code)
+        return dict(
+            user_type=promo_code.enterprise.enterprise_type,
+            enterprise_id=promo_code.enterprise_id)
 
     @property
     def account_no(self):
@@ -265,6 +271,9 @@ class Campaign(BaseModel):
 
 class Enterprise(BaseModel):
     name = models.CharField(max_length=64)
+    enterprise_type = models.CharField(
+        choices=get_choices(Constants.USER_TYPE), max_length=16,
+        default=Constants.DEFAULT_USER_TYPE)
     companies = models.ManyToManyField('product.Company', blank=True)
     categories = models.ManyToManyField('product.Category', blank=True)
     hexa_code = models.CharField(max_length=8, default='#005db1')
@@ -272,18 +281,9 @@ class Enterprise(BaseModel):
         upload_to=Constants.ENTERPRISE_UPLOAD_PATH,
         default=Constants.DEFAULT_LOGO)
     commission = models.FloatField(default=0.0)
-    person = GenericRelation(
-        'users.User', related_query_name='enterprise_user',
-        object_id_field='enterprise_id')
-    playlist = GenericRelation(
-        'content.EnterprisePlaylist', related_query_name='enterprise_playlist',
-        object_id_field='enterprise_id')
 
     def __str__(self):
         return self.name
-
-    def generate_referral_code(self):
-        pass
 
 
 class SubcriberEnterprise(BaseModel):
@@ -299,15 +299,9 @@ class SubcriberEnterprise(BaseModel):
         'users.User', related_query_name='subscriber_enterprise_user',
         object_id_field='enterprise_id')
     commission = models.FloatField(default=0.0)
-    playlist = GenericRelation(
-        'content.EnterprisePlaylist', related_query_name='enterprise_playlist',
-        object_id_field='enterprise_id')
 
     def __str__(self):
         return self.name
-
-    def generate_referral_code(self):
-        pass
 
 
 class AccountDetail(BaseModel):
@@ -327,11 +321,18 @@ class AccountDetail(BaseModel):
     long_description = models.TextField(null=True, blank=True)
 
 
-class Referral(BaseModel):
-    referral_code = models.CharField(max_length=6, unique=True)
-    referral_reference = models.CharField(max_length=6, null=True, blank=True)
+class PromoCode(BaseModel):
+    code = models.CharField(max_length=16, unique=True)
     enterprise = models.ForeignKey(
-        'users.Enterprise', null=True, blank=True, on_delete=models.CASCADE)
+        'users.Enterprise', on_delete=models.PROTECT)
+
+    def __str__(self):
+        return '%s: %s' % (self.code, self.enterprise.__str__())
+
+
+class Referral(BaseModel):
+    code = models.CharField(max_length=8, blank=True)
+    reference_code = models.CharField(max_length=6, null=True, blank=True)
     user = models.OneToOneField(
         'users.User', null=True, blank=True, on_delete=models.CASCADE)
 
@@ -459,7 +460,6 @@ def account_post_save(sender, instance, created, **kwargs):
     if created:
         message = dict(
             message=(Constants.USER_CREATION_MESSAGE % (instance.phone_no)),
-            type='sms'
-        )
+            type='sms')
         instance.send_notification(**message)
         AccountDetail.objects.create(account_id=instance.id)

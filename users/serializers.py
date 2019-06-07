@@ -73,7 +73,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     phone_no = serializers.CharField(required=True, max_length=10)
     transaction_id = serializers.CharField(required=True)
     password = serializers.CharField(required=False)
-    promo_code = serializers.CharField(required=False)
+    promo_code = serializers.CharField(required=False, default='OCOVR-1-4')
     referral_code = serializers.CharField(required=False)
     fcm_id = serializers.CharField(required=False)
     first_name = serializers.CharField(required=True)
@@ -86,6 +86,13 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
     def validate_password(self, value):
         return make_password(value)
+
+    def validate_promo_code(self, value):
+        validate_referral = User.validate_promo_code(value)
+        if not validate_referral:
+            raise serializers.ValidationError(
+                Constants.REFERRAL_CODE_EXCEPTION)
+        return value
 
     def validate_referral_code(self, value):
         validate_referral = User.validate_referral_code(value)
@@ -115,15 +122,14 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return pincodes.get().id
 
     def create(self, validated_data):
-        validated_data.update(User.get_referral_details(
-            validated_data.get('referral_code')))
+        validated_data.update(User.get_promo_code_details(
+            validated_data['promo_code']))
         account = self.get_account(validated_data)
         data = dict(
             account_id=account.id, is_active=True,
             user_type=validated_data['user_type'],
             enterprise_id=validated_data['enterprise_id'],
-            manager_id=validated_data.get('manager_id')
-        )
+            manager_id=validated_data.get('manager_id'))
         self.instance = User.objects.create(**data)
         self.instance.generate_referral(validated_data.get('referral_code'))
         if any(x in validated_data.keys() for x in Constants.USER_FILE_UPLOAD):
@@ -210,7 +216,7 @@ class UserSerializer(serializers.ModelSerializer):
     account = serializers.SerializerMethodField()
     enterprise = serializers.SerializerMethodField()
     available_users = serializers.SerializerMethodField()
-    referral_code = serializers.ReadOnlyField(source='referral.referral_code')
+    referral_code = serializers.ReadOnlyField(source='referral.code')
     bank_details = serializers.SerializerMethodField()
 
     def get_account(self, obj):
@@ -496,10 +502,12 @@ class UserDetailSerializer(serializers.ModelSerializer):
         source='account.accountdetail.short_description', default='')
     long_description = serializers.ReadOnlyField(
         source='account.accountdetail.long_description', default='')
-    profile_pic = serializers.FileField(source='account.profile_pic')
+    profile_pic = serializers.FileField(
+        source='account.profile_pic', default='')
     product_sold = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
     email = serializers.ReadOnlyField(source='account.email', default='')
+    rules = serializers.ReadOnlyField(source='get_rules')
 
     def get_certifications(self, obj):
         data = list()
@@ -536,5 +544,5 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'agent_id', 'phone_no', 'name', 'categories', 'profile_pic',
             'certifications', 'location', 'short_description',
             'long_description', 'product_sold', 'user_type', 'pan_no',
-            'rating', 'bank_details', 'email'
+            'rating', 'bank_details', 'email', 'rules'
         )

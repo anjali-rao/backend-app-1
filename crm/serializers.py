@@ -273,13 +273,15 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
 
     def get_features(self, obj):
         features = list()
-        for f in obj.premium.product_variant.feature_set.exclude(
-            short_description__in=[
-                'Data unavailable', '', 'Not covered', 'Not Covered']
-        ).order_by('-rating').values(
-                'feature_master__name', 'short_description')[:5]:
+        feature_set = sorted(
+            obj.premium.product_variant.feature_set.exclude(
+                short_description__in=[
+                    'Data unavailable', '', 'Not covered', 'Not Covered']
+            ), key=lambda feature: Constants.RECOMMENDATION_FEATURE_ORDER.get(
+                feature.feature_master.name, 999))
+        for f in feature_set[:5]:
             features.append('%s: %s' % (
-                f['feature_master__name'], f['short_description']))
+                f.feature_master.name, f.short_description))
         return features
 
     class Meta:
@@ -287,13 +289,13 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
         fields = (
             'quote_id', 'lead_id', 'sum_insured', 'premium',
             'tax_saving', 'wellness_rewards', 'health_checkups',
-            'product', 'features'
-        )
+            'product', 'features')
 
 
 class LeadDetailSerializer(serializers.ModelSerializer):
     lead_id = serializers.ReadOnlyField(source='id')
-    full_name = serializers.ReadOnlyField(source='contact.get_full_name', default='')
+    full_name = serializers.ReadOnlyField(
+        source='contact.get_full_name', default='')
     logo = serializers.FileField(source='category.logo', default='')
     stage = serializers.ReadOnlyField(source='get_stage_display')
     phone_no = serializers.ReadOnlyField(source='contact.phone_no')
