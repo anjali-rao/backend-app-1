@@ -11,7 +11,8 @@ from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
     AccountSearchSerializers, User, PincodeSerializer, Pincode,
-    UpdateUserSerializer, UserEarningSerializer, UserDetailSerializer
+    UpdateUserSerializer, UserEarningSerializer, UserDetailSerializerV2,
+    UserDetailSerializerV3
 )
 from sales.serializers import SalesApplicationSerializer
 from users.decorators import UserAuthentication
@@ -235,8 +236,13 @@ class UpdateUser(generics.UpdateAPIView):
 
 class GetUserDetails(generics.RetrieveAPIView):
     authentication_classes = (UserAuthentication,)
-    serializer_class = UserDetailSerializer
     queryset = User.objects.all()
+    version_serializer = dict(
+        v2=UserDetailSerializerV2, v3=UserDetailSerializerV3)
+
+    def get_serializer_class(self):
+        return self.version_serializer.get(
+            self.kwargs['version'], UserDetailSerializerV2)
 
 
 class CreateAppointment(generics.CreateAPIView):

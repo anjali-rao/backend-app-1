@@ -490,7 +490,7 @@ class UserEarningSerializer(serializers.ModelSerializer):
             'earning_details')
 
 
-class UserDetailSerializer(serializers.ModelSerializer):
+class UserDetailSerializerV2(serializers.ModelSerializer):
     certifications = serializers.SerializerMethodField()
     agent_id = serializers.UUIDField(source='id')
     categories = serializers.SerializerMethodField()
@@ -507,7 +507,6 @@ class UserDetailSerializer(serializers.ModelSerializer):
     product_sold = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
     email = serializers.ReadOnlyField(source='account.email', default='')
-    rules = serializers.ReadOnlyField(source='get_rules')
 
     def get_certifications(self, obj):
         data = list()
@@ -544,5 +543,29 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'agent_id', 'phone_no', 'name', 'categories', 'profile_pic',
             'certifications', 'location', 'short_description',
             'long_description', 'product_sold', 'user_type', 'pan_no',
-            'rating', 'bank_details', 'email', 'rules'
+            'bank_details', 'email',
         )
+
+
+class UserDetailSerializerV3(serializers.ModelSerializer):
+    phone_no = serializers.ReadOnlyField(source='account.phone_no')
+    name = serializers.ReadOnlyField(source='account.get_full_name')
+    pan_no = serializers.ReadOnlyField(source='account.pan_no')
+    profile_pic = serializers.FileField(
+        source='account.profile_pic', default='')
+    pincode = serializers.ReadOnlyField(
+        source='account.address.pincode.pincode', default='')
+    flat_no = serializers.ReadOnlyField(
+        source='account.address.flat_no', default='')
+    street = serializers.ReadOnlyField(
+        source='account.address.street', default='')
+    city = serializers.ReadOnlyField(
+        source='account.address.pincode.city', default='')
+    email = serializers.ReadOnlyField(source='account.email', default='')
+    rules = serializers.ReadOnlyField(source='get_rules')
+
+    class Meta:
+        model = User
+        fields = (
+            'phone_no', 'name', 'profile_pic', 'user_type', 'pan_no', 'rating',
+            'email', 'flat_no', 'street', 'city', 'pincode', 'rules')
