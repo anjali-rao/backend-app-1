@@ -82,7 +82,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     cancelled_cheque = serializers.FileField(required=False)
     photo = serializers.FileField(required=False)
     manager_id = serializers.CharField(required=False)
-    user_type = serializers.CharField(default='enterprise')
+    user_type = serializers.CharField(default=Constants.DEFAULT_USER_TYPE)
 
     def validate_password(self, value):
         return make_password(value)
@@ -122,9 +122,9 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return pincodes.get().id
 
     def create(self, validated_data):
-        validated_data.update(User.get_promo_code_details(
-            validated_data['promo_code']))
         account = self.get_account(validated_data)
+        validated_data.update(User.get_promo_code_details(
+            validated_data['promo_code'], account.get_full_name()))
         data = dict(
             account_id=account.id, is_active=True,
             user_type=validated_data['user_type'],
