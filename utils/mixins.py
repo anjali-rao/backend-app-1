@@ -1,6 +1,7 @@
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import (
-    APIException, NotAcceptable, NotFound, MethodNotAllowed)
+    NotAcceptable, NotFound, MethodNotAllowed)
+from rest_framework import exceptions, status
 from rest_framework.views import exception_handler
 
 
@@ -26,6 +27,14 @@ class MethodSerializerView(object):
                 return serializer_cls
 
         raise MethodNotAllowed(self.request.method)
+
+
+class APIException(exceptions.APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = {
+        'detail': ['Service temporarily unavailable, try again later.']
+    }
+    default_code = 'invalid'
 
 
 class RecommendationException(Exception):
