@@ -177,10 +177,13 @@ class User(BaseModel):
         from product.models import Category
         for category in Category.objects.only(
                 'name', 'id', 'hexa_code', 'logo', 'is_active'):
+            is_active = False
+            categorys = self.enterprise.categories.filter(id=category.id)
+            if categorys.exists():
+                is_active = categorys.get().is_active
             categories.append(dict(
                 id=category.id, hexa_code=category.hexa_code,
-                name=category.name.split(' ')[0],
-                is_active=(category.is_active or category.id in self.enterprise.categories.values_list('id', flat=True)), # noqa
+                name=category.name.split(' ')[0], is_active=is_active,
                 logo=(
                     Constants.DEBUG_HOST if DEBUG else '') + category.logo.url
             ))
@@ -210,7 +213,6 @@ class User(BaseModel):
     def get_rules(self):
         rules = dict.fromkeys(Constants.PROMO_RULES_KEYS, False)
         promo_code = self.enterprise.promocode_set.get().code.split('-')[1:] # noqa
-        print(promo_code)
         for rule_code in promo_code:
             if not rule_code.isdigit():
                 rule_code = 1
@@ -245,11 +247,24 @@ class User(BaseModel):
                     name=Constants.DEFAULT_ENTERPRISE)).id)
 
     @staticmethod
-    def get_promo_code_details(code):
+    def get_promo_code_details(code, name):
         promo_code = PromoCode.objects.get(code=code)
+        enterprises = Enterprise.objects.filter(
+            promo_code=promo_code, enterprise_type='enterprise')
+        if enterprises.exists():
+            return dict(
+                user_type='enterprise', enterprise_id=enterprises.get().id)
+        enterprise = Enterprise.objects.create(
+            name=name, enterprise_type='subscriber', promo_code=promo_code)
+        from product.models import Category, Company
+        for category_id in Category.objects.values_list('id', flat=True):
+            enterprise.categories.add(category_id)
+        for company_id in Company.objects.values_list('id', flat=True):
+            enterprise.companies.add(company_id)
+        enterprise.save()
         return dict(
-            user_type=promo_code.enterprise.enterprise_type,
-            enterprise_id=promo_code.enterprise_id)
+            user_type=enterprise.enterprise_type,
+            enterprise_id=enterprise.id)
 
     @property
     def account_no(self):
@@ -277,6 +292,7 @@ class Enterprise(BaseModel):
     companies = models.ManyToManyField('product.Company', blank=True)
     categories = models.ManyToManyField('product.Category', blank=True)
     hexa_code = models.CharField(max_length=8, default='#005db1')
+    promo_code = models.ForeignKey('users.PromoCode', on_delete=models.PROTECT)
     logo = models.ImageField(
         upload_to=Constants.ENTERPRISE_UPLOAD_PATH,
         default=Constants.DEFAULT_LOGO)
@@ -323,11 +339,9 @@ class AccountDetail(BaseModel):
 
 class PromoCode(BaseModel):
     code = models.CharField(max_length=16, unique=True)
-    enterprise = models.ForeignKey(
-        'users.Enterprise', on_delete=models.PROTECT)
 
     def __str__(self):
-        return '%s: %s' % (self.code, self.enterprise.__str__())
+        return '%s' % (self.code)
 
 
 class Referral(BaseModel):

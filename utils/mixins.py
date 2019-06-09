@@ -47,6 +47,10 @@ def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
 
     if response is not None:
-        response.data['detail'] = [str(exc)]
-
+        data = response.data
+        response.data = {}
+        for field, value in data.items():
+            response.data[field] = value
+        if 'detail' in data:
+            response.data['detail'] = [str(exc)]
     return response

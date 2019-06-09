@@ -132,6 +132,7 @@ INVALID_TRANSACTION_ID = 'Invalid transaction id provided.'
 INVALID_PHONE_NO = 'Invalid phone no entered.'
 INVALID_USERNAME = 'Invalid username provided.'
 INVALID_PASSWORD = 'Invalid password provided.'
+INVALID_PROMO_CODE = 'Invalid prmo code provided.'
 INVALID_USERNAME_PHONE_COMBINATION = 'Invalid username and phone no combination.' # noqa
 PASSWORD_MISMATCH = 'Password and confirm password mismatch'
 ACCOUNT_DISABLED = 'Account is unactive. Please contact OneCover for reactivation' # noqa
