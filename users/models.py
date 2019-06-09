@@ -135,7 +135,7 @@ class User(BaseModel):
     manager_id = models.CharField(max_length=48, null=True)
 
     class Meta:
-        unique_together = ('user_type', 'enterprise', 'account')
+        unique_together = ('user_type', 'account')
 
     def __str__(self):
         return self.account.get_full_name()
