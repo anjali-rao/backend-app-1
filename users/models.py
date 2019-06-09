@@ -212,7 +212,7 @@ class User(BaseModel):
 
     def get_rules(self):
         rules = dict.fromkeys(Constants.PROMO_RULES_KEYS, False)
-        promo_code = self.enterprise.promocode.get().code.split('-')[1:] # noqa
+        promo_code = self.enterprise.promocode.code.split('-')[1:]
         for rule_code in promo_code:
             if not rule_code.isdigit():
                 rule_code = 1
