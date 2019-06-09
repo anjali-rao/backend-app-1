@@ -138,6 +138,5 @@ class ReferralAdmin(admin.ModelAdmin):
 
 @admin.register(PromoCode)
 class PromoCodeAdmin(admin.ModelAdmin):
-    list_display = ('code', 'enterprise')
-    raw_id_fields = ('enterprise',)
-    search_fields = ('code', 'enterprise_id',)
+    list_display = ('code',)
+    search_fields = ('code',)
