@@ -212,7 +212,7 @@ class User(BaseModel):
 
     def get_rules(self):
         rules = dict.fromkeys(Constants.PROMO_RULES_KEYS, False)
-        promo_code = self.enterprise.promocode_set.get().code.split('-')[1:] # noqa
+        promo_code = self.enterprise.promocode.get().code.split('-')[1:] # noqa
         for rule_code in promo_code:
             if not rule_code.isdigit():
                 rule_code = 1
@@ -250,12 +250,12 @@ class User(BaseModel):
     def get_promo_code_details(code, name):
         promo_code = PromoCode.objects.get(code=code)
         enterprises = Enterprise.objects.filter(
-            promo_code=promo_code, enterprise_type='enterprise')
+            promocode=promo_code, enterprise_type='enterprise')
         if enterprises.exists():
             return dict(
                 user_type='enterprise', enterprise_id=enterprises.get().id)
         enterprise = Enterprise.objects.create(
-            name=name, enterprise_type='subscriber', promo_code=promo_code)
+            name=name, enterprise_type='subscriber', promocode=promo_code)
         from product.models import Category, Company
         for category_id in Category.objects.values_list('id', flat=True):
             enterprise.categories.add(category_id)
@@ -292,7 +292,7 @@ class Enterprise(BaseModel):
     companies = models.ManyToManyField('product.Company', blank=True)
     categories = models.ManyToManyField('product.Category', blank=True)
     hexa_code = models.CharField(max_length=8, default='#005db1')
-    promo_code = models.ForeignKey('users.PromoCode', on_delete=models.PROTECT)
+    promocode = models.ForeignKey('users.PromoCode', on_delete=models.PROTECT)
     logo = models.ImageField(
         upload_to=Constants.ENTERPRISE_UPLOAD_PATH,
         default=Constants.DEFAULT_LOGO)
