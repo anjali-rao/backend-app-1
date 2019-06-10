@@ -142,7 +142,7 @@ class Appointment(BaseModel):
 
 
 class Bank(models.Model):
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, db_index=True)
     is_active = models.BooleanField(default=False)
 
     def __str__(self):
@@ -151,10 +151,9 @@ class Bank(models.Model):
 
 class BankBranch(models.Model):
     bank = models.ForeignKey('content.Bank', on_delete=models.CASCADE)
-    branch_name = models.CharField(max_length=128)
-    ifsc = models.CharField(max_length=15, unique=True)
-    micr = models.CharField(max_length=128, null=True)
-    city = models.CharField(max_length=64)
+    branch_name = models.CharField(max_length=128, db_index=True)
+    ifsc = models.CharField(max_length=15, unique=True, db_index=True)
+    city = models.CharField(max_length=64, db_index=True)
 
     def __str__(self):
         return '%s => %s:%s' % (self.bank.name, self.branch_name, self.ifsc)
