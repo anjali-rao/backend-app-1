@@ -80,7 +80,7 @@ class PromoBook(BaseModel):
 
     def save(self, *args, **kwargs):
         from users.tasks import send_sms
-        send_sms(self.phone_no, Constants.PROMO_MESSAGE % self.phone_no)
+        send_sms.delay(self.phone_no, Constants.PROMO_MESSAGE % self.phone_no)
         super(PromoBook, self).save(*args, **kwargs)
 
 

@@ -62,7 +62,7 @@ class Application(BaseModel):
             self.reference_app.reference_no, self.premium,
             self.reference_app.quote.premium.product_variant.__str__(),
             self.get_payment_link())
-        send_sms(self.reference_app.client.phone_no, message)
+        send_sms.delay(self.reference_app.client.phone_no, message)
 
     def handle_creation(self):
         self.section = Constant.SECTION.get(
