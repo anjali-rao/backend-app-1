@@ -139,3 +139,22 @@ class Appointment(BaseModel):
     phone_no = models.CharField(max_length=10)
     address = models.TextField()
     date = models.DateField()
+
+
+class Bank(models.Model):
+    name = models.CharField(max_length=256)
+    is_active = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+
+class BankBranch(models.Model):
+    bank = models.ForeignKey('content.Bank', on_delete=models.CASCADE)
+    branch_name = models.CharField(max_length=128)
+    ifsc = models.CharField(max_length=15, unique=True)
+    micr = models.CharField(max_length=128, null=True)
+    city = models.CharField(max_length=64)
+
+    def __str__(self):
+        return '%s => %s:%s' % (self.bank.name, self.branch_name, self.ifsc)
