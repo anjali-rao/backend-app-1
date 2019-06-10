@@ -6,3 +6,5 @@ media/*
 static*
 goplannr.json
 *.log
+celerybeat-schedule
+celerybeat.pid
