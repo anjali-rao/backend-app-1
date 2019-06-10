@@ -361,28 +361,10 @@ class Document(BaseModel):
         return self.doc_type
 
 
-class Bank(models.Model):
-    name = models.CharField(max_length=256)
-    is_active = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.name
-
-
-class BankBranch(models.Model):
-    bank = models.ForeignKey('users.Bank', on_delete=models.CASCADE)
-    branch_name = models.CharField(max_length=128)
-    ifsc = models.CharField(max_length=15, unique=True)
-    micr = models.CharField(max_length=128, null=True)
-    city = models.CharField(max_length=64)
-
-    def __str__(self):
-        return '%s => %s:%s' % (self.bank.name, self.branch_name, self.ifsc)
-
-
 class BankAccount(BaseModel):
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
-    branch = models.OneToOneField('BankBranch', on_delete=models.CASCADE)
+    branch = models.OneToOneField(
+        'content.BankBranch', on_delete=models.CASCADE)
     account_no = models.CharField(max_length=32)
     default = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -455,7 +437,10 @@ class IPAddress(BaseModel):
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))
 def user_post_save(sender, instance, created, **kwargs):
     if created:
-        pass
+        from content.models import EnterprisePlaylist
+        EnterprisePlaylist.objects.create(
+            enterprise_id=instance.enterprise_id,
+            playlist_id=Constants.DEFAULT_PLAYLIST_ID)
 # Currently Not required have to implement once product is lauched via cron
 #        if not instance.__class__.objects.filter(
 #                user_type=constants.DEFAULT_USER_TYPE).exists():

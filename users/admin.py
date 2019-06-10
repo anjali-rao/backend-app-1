@@ -6,8 +6,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from users.models import (
-    Account, User, Campaign, AccountDetail, Document, Bank, BankAccount,
-    BankBranch, Enterprise, SubcriberEnterprise, State, Pincode, Address,
+    Account, User, Campaign, AccountDetail, Document, BankAccount,
+    Enterprise, SubcriberEnterprise, State, Pincode, Address,
     IPAddress, Referral, PromoCode)
 
 
@@ -58,26 +58,12 @@ class DocumentsAdmin(admin.ModelAdmin):
     list_filter = ('doc_type',)
 
 
-@admin.register(Bank)
-class BankAdmin(admin.ModelAdmin):
-    list_display = ('name', 'is_active')
-    list_filter = ('name', 'is_active')
-
-
 @admin.register(BankAccount)
 class BankAccountAdmin(admin.ModelAdmin):
     list_display = ('user', 'branch', 'default')
     search_fields = ('user__username', 'user__account__phone_no')
     raw_id_fields = ('user', 'branch')
     list_filter = ('default',)
-
-
-@admin.register(BankBranch)
-class BankBranchAdmin(admin.ModelAdmin):
-    list_display = ('bank', 'branch_name', 'ifsc', 'city', 'micr')
-    search_fields = (
-        'branch_name__user__username', 'branch_name__user__account__phone_no')
-    raw_id_fields = ('bank',)
 
 
 @admin.register(Campaign)

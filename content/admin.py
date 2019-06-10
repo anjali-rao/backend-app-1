@@ -6,7 +6,7 @@ from django.contrib import admin
 from content.models import (
     Faq, HelpFile, ContactUs, NetworkHospital, NewsletterSubscriber,
     PromoBook, HelpLine, Playlist, EnterprisePlaylist, Article,
-    Coverages, Note, Appointment)
+    Coverages, Note, Appointment, Bank, BankBranch)
 
 
 @admin.register(Faq)
@@ -106,3 +106,21 @@ class AppointmentAdmin(admin.ModelAdmin):
     list_display = ('name', 'phone_no', 'date', 'category')
     raw_id_fields = ('lead', 'user')
     search_fields = ('phone_no', 'name', 'user__phone_no')
+
+
+@admin.register(Bank)
+class BankAdmin(admin.ModelAdmin):
+    list_display = ('name', 'is_active')
+    list_filter = ('name', 'is_active')
+    search_fields = ('name',)
+
+    class Meta:
+        ordering = ('name',)
+
+
+@admin.register(BankBranch)
+class BankBranchAdmin(admin.ModelAdmin):
+    list_display = ('bank', 'branch_name', 'ifsc', 'city')
+    search_fields = ('branch_name', 'bank__name', 'ifsc', 'city')
+    raw_id_fields = ('bank',)
+    list_filter = ('bank__name',)

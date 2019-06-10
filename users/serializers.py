@@ -6,7 +6,8 @@ from django.core.cache import cache
 
 from users.models import (
     User, Account, Enterprise, AccountDetail, Pincode,
-    Address, BankAccount, BankBranch)
+    Address, BankAccount)
+from content.models import BankBranch
 
 from earnings.serializers import EarningSerializer
 
