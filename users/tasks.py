@@ -3,8 +3,10 @@ import urllib
 import requests
 
 from goplannr.settings import SMS_API_KEY, SMS_API
+from celery import shared_task
 
 
+@shared_task(name='users.tasks.send_sms')
 def send_sms(phone_no, message):
     json_data = {
         "sms": [{
