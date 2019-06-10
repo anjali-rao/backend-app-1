@@ -98,8 +98,7 @@ class RetrieveUpdateApplicationMembers(
                     serializer.is_valid(raise_exception=True)
                     serializer.save(application_id=application.id)
                 from sales.tasks import update_insurance_fields
-                # To Dos' Use Celery
-                update_insurance_fields(application_id=application.id)
+                update_insurance_fields.delay(application_id=application.id)
                 getattr(
                     application, application.application_type).switch_premium(
                     application.adults, application.childrens)

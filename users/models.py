@@ -40,7 +40,7 @@ class Account(AbstractUser):
 
     def send_sms(self, kwargs):
         from users.tasks import send_sms
-        send_sms(self.phone_no, kwargs['message'])
+        send_sms.delay(self.phone_no, kwargs['message'])
 
     def get_default_user(self):
         users = self.user_set.filter(is_active=True)
@@ -66,7 +66,7 @@ class Account(AbstractUser):
     @classmethod
     def send_otp(cls, phone_no):
         from users.tasks import send_sms
-        return send_sms(
+        return send_sms.delay(
             phone_no,
             Constants.OTP_MESSAGE % cls.generate_otp(phone_no))
 
