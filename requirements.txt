@@ -6,7 +6,7 @@ cached-property==1.5.1
 certifi==2019.3.9
 chardet==3.0.4
 decorator==4.4.0
-Django==2.1.7
+Django==2.1.9
 django-cors-headers==2.5.2
 django-hosts==3.0
 django-redis==4.10.0
