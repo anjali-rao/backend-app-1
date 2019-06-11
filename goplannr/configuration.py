@@ -4,7 +4,8 @@ import json
 import os
 
 
-CONFIGURATION_FILE = os.environ.get('GOPLANNR_CONFIG')
+CONFIGURATION_FILE = os.environ.get(
+    'GOPLANNR_CONFIG', 'utils/sample_configuration.json')
 
 if CONFIGURATION_FILE is None:
     raise ImproperlyConfigured(
