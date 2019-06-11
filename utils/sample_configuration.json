@@ -1,0 +1,48 @@
+{
+    "SECRET_KEY" : "9#fh63ci+*y1#)z1d!**x&8uu*z&r%%=#b+w+rdvx#el6j!d2dlkdck23kxoasksxmoaxs",
+    "DEBUG": false,
+    "ALLOWED_HOSTS": "*",
+    "DB_ENGINE": "django.db.backends.postgresql_psycopg2",
+    "DB_NAME": "goplannr",
+    "DB_USER": "goplannr",
+    "DB_PASSWORD": "goplannr9232",
+    "DB_HOST": "localhost",
+    "DB_PORT": "5432",
+    "JWT_SECRET": "Q)%(#)%AKSufihmo",
+    "BROKER_URL": "redis://localhost:6379/0",
+    "EMAIL_USE_TLS": true,
+    "EMAIL_BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+    "EMAIL_HOST": "smtp.gmail.com",
+    "EMAIL_HOST_USER": "",
+    "DEFAULT_FROM_EMAIL": "",
+    "EMAIL_HOST_PASSWORD": "",
+    "EMAIL_PORT": 587,
+    "CELERY_TIMEZONE": "Asia/Kolkata",
+    "CELERY_ACCEPT_CONTENT": "json,pickle",
+    "CELERY_TASK_SERIALIZER": "pickle",
+    "CELERY_RESULT_SERIALIZER": "pickle",
+    "CELERY_DEFAULT_QUEUE": "celery",
+    "CACHING": {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": "redis://127.0.0.1:6379/1",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient"
+            },
+            "KEY_PREFIX": "goplanr"
+        }
+    },
+    "SMS_API": "https://alerts.solutionsinfini.com/api/v4/?api_key=",
+    "SMS_API_KEY": "Ad1d1306cd0f1c906b32978dcc053311c",
+    "DEFAULT_HOST": "http://localhost:8000",
+    "PRODUCTTION_HOST": "http://api.staging.goplannr.com",
+    "RAVEN_CONFIG": {
+        "dsn": "https://6037e72fa5534db6bf38e4b48e08f1f0@sentry.io/1427326"
+    },
+    "AWS_ACCESS_KEY_ID": "AKIAIE6ULNHHS5PKEUSA",
+    "AWS_SECRET_ACCESS_KEY": "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",
+    "S3_BUCKET": "develop-goplannr",
+    "CLOUDFRONT_ID": "EARJFRF2S989L",
+    "CLOUDFRONT_DOMAIN": "d280c2inrydwgd.cloudfront.net",
+    "ENV": "localhost:8000"
+}
