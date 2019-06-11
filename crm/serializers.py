@@ -152,18 +152,24 @@ class QuoteSerializer(serializers.ModelSerializer):
     product = serializers.ReadOnlyField(
         source='premium.product_variant.get_product_details')
     sale_stage = serializers.SerializerMethodField()
+    application_id = serializers.SerializerMethodField()
 
     def get_sale_stage(self, obj):
         if hasattr(obj, 'application'):
             return obj.application.stage
         return 'product_details'
 
+    def get_application_id(self, obj):
+        if hasattr(obj, 'application'):
+            return obj.application.id
+        return ''
+
     class Meta:
         model = Quote
         fields = (
             'quote_id', 'lead_id', 'sum_insured', 'premium',
-            'product', 'recommendation_score', 'status', 'sale_stage'
-        )
+            'product', 'recommendation_score', 'status', 'sale_stage',
+            'application_id')
 
 
 class QuoteDetailsSerializer(serializers.ModelSerializer):
