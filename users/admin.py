@@ -6,9 +6,9 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from users.models import (
-    Account, User, Campaign, AccountDetail, Document, Bank, BankAccount,
-    BankBranch, Enterprise, SubcriberEnterprise, State, Pincode, Address,
-    IPAddress, Referral)
+    Account, User, Campaign, AccountDetail, Document, BankAccount,
+    Enterprise, SubcriberEnterprise, State, Pincode, Address,
+    IPAddress, Referral, PromoCode)
 
 
 @admin.register(Account)
@@ -39,7 +39,7 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'user_type')
     search_fields = (
         'account__phone_no', 'account__alternate_no', 'account__aadhar_no')
-    raw_id_fields = ('account', 'campaign')
+    raw_id_fields = ('account', 'campaign', 'enterprise')
 
 
 @admin.register(AccountDetail)
@@ -58,26 +58,12 @@ class DocumentsAdmin(admin.ModelAdmin):
     list_filter = ('doc_type',)
 
 
-@admin.register(Bank)
-class BankAdmin(admin.ModelAdmin):
-    list_display = ('name', 'is_active')
-    list_filter = ('name', 'is_active')
-
-
 @admin.register(BankAccount)
 class BankAccountAdmin(admin.ModelAdmin):
     list_display = ('user', 'branch', 'default')
     search_fields = ('user__username', 'user__account__phone_no')
     raw_id_fields = ('user', 'branch')
     list_filter = ('default',)
-
-
-@admin.register(BankBranch)
-class BankBranchAdmin(admin.ModelAdmin):
-    list_display = ('bank', 'branch_name', 'ifsc', 'city', 'micr')
-    search_fields = (
-        'branch_name__user__username', 'branch_name__user__account__phone_no')
-    raw_id_fields = ('bank',)
 
 
 @admin.register(Campaign)
@@ -113,7 +99,7 @@ class PincodeAdmin(admin.ModelAdmin):
 
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
-    list_display = ('flat_no', 'street', 'land_mark')
+    list_display = ('flat_no', 'street', 'landmark')
     search_fields = ('pincode__pincode', 'pincode__state', 'pincode__city')
     raw_id_fields = ('pincode',)
     list_filter = ('pincode__state',)
@@ -131,6 +117,12 @@ class IPAddressAdmin(admin.ModelAdmin):
 
 @admin.register(Referral)
 class ReferralAdmin(admin.ModelAdmin):
-    list_display = ('referral_code', 'referral_reference')
-    raw_id_fields = ('enterprise', 'user')
-    search_fields = ('referral_code', 'referral_reference')
+    list_display = ('code', 'reference_code',)
+    raw_id_fields = ('user',)
+    search_fields = ('code', 'reference_code')
+
+
+@admin.register(PromoCode)
+class PromoCodeAdmin(admin.ModelAdmin):
+    list_display = ('code',)
+    search_fields = ('code',)

@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import (
-    constants, get_choices, genrate_random_string)
+    constants as Constants, get_choices, genrate_random_string)
 
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import JSONField
@@ -12,6 +12,7 @@ from django.db.models.signals import post_save
 from django.db import IntegrityError
 from django.dispatch import receiver
 from django.utils.timezone import now
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 from questionnaire.models import Response
 from utils.mixins import RecommendationException
@@ -20,10 +21,13 @@ from utils.mixins import RecommendationException
 class Quote(BaseModel):
     lead = models.ForeignKey('crm.Lead', on_delete=models.CASCADE)
     status = models.CharField(
-        max_length=16, choices=constants.STATUS_CHOICES,
+        max_length=16, choices=Constants.STATUS_CHOICES,
         default='pending')
-    premium = models.ForeignKey(
-        'product.Premium', null=True, blank=True, on_delete=models.CASCADE)
+    limit = models.Q(app_label='product', model='healthpremium')
+    content_type = models.ForeignKey(
+        ContentType, on_delete=models.CASCADE, limit_choices_to=limit)
+    premium_id = models.PositiveIntegerField()
+    premium = GenericForeignKey('content_type', 'premium_id')
     recommendation_score = models.FloatField(default=0.0)
     ignore = models.BooleanField(default=False)
 
@@ -39,7 +43,7 @@ class Quote(BaseModel):
             self.premium.product_variant.company_category.company.name)
 
     class Meta:
-        ordering = ['-recommendation_score', 'premium__base_premium']
+        ordering = ['-recommendation_score', ]
 
     def get_feature_details(self):
         return self.premium.product_variant.feature_set.values(
@@ -64,12 +68,17 @@ class Application(BaseModel):
     client = models.ForeignKey(
         'crm.Contact', null=True, on_delete=models.PROTECT)
     application_type = models.CharField(
-        max_length=32, choices=get_choices(constants.APPLICATION_TYPES))
+        max_length=32, choices=get_choices(Constants.APPLICATION_TYPES))
     quote = models.OneToOneField('sales.Quote', on_delete=models.CASCADE)
     status = models.CharField(
-        max_length=32, choices=constants.APPLICATION_STATUS, default='fresh')
+        max_length=32, choices=Constants.APPLICATION_STATUS, default='fresh')
+    stage = models.CharField(
+        max_length=32, default='proposer_details',
+        choices=get_choices(Constants.APPLICATION_STAGES))
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
+    payment_mode = models.CharField(max_length=64, choices=get_choices(
+        Constants.AGGREGATOR_CHOICES), default='offline')
     terms_and_conditions = models.BooleanField(null=True)
 
     def save(self, *args, **kwargs):
@@ -82,6 +91,14 @@ class Application(BaseModel):
             self.application_type = self.company_category.category.name.lower(
             ).replace(' ', '')
         super(Application, self).save(*args, **kwargs)
+
+    def aggregator_operation(self):
+        if self.quote.premium.product_variant.company_category.company.name not in Constants.ACTIVE_AGGREGATOR_COMPANIES: # noqa
+            return
+        from aggregator.wallnut.models import Application as Aggregator
+        if not hasattr(self, 'application'):
+            Aggregator.objects.create(
+                reference_app_id=self.id, insurance_type=self.application_type)
 
     def update_fields(self, **kw):
         updated = False
@@ -100,30 +117,8 @@ class Application(BaseModel):
                     reference_no=self.reference_no).exists():
                 self.reference_no = genrate_random_string(10)
 
-    def switch_premium(self, adults, childrens):
-        lead = self.quote.lead
-        data = dict(
-            effective_age=now().year - self.active_members.aggregate(
-                s=models.Max('dob'))['s'].year, adults=adults,
-            product_variant_id=self.quote.premium.product_variant_id,
-            childrens=childrens
-        )
-        for member in constants.RELATION_CHOICES:
-            members = self.active_members.filter(relation=member)
-            if members.exists() and member not in ['son', 'daughter']:
-                data['%s_age' % (member)] = members.get().age
-        data['customer_segment_id'] = lead.get_customer_segment(**data).id
-        self.quote.lead.refresh_quote_data(**data)
-        quote = lead.get_quotes().first()
-        if not quote:
-            raise RecommendationException('No quote found for this creteria')
-        self.quote_id = quote.id
-        self.premium = quote.premium.amount
-        self.suminsured = quote.premium.sum_insured
-        self.save()
-
     def add_default_members(self):
-        lead = self.quote.lead
+        lead = self.quote.lead.category_lead
         today = now()
         members = list()
 
@@ -158,6 +153,18 @@ class Application(BaseModel):
             members.append(instance)
         Member.objects.bulk_create(members)
 
+    def create_policy(self):
+        return Policy.objects.create(application_id=self.id)
+
+    @property
+    def adults(self):
+        return self.active_members.filter(
+            dob__year__lte=(now().year - 18)).count()
+
+    @property
+    def childrens(self):
+        return self.active_members.count() - self.adults
+
     @cached_property
     def active_members(self):
         return self.member_set.filter(ignore=False)
@@ -179,6 +186,9 @@ class Application(BaseModel):
             self.reference_no, self.application_type,
             self.company_category.company.name)
 
+    class Meta:
+        ordering = ('-created',)
+
 
 class ExistingPolicies(BaseModel):
     application = models.ForeignKey(
@@ -192,15 +202,15 @@ class Member(BaseModel):
     application = models.ForeignKey(
         'sales.Application', on_delete=models.CASCADE)
     relation = models.CharField(
-        max_length=128, choices=get_choices(constants.RELATION_CHOICES),
+        max_length=128, choices=get_choices(Constants.RELATION_CHOICES),
         db_index=True)
     first_name = models.CharField(max_length=128, blank=True)
     last_name = models.CharField(max_length=128, blank=True)
     dob = models.DateField(null=True)
     gender = models.CharField(
-        choices=get_choices(constants.GENDER), max_length=16)
+        choices=get_choices(Constants.GENDER), max_length=16, null=True)
     occupation = models.CharField(
-        choices=get_choices(constants.OCCUPATION_CHOICES), max_length=32,
+        choices=get_choices(Constants.OCCUPATION_CHOICES), max_length=32,
         null=True, blank=True
     )
     height = models.FloatField(default=0.0)
@@ -230,10 +240,10 @@ class Member(BaseModel):
 
     @property
     def age(self):
-        if not self.dob:
-            return
-        return int((
-            now().today().date() - self.dob).days / 365.2425)
+        if self.dob:
+            return int((
+                now().today().date() - self.dob
+            ).days / 365.2425)
 
     @property
     def height_foot(self):
@@ -251,7 +261,7 @@ class Nominee(BaseModel):
     application = models.ForeignKey(
         'sales.Application', on_delete=models.CASCADE)
     relation = models.CharField(
-        max_length=128, choices=get_choices(constants.RELATION_CHOICES),
+        max_length=128, choices=get_choices(Constants.RELATION_CHOICES),
         db_index=True)
     first_name = models.CharField(max_length=128)
     last_name = models.CharField(max_length=128)
@@ -270,27 +280,6 @@ class Nominee(BaseModel):
         return name.strip()
 
 
-class Earnings(models.Model):
-    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
-    quote = models.ForeignKey(
-        'sales.Quote', on_delete=models.CASCADE, null=True, blank=True)
-    amount = models.FloatField(default=0.0)
-    earning_type = models.CharField(
-        choices=get_choices(constants.EARNING_TYPES), max_length=16)
-    sub_type = models.CharField(max_length=32)
-    paid = models.BooleanField(default=False)
-
-    @classmethod
-    def get_user_earnings(cls, user_id, earning_type=None, sub_type=None):
-        query = dict(user_id=user_id)
-        if earning_type:
-            query['earning_type'] = earning_type
-        if sub_type:
-            query['sub_type'] = sub_type
-        return cls.objects.filter(**query).annotate(
-            s=models.Sum('amount'))['s']
-
-
 class Insurance(BaseModel):
 
     class Meta:
@@ -302,44 +291,70 @@ class Insurance(BaseModel):
 
 class HealthInsurance(Insurance):
     gastrointestinal_disease = JSONField(
-        default=list, help_text=constants.GASTROINTESTINAL_DISEASE)
+        default=list, help_text=Constants.GASTROINTESTINAL_DISEASE)
     neuronal_diseases = JSONField(
-        default=list, help_text=constants.NEURONAL_DISEASES)
+        default=list, help_text=Constants.NEURONAL_DISEASES)
     oncology_disease = JSONField(
-        default=list, help_text=constants.ONCOLOGY_DISEASE)
+        default=list, help_text=Constants.ONCOLOGY_DISEASE)
     respiratory_diseases = JSONField(
-        default=list, help_text=constants.RESPIRATORY_DISEASES)
+        default=list, help_text=Constants.RESPIRATORY_DISEASES)
     cardiovascular_disease = JSONField(
-        default=list, help_text=constants.CARDIOVASCULAR_DISEASE)
+        default=list, help_text=Constants.CARDIOVASCULAR_DISEASE)
     ent_diseases = JSONField(
-        default=list, help_text=constants.ENT_DISEASE)
+        default=list, help_text=Constants.ENT_DISEASE)
     blood_diseases = JSONField(
-        default=list, help_text=constants.BLOOD_DISODER)
+        default=list, help_text=Constants.BLOOD_DISODER)
     alcohol_consumption = models.IntegerField(
-        default=0.0, help_text=constants.ALCOHOL_CONSUMPTION,
+        default=0.0, help_text=Constants.ALCOHOL_CONSUMPTION,
         null=True, blank=True)
     tobacco_consumption = models.IntegerField(
-        default=0.0, help_text=constants.TABBACO_CONSUMPTION,
+        default=0.0, help_text=Constants.TABBACO_CONSUMPTION,
         null=True, blank=True)
     cigarette_consumption = models.IntegerField(
-        default=0.0, help_text=constants.CIGARETTE_CONSUMPTION,
+        default=0.0, help_text=Constants.CIGARETTE_CONSUMPTION,
         null=True, blank=True)
     previous_claim = models.BooleanField(
-        default=False, help_text=constants.PREVIOUS_CLAIM,
+        default=False, help_text=Constants.PREVIOUS_CLAIM,
         null=True, blank=True)
     proposal_terms = models.BooleanField(
-        default=False, help_text=constants.PROPOSAL_TERMS,
+        default=False, help_text=Constants.PROPOSAL_TERMS,
         null=True, blank=True)
 
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+
     def update_default_fields(self, kw):
-        for field in constants.HEALTHINSURANCE_FIELDS:
+        for field in Constants.HEALTHINSURANCE_FIELDS:
             setattr(self, field, kw)
         self.save()
+
+    def switch_premium(self, adults, childrens):
+        lead = self.application.quote.lead
+        data = dict(
+            effective_age=(
+                now().year - self.application.active_members.aggregate(
+                    s=models.Min('dob'))['s'].year), adults=adults,
+            product_variant_id=self.application.quote.premium.product_variant_id, # noqa
+            childrens=childrens)
+        for member in Constants.RELATION_CHOICES:
+            members = self.application.active_members.filter(relation=member)
+            if members.exists() and member not in ['son', 'daughter']:
+                data['%s_age' % (member)] = members.get().age
+        data['customer_segment_id'] = lead.category_lead.get_customer_segment(
+            **data).id
+        lead.refresh_quote_data(**data)
+        quote = lead.get_quotes().first()
+        if not quote:
+            raise RecommendationException('No quote found for this creteria')
+        self.application.quote_id = quote.id
+        self.application.premium = quote.premium.amount
+        self.application.suminsured = quote.premium.sum_insured
+        self.application.save()
 
     def get_summary(self):
         response = dict()
         for field in self._meta.fields:
-            if field.name in constants.INSURANCE_EXCLUDE_FIELDS:
+            if field.name in Constants.INSURANCE_EXCLUDE_FIELDS:
                 continue
             field_value = getattr(self, field.name)
             if isinstance(field_value, list):
@@ -364,17 +379,22 @@ class TravelInsurance(Insurance):
 class Policy(BaseModel):
     application = models.OneToOneField(
         'sales.Application', on_delete=models.CASCADE)
-    contact = models.ForeignKey('crm.Contact', on_delete=models.CASCADE)
-    policy_data = JSONField()
+    policy_number = models.CharField(max_length=64, blank=True, null=True)
+    policy_data = JSONField(default=dict)
+    policy_file = models.FileField(
+        upload_to=Constants.POLICY_UPLOAD_PATH,
+        null=True, blank=True)
 
 
 @receiver(post_save, sender=Application, dispatch_uid="action%s" % str(now()))
 def application_post_save(sender, instance, created, **kwargs):
     if created:
         Quote.objects.filter(lead_id=instance.quote.lead.id).exclude(
-            id=instance.quote_id, status='accepted').update(status='rejected')
-        instance.quote.status = 'accepted'
-        instance.quote.save()
+            id=instance.quote_id, status__in=['accepted', 'rejected']
+        ).update(status='rejected')
+        quote = instance.quote
+        quote.status = 'accepted'
+        quote.save()
         instance.add_default_members()
         ContentType.objects.get(
             model=instance.application_type, app_label='sales'

@@ -1,30 +1,6 @@
-from django.core.exceptions import ImproperlyConfigured
-
-import json
 import os
 import redis
-
-CONFIGURATION_FILE = os.environ.get('GOPLANNR_CONFIG')
-
-if CONFIGURATION_FILE is None:
-    raise ImproperlyConfigured(
-        "ImproperlyConfigured: Set CONFIG environment variable"
-    )
-
-
-with open(CONFIGURATION_FILE) as f:
-    configs = json.loads(f.read())
-
-
-def get_env_var(setting, configs=configs):
-    try:
-        return configs[setting]
-    except KeyError:
-        raise ImproperlyConfigured(
-            "ImproperlyConfigured: Set {0} environment variable".format(
-                setting)
-        )
-
+from goplannr.configuration import get_env_var
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -39,6 +15,8 @@ STATIC_URL = '/static/'
 
 SECRET_KEY = get_env_var('SECRET_KEY')
 JWT_SECRET = get_env_var('JWT_SECRET')
+
+ENV = get_env_var('ENV')
 
 DEFAULT_HOST = "www"
 ROOT_HOSTCONF = 'goplannr.hosts'
@@ -64,7 +42,8 @@ INSTALLED_APPS = [
     'product',
     'sales',
     'questionnaire',
-    'storages'
+    'aggregator.wallnut',
+    'earnings'
 ]
 
 if DEBUG:
@@ -76,7 +55,7 @@ if DEBUG:
 else:
     STATIC_ROOT = "static"
     RAVEN_CONFIG = get_env_var('RAVEN_CONFIG')
-    INSTALLED_APPS.append('raven.contrib.django.raven_compat')
+    INSTALLED_APPS.extend(['raven.contrib.django.raven_compat', 'storages'])
     # For S3 Document Stroage
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     CLOUDFRONT_DOMAIN = get_env_var('CLOUDFRONT_DOMAIN')
@@ -185,3 +164,9 @@ CACHES = get_env_var('CACHING')
 # SMS API KEY
 SMS_API_KEY = get_env_var('SMS_API_KEY')
 SMS_API = get_env_var('SMS_API')
+
+# REST_FRAMEWORK
+
+REST_FRAMEWORK = dict(
+    EXCEPTION_HANDLER='utils.mixins.custom_exception_handler'
+)

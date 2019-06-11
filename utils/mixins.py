@@ -1,5 +1,8 @@
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import (
+    NotAcceptable, NotFound, MethodNotAllowed)
 from rest_framework import exceptions, status
-from django.utils.translation import ugettext_lazy as _
+from rest_framework.views import exception_handler
 
 
 class MethodSerializerView(object):
@@ -23,7 +26,7 @@ class MethodSerializerView(object):
             if self.request.method in methods:
                 return serializer_cls
 
-        raise exceptions.MethodNotAllowed(self.request.method)
+        raise MethodNotAllowed(self.request.method)
 
 
 class APIException(exceptions.APIException):
@@ -33,35 +36,6 @@ class APIException(exceptions.APIException):
     }
     default_code = 'invalid'
 
-    def __init__(self, detail=None, code=None):
-        if detail is None:
-            detail = self.default_detail
-        if code is None:
-            code = self.default_code
-
-        # For validation failures, we are overriding details to dict from str,
-        # so that error response should remain common across all errors.
-        if not isinstance(detail, dict):
-            detail = {'detail': [detail]}
-
-        self.detail = exceptions._get_error_details(detail, code)
-
-
-class NotAcceptable(APIException):
-    status_code = status.HTTP_406_NOT_ACCEPTABLE
-    default_detail = _('Could not satisfy the request Accept header.')
-    default_code = 'not_acceptable'
-
-    def __init__(self, detail=None, code=None, available_renderers=None):
-        self.available_renderers = available_renderers
-        super(NotAcceptable, self).__init__(detail, code)
-
-
-class NotFound(APIException):
-    status_code = status.HTTP_404_NOT_FOUND
-    default_detail = _('Not found.')
-    default_code = 'not_found'
-
 
 class RecommendationException(Exception):
     pass
@@ -69,3 +43,23 @@ class RecommendationException(Exception):
 
 class InsuranceException(Exception):
     pass
+
+
+class CustomPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+
+
+def custom_exception_handler(exc, context):
+    # Call REST framework's default exception handler first,
+    # to get the standard error response.
+    response = exception_handler(exc, context)
+
+    if response is not None:
+        data = response.data
+        response.data = {}
+        for field, value in data.items():
+            response.data[field] = value
+        if 'detail' in data:
+            response.data['detail'] = [str(exc)]
+    return response

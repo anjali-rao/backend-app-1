@@ -4,14 +4,49 @@ from __future__ import unicode_literals
 from django.contrib import admin
 
 from crm.models import Lead, Contact, KYCDocument
+from crm.leads.models import HealthInsurance
+from content.models import Note
+
+
+class HealthInsuranceInline(admin.StackedInline):
+    model = HealthInsurance
+
+    can_delete = False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+class NotesInline(admin.TabularInline):
+    model = Note
+    can_delete = False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ('user', 'category', 'amount', 'final_score')
+    list_display = ('user', 'category', 'pincode')
     search_fields = ('user__account__phone_no', 'id', 'category__id')
+    raw_id_fields = ('user', 'category', 'contact',)
+    _inlines_class_set = dict(
+        healthinsurance=HealthInsuranceInline
+    )
     list_filter = ('category',)
-    raw_id_fields = ('user', 'category', 'contact', 'customer_segment')
+
+    def get_inline_instances(self, request, obj=None):
+        inlines = list()
+        if obj is not None and hasattr(obj, obj.category_name):
+            inline_class = self.get_inline_class(obj.category_name)
+            inlines.append(inline_class(self.model, self.admin_site))
+        inlines.extend([
+            NotesInline(self.model, self.admin_site)
+        ])
+        return inlines
+
+    def get_inline_class(self, keywords):
+        return self._inlines_class_set.get(keywords)
 
 
 @admin.register(Contact)

@@ -6,20 +6,20 @@ from sales.models import (
 )
 from crm.models import Contact, KYCDocument
 from users.models import Pincode, Address
-from utils import constants, mixins
+from utils import constants as Constants, mixins
 
 from django.db import transaction, IntegrityError
 
 
 class CreateApplicationSerializer(serializers.ModelSerializer):
+    application_id = serializers.ReadOnlyField(source='id', read_only=True)
     quote_id = serializers.CharField(required=True)
     contact_name = serializers.CharField(required=True, write_only=True)
     contact_no = serializers.CharField(required=True, write_only=True)
-    application_id = serializers.SerializerMethodField()
 
     def validate_quote_id(self, value):
         if not Quote.objects.filter(id=value).exists():
-            raise serializers.ValidationError(constants.INVALID_QUOTE_ID)
+            raise serializers.ValidationError(Constants.INVALID_QUOTE_ID)
         return value
 
     def create(self, validated_data):
@@ -33,21 +33,18 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     suminsured=quote.premium.sum_insured)
                 lead = quote.lead
                 contact, created = Contact.objects.get_or_create(
-                    phone_no=validated_data['contact_no'])
+                    phone_no=validated_data['contact_no'],
+                    user_id=lead.user.id)
                 if created:
-                    contact.update_fields(**dict(
-                        user_id=lead.user.id, first_name=full_name[0]))
+                    contact.update_fields(**dict(first_name=full_name[0]))
                 lead.update_fields(**dict(
                     contact_id=contact.id, status='inprogress', stage='cart'))
             return instance
         except IntegrityError as e:
             raise mixins.NotAcceptable(
-                constants.APPLICATION_ALREAY_EXISTS)
+                Constants.APPLICATION_ALREAY_EXISTS)
         raise mixins.NotAcceptable(
-            constants.FAILED_APPLICATION_CREATION)
-
-    def get_application_id(self, obj):
-        return obj.id
+            Constants.FAILED_APPLICATION_CREATION)
 
     class Meta:
         model = Application
@@ -106,13 +103,13 @@ class GetProposalDetailsSerializer(serializers.ModelSerializer):
 class UpdateContactDetailsSerializer(serializers.ModelSerializer):
     document_type = serializers.CharField(required=True)
     document_number = serializers.CharField(required=True)
-    pincode = serializers.CharField(required=True)
-    street = serializers.CharField(required=True)
-    flat_no = serializers.CharField(required=True)
+    pincode = serializers.CharField(required=True, max_length=6)
+    street = serializers.CharField(required=True, max_length=128)
+    flat_no = serializers.CharField(required=True, max_length=64)
 
     def validate_pincode(self, value):
         if not Pincode.get_pincode(value):
-            raise serializers.ValidationError(constants.INVALID_PINCODE)
+            raise serializers.ValidationError(Constants.INVALID_PINCODE)
         return value
 
     def save(self, **kwargs):
@@ -133,12 +130,13 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                 application_id=app.id, relation='self')
             if self.instance.phone_no != validated_data['phone_no']:
                 instances = self.Meta.model.objects.filter(
-                    phone_no=validated_data['phone_no'])
+                    phone_no=validated_data['phone_no'],
+                    user_id=validated_data['user_id'])
                 if instances.exists():
                     self.instance = instances.latest('modified')
                 else:
                     self.instance = None
-                    update_fields['user_id'] = app.quote.lead.user.id
+                    update_fields['user_id'] = validated_data['user_id']
             elif members.exists():
                 member = members.get()
                 member.update_fields(**dict(
@@ -155,7 +153,8 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             kycdocument.save()
             self.instance.update_fields(**update_fields)
             app.update_fields(**dict(
-                status='pending', client_id=self.instance.id))
+                status='pending', client_id=self.instance.id,
+                stage='insured_members'))
 
     def create(self, valid_data):
         """
@@ -191,7 +190,7 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                 many_to_many[field_name] = valid_data.pop(field_name)
         validated_data = dict()
         for field_name in valid_data.keys():
-            if field_name in constants.CONTACT_CREATION_FIELDS:
+            if field_name in Constants.CONTACT_CREATION_FIELDS:
                 validated_data[field_name] = valid_data[field_name]
         try:
             instance = ModelClass._default_manager.create(**validated_data)
@@ -272,16 +271,13 @@ class CreateMemberSerializers(serializers.ModelSerializer):
     class Meta:
         model = Member
         fields = (
-            'gender', 'first_name', 'last_name', 'dob', 'relation',
+            'first_name', 'last_name', 'dob', 'relation',
             'height', 'weight', 'height_foot', 'height_inches', 'id')
         read_only_fields = ('height_foot', 'height_inches')
 
 
 class MemberSerializer(serializers.ModelSerializer):
-    full_name = serializers.SerializerMethodField()
-
-    def get_full_name(self, obj):
-        return obj.get_full_name()
+    full_name = serializers.ReadOnlyField(source='get_full_name')
 
     class Meta:
         model = Member
@@ -289,14 +285,6 @@ class MemberSerializer(serializers.ModelSerializer):
 
 
 class GetApplicationMembersSerializer(serializers.ModelSerializer):
-    height_foot = serializers.SerializerMethodField()
-    height_inches = serializers.SerializerMethodField()
-
-    def get_height_foot(self, obj):
-        return obj.height_foot
-
-    def get_height_inches(self, obj):
-        return obj.height_inches
 
     class Meta:
         model = Member
@@ -323,10 +311,7 @@ class CreateNomineeSerializer(serializers.ModelSerializer):
 
 
 class NomineeSerializer(serializers.ModelSerializer):
-    full_name = serializers.SerializerMethodField()
-
-    def get_full_name(self, obj):
-        return obj.get_full_name()
+    full_name = serializers.ReadOnlyField(source='get_full_name')
 
     class Meta:
         model = Nominee
@@ -422,7 +407,7 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
     def get_insured_members(self, obj):
         members = sorted(
             self.instance.active_members,
-            key=lambda member: constants.MEMBER_ORDER.get(
+            key=lambda member: Constants.MEMBER_ORDER.get(
                 member.relation, 0))
         return GetApplicationMembersSerializer(
             members, many=True).data
@@ -443,27 +428,21 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
 
 
 class SalesApplicationSerializer(serializers.ModelSerializer):
+    quote_id = serializers.ReadOnlyField(source='quote.id')
     proposer_name = serializers.SerializerMethodField()
-    product_name = serializers.SerializerMethodField()
+    product_name = serializers.ReadOnlyField(
+        source='quote.premium.product_variant.product_short_name')
     section = serializers.SerializerMethodField()
     earning = serializers.SerializerMethodField()
-    last_updated = serializers.SerializerMethodField()
-    logo = serializers.SerializerMethodField()
+    last_updated = serializers.DateTimeField(source='modified')
+    logo = serializers.ReadOnlyField(
+        source='quote.premium.product_variant.logo')
 
     def get_earning(self, obj):
         return ''
 
-    def get_last_updated(self, obj):
-        return obj.modified.strftime("%d/%m/%Y")
-
-    def get_logo(self, obj):
-        return obj.quote.premium.product_variant.logo
-
     def get_section(self, obj):
-        return self.context['section']
-
-    def get_product_name(self, obj):
-        return obj.quote.premium.product_variant.product_short_name
+        return self.context.get('section', '-')
 
     def get_proposer_name(self, obj):
         instance = obj.client or obj.quote.lead.contact
@@ -473,5 +452,36 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         model = Application
         fields = (
             'id', 'reference_no', 'premium', 'suminsured', 'earning',
-            'last_updated', 'logo', 'section', 'product_name', 'proposer_name'
-        )
+            'last_updated', 'logo', 'section', 'product_name', 'proposer_name',
+            'stage', 'quote_id')
+
+
+class ClientSerializer(serializers.ModelSerializer):
+    company_logo = serializers.ReadOnlyField(
+        source='quote.premium.product_variant.logo')
+    product_name = serializers.ReadOnlyField(
+        source='quote.premium.product_variant.product_short_name')
+    full_name = serializers.SerializerMethodField()
+    status = serializers.ReadOnlyField(source='get_status_display')
+
+    def get_full_name(self, obj):
+        instance = obj.client or obj.quote.lead.contact
+        return instance.get_full_name()
+
+    class Meta:
+        model = Application
+        fields = (
+            'id', 'product_name', 'full_name', 'created', 'premium',
+            'status', 'company_logo')
+
+
+class UpdateApplicationSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = Application
+        fields = ('status', )
+
+    @property
+    def data(self):
+        self._data = dict(message='Application updated successfully')
+        return self._data

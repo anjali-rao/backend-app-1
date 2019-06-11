@@ -2,21 +2,24 @@
 from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
-from utils import constants, get_choices
-from django.utils.functional import cached_property
+from utils import constants as Constants, get_choices
 
+from django.utils.functional import cached_property
 from django.contrib.postgres.fields import IntegerRangeField
+from django.contrib.postgres.fields import ArrayField
+from django.contrib.contenttypes.fields import GenericRelation
 
 
 class Category(BaseModel):
     name = models.CharField(max_length=128, db_index=True)
     description = models.TextField(null=True, blank=True)
     logo = models.ImageField(
-        upload_to=constants.CATEGORY_UPLOAD_PATH,
-        default=constants.DEFAULT_LOGO)
+        upload_to=Constants.CATEGORY_UPLOAD_PATH,
+        default=Constants.DEFAULT_LOGO)
     hexa_code = models.CharField(
-        max_length=8, default=constants.DEFAULT_HEXA_CODE)
+        max_length=8, default=Constants.DEFAULT_HEXA_CODE)
     is_active = models.BooleanField(default=False)
+    commission = models.FloatField(default=Constants.DEFAULT_COMMISSION)
 
     def __str__(self):
         return self.name
@@ -27,15 +30,17 @@ class Company(BaseModel):
     short_name = models.CharField(max_length=128)
     categories = models.ManyToManyField('product.Category')
     logo = models.ImageField(
-        upload_to=constants.COMPANY_UPLOAD_PATH,
-        default=constants.DEFAULT_LOGO)
+        upload_to=Constants.COMPANY_UPLOAD_PATH,
+        default=Constants.DEFAULT_LOGO)
     hexa_code = models.CharField(
-        max_length=8, default=constants.DEFAULT_HEXA_CODE)
+        max_length=8, default=Constants.DEFAULT_HEXA_CODE)
     website = models.URLField(null=True, blank=True)
     spoc = models.TextField(null=True, blank=True)
-    toll_free_number = models.CharField(max_length=50, null=True, blank=True)
+    toll_free_number = ArrayField(
+        models.CharField(max_length=32), default=list, blank=True, null=True)
     long_description = models.TextField(null=True, blank=True)
     small_description = models.TextField(null=True, blank=True)
+    commission = models.FloatField(default=0.0)
 
     def __str__(self):
         return self.name
@@ -71,6 +76,8 @@ class ProductVariant(BaseModel):
     parent_product = models.CharField(
         max_length=128, null=True, blank=True, default='GoPlannr')
     feature_variant = models.CharField(max_length=256, default='base')
+    short_description = models.CharField(max_length=128, null=True, blank=True)
+    long_description = models.TextField(null=True, blank=True)
     chronic = models.BooleanField(default=True)
 
     def get_product_details(self):
@@ -84,7 +91,7 @@ class ProductVariant(BaseModel):
     def logo(self):
         from goplannr.settings import DEBUG
         return (
-            constants.DEBUG_HOST if DEBUG else ''
+            Constants.DEBUG_HOST if DEBUG else ''
         ) + self.company_category.company.logo.url
 
     @cached_property
@@ -95,23 +102,19 @@ class ProductVariant(BaseModel):
 
     def get_basic_details(self):
         return {
-            'toll_free_number': self.company_category.company.toll_free_number,
-            'brochure': self.get_help_file('SALES BROCHURES'),
-            'claim_form': self.get_help_file('CLAIM FORMS')
+            'toll_free_number': self.company_category.company.toll_free_number or '', # noqa
+            'brochure': self.get_help_file('sales_brochure'),
+            'claim_form': self.get_help_file('claim_form')
         }
 
     def get_help_file(self, file_type):
         from content.models import HelpFile
         helpfile = HelpFile.objects.filter(
-            category=self.company_category.category.name,
-            file_type=file_type).last()
-        if not helpfile:
-            helpfile = HelpFile.objects.filter(
-                category='ALL', file_type=file_type).last()
-        return helpfile.file.url if helpfile else ''
+            product_variant_id=self.id, file_type=file_type).first()
+        return helpfile.file.url if helpfile else '-'
 
     def __str__(self):
-        return self.name
+        return self.product_short_name
 
 
 class CustomerSegment(BaseModel):
@@ -128,7 +131,7 @@ class FeatureMaster(BaseModel):
     order = models.IntegerField(default=1)
     feature_type = models.CharField(
         max_length=32, default='Others',
-        choices=get_choices(constants.FEATURE_TYPES))
+        choices=get_choices(Constants.FEATURE_TYPES))
     short_description = models.CharField(max_length=128, null=True, blank=True)
     long_description = models.TextField(null=True, blank=True)
 
@@ -188,22 +191,27 @@ class DeductibleMaster(BaseModel):
         return self.text
 
 
-class Premium(BaseModel):
+class HealthPremium(BaseModel):
     product_variant = models.ForeignKey(
         'product.ProductVariant', null=True, blank=True,
         on_delete=models.CASCADE)
     deductible = models.ForeignKey(
         'product.DeductibleMaster', null=True, blank=True,
         on_delete=models.CASCADE)
-    sum_insured = models.IntegerField(default=0.0, db_index=True)
+    sum_insured = models.IntegerField(default=0.0)
+    suminsured_range = IntegerRangeField(default=(0, 300000), db_index=True)
     age_range = IntegerRangeField(default=(0, 100), db_index=True)
     adults = models.IntegerField(null=True, blank=True, db_index=True)
     childrens = models.IntegerField(null=True, blank=True, db_index=True)
     citytier = models.CharField(
         max_length=256, null=True, blank=True)
-    base_premium = models.FloatField(default=constants.DEFAULT_BASE_PREMIUM)
-    gst = models.FloatField(default=constants.DEFAULT_GST)
-    commission = models.FloatField(default=constants.DEFAULT_COMMISSION)
+    base_premium = models.FloatField(default=Constants.DEFAULT_BASE_PREMIUM)
+    gst = models.FloatField(default=Constants.DEFAULT_GST)
+    commission = models.FloatField(default=0.0)
+    premium = GenericRelation(
+        'sales.quote', related_query_name='healthinsurance',
+        object_id_field='premium_id')
+    ignore = models.BooleanField(default=False)
 
     def get_details(self):
         return {
@@ -214,13 +222,14 @@ class Premium(BaseModel):
 
     @cached_property
     def commission_amount(self):
-        return self.amount * self.commission
+        company = self.product_variant.company_category.company
+        category = self.product_variant.company_category.category
+        return self.amount * (
+            self.commission + company.commission + category.commission)
 
     @cached_property
     def amount(self):
-        return round((
-            self.gst * self.base_premium
-        ) + self.base_premium + (self.base_premium * self.commission), 2)
+        return round((self.gst * self.base_premium) + self.base_premium, 2)
 
     def __str__(self):
         return '%s | %s' % (self.sum_insured, self.age_range)

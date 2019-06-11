@@ -1,19 +1,25 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from rest_framework import permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 
-
+from crm.serializers import LeadSerializer
+from sales.serializers import ClientSerializer
 from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
     AccountSearchSerializers, User, PincodeSerializer, Pincode,
-    SalesSerializer
+    UpdateUserSerializer, UserEarningSerializer, UserDetailSerializerV2,
+    UserDetailSerializerV3
 )
+from sales.serializers import SalesApplicationSerializer
 from users.decorators import UserAuthentication
 from utils import constants
 from utils.mixins import APIException
+from content.serializers import (
+    EnterprisePlaylistSerializer, AppoinmentSerializer, Appointment)
 
 from django.db.models import Q
 from django.db import transaction, IntegrityError
@@ -47,7 +53,7 @@ class RegisterUser(generics.CreateAPIView):
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
-        except IntegrityError:
+        except IntegrityError as e:
             raise APIException(constants.USER_ALREADY_EXISTS)
 
         return Response(serializer.response, status=status.HTTP_201_CREATED)
@@ -105,7 +111,7 @@ class SearchAccount(generics.ListAPIView):
 
 class PincodeSearch(APIView):
 
-    def get(self, request, version, format=None):
+    def get(self, request, version):
 
         data = []
         text = request.query_params.get('text')
@@ -164,7 +170,97 @@ class PincodeSearch(APIView):
         return cleaned_list
 
 
-class GetSales(generics.RetrieveAPIView):
+class GetEarnings(generics.RetrieveAPIView):
     authentication_classes = (UserAuthentication,)
     queryset = User.objects.all()
-    serializer_class = SalesSerializer
+    serializer_class = UserEarningSerializer
+
+    def get_object(self):
+        return self.request.user
+
+
+class GetCart(generics.ListAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = SalesApplicationSerializer
+
+    def get_queryset(self):
+        return self.request.user.get_applications(
+            status=['pending', 'fresh', 'submitted'])
+
+
+class GetLeads(generics.ListAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = LeadSerializer
+
+    def get_queryset(self):
+        from crm.models import Lead
+        return Lead.objects.filter(
+            user_id=self.request.user.id, ignore=False).exclude(contact=None)
+
+
+class GetClients(generics.ListAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = ClientSerializer
+
+    def get_queryset(self):
+        return self.request.user.get_applications(status=[
+            'submitted', 'approved', 'completed'])
+
+
+class GetPlaylist(generics.ListAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = EnterprisePlaylistSerializer
+
+    def get_queryset(self):
+        enterprise = self.request.user.enterprise
+        data = self.request.query_params
+        playlists = enterprise.enterpriseplaylist_set.select_related(
+            'playlist')
+        if playlists.exists():
+            if 'playlist_type' in data:
+                if data['playlist_type'] in constants.PLAYLIST_CHOICES:
+                    return playlists.filter(
+                        playlist__playlist_type=data['playlist_type'])
+                raise APIException(constants.INVALID_PLAYLIST_TYPE)
+            return playlists
+        raise APIException(constants.PLAYLIST_UNAVAILABLE)
+
+
+class UpdateUser(generics.UpdateAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = UpdateUserSerializer
+
+    def get_object(self):
+        return self.request.user
+
+
+class GetUserDetails(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
+    queryset = User.objects.all()
+    version_serializer = dict(
+        v2=UserDetailSerializerV2, v3=UserDetailSerializerV3)
+
+    def get_serializer_class(self):
+        return self.version_serializer.get(
+            self.kwargs['version'], UserDetailSerializerV2)
+
+
+class CreateAppointment(generics.CreateAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = AppoinmentSerializer
+
+    def create(self, request, *args, **kwargs):
+        with transaction.atomic():
+            data = request.data
+            if self.request.user.id:
+                data['user'] = self.request.user.id
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            if Appointment.objects.filter(
+                user_id=data['user'], date=data['date'],
+                    phone_no=data['phone_no']).exists():
+                raise APIException('Appointment already scheduled.')
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers)

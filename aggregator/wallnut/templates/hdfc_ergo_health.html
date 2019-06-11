@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>OneCover</title>
+	<meta charset="utf-8">
+  	<meta name="viewport" content="width=device-width, initial-scale=1">
+  	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+  	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+	<style>
+		.loader {
+			margin-top: 150px;
+	  		border: 16px solid #f3f3f3;
+		  	border-radius: 50%;
+		  	border-top: 16px solid #3498db;
+	  		width: 120px;
+		  	height: 120px;
+		  	-webkit-animation: spin 2s linear infinite; /* Safari */
+  			animation: spin 2s linear infinite;
+		}
+
+		@-webkit-keyframes spin {
+  			0% { -webkit-transform: rotate(0deg); }
+  			100% { -webkit-transform: rotate(360deg); }
+		}
+
+		@keyframes spin {
+  			0% { transform: rotate(0deg); }
+  			100% { transform: rotate(360deg); }
+		}
+		.header {
+			background: #005db1;
+		}
+		.input-group {
+			position: initial;
+			display: initial;
+		}
+	</style>
+	<script type="text/javascript">
+		function submit_form() {
+			document.getElementById('form-container').style.display = "none"
+			document.getElementById('loading').style.display = "block"
+			window.setTimeout(function() { document.forms.payment_modal_form.submit(); }, 2000);
+			return false
+		}
+	</script>
+</head>
+<body>
+	<div class="col-sm-12 header">
+		<img src="/static/img/favicon.png" style="height: 50px;">
+	</div>
+	<div class="col-sm-12" style="margin-top: 30%" id="form-container">
+		<form autocomplete="off" id="payment_modal_form" name="payment_modal_form" accept-charset="utf-8" method="post" action="https://netinsure.hdfcergo.com/onlineproducts/healthonline/tim.aspx" target="_self">
+			<div id="payment_modal_success_error"></div>
+			<p><b>Select Your Payment Option<b></p>
+			<div class="input-group">
+				<select name="hdnPayMode" id="hdnPayMode" class="form-control">
+					<option value="CC">Credit/Debit Card</option>
+					<option value="DD">Internet Banking</option>
+				</select>
+				<input type="hidden" name="CustomerID" id="CustomerID" value="{{customer_code}}">
+				<input type="hidden" name="TxnAmount" id="TxnAmount" value="{{premium}}">
+				<input type="hidden" name="AdditionalInfo1" id="AdditionalInfo1" value="{{additionalInfo1}}">
+				<input type="hidden" name="AdditionalInfo2" id="AdditionalInfo2" value="{{additionalInfo2}}">
+				<input type="hidden" name="AdditionalInfo3" id="AdditionalInfo3" value="{{additionalInfo3}}">
+				<input type="hidden" name="ProducerCd" id="ProducerCd" value="{{producer_code}}">
+				<input type="hidden" name="UserName" id="UserName" value="{{customer_name}}">
+				<input type="hidden" name="UserMailId" id="UserMailId" value="{{customer_email}}">
+				<input type="hidden" name="ProductCd" id="ProductCd" value="{{product_code}}">
+				<center>
+					<button type="submit" name="submit_modal_payment" id="submit_modal_payment" class="btn btn-primary" style="margin-top: 5% !important; display: none;">Make Payment </button>
+					<button type="button" name="submit_modal_payment" id="submit_modal_payment" class="btn btn-primary" style="margin-top: 5% !important" onclick="return submit_form()">Make Payment </button>
+				</center>
+			</div>
+		</form>
+	</div>
+	<div class="col-sm-12" id="loading" style="display: none;">
+		<center>
+			<div class="loader"></div>
+			<br>
+			<p style="color: #005db1">Please wait while we take you to payment page....</p>
+		</center>
+	</div>
+</body>
+</html>

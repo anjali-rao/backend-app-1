@@ -29,11 +29,12 @@ class GetSearchParamater(views.APIView):
 
     @method_decorator(cache_page(API_CACHE_TIME))
     def get(self, request, version):
-        return Response([
-            {
-                'company': CompanyNameSerializers(
-                    Company.objects.all(), many=True).data,
-                'category': CategoryNameSerializers(
-                    Category.objects.all(), many=True).data
-            }
-        ])
+        data = dict(
+            company=CompanyNameSerializers(
+                Company.objects.all(), many=True).data,
+            category=CategoryNameSerializers(
+                Category.objects.all(), many=True).data
+        )
+        if version == 'v2':
+            return Response(data)
+        return Response([data])

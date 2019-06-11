@@ -1,15 +1,12 @@
 from rest_framework import serializers
 
 from questionnaire.models import Question, Answer, Response
-from utils import constants
+from utils import constants as Constants
 
 
 class QuestionnSerializers(serializers.ModelSerializer):
-    question_id = serializers.SerializerMethodField()
+    question_id = serializers.ReadOnlyField(source='id')
     answers = serializers.SerializerMethodField()
-
-    def get_question_id(self, obj):
-        return obj.id
 
     def get_answers(self, obj):
         return AnswerSerializer(
@@ -23,10 +20,7 @@ class QuestionnSerializers(serializers.ModelSerializer):
 
 
 class AnswerSerializer(serializers.ModelSerializer):
-    answer_id = serializers.SerializerMethodField()
-
-    def get_answer_id(self, obj):
-        return obj.id
+    answer_id = serializers.ReadOnlyField(source='id')
 
     class Meta:
         model = Answer
@@ -34,36 +28,26 @@ class AnswerSerializer(serializers.ModelSerializer):
 
 
 class ResponseSerializer(serializers.Serializer):
-    category_id = serializers.IntegerField(required=True)
-    gender = serializers.CharField(required=True)
-    pincode = serializers.CharField(required=True, max_length=6)
-    family = serializers.JSONField(required=True)
+    lead_id = serializers.IntegerField(required=True)
     answers = serializers.JSONField(required=True)
 
-    def validate_category_id(self, value):
-        from product.models import Category
-        if not Category.objects.filter(id=value).exists():
-            raise serializers.ValidationError(
-                constants.INVALID_CATEGORY_ID)
+    def validate_lead_id(self, value):
+        from crm.models import Lead
+        if not Lead.objects.filter(id=value).exists():
+            raise serializers.ValidationError(Constants.INVALID_LEAD_ID)
         return value
-
-#    def validate_pincode(self, value):
-#        from users.models import Pincode
-#        if not Pincode.get_pincode(value):
-#            raise serializers.ValidationError(constants.INVALID_PINCODE)
-#        return value
 
     def validate_customer_segment_id(self, value):
         from product.models import CustomerSegment
         if not CustomerSegment.objects.filter(id=value).exists():
             raise serializers.ValidationError(
-                constants.INVALID_CUSTOMER_SEGMENT)
+                Constants.INVALID_CUSTOMER_SEGMENT)
         return value
 
     def validate_answers(self, value):
         if not value or not isinstance(value, list):
             raise serializers.ValidationError(
-                constants.ANSWER_CANNOT_BE_LEFT_BLANK
+                Constants.ANSWER_CANNOT_BE_LEFT_BLANK
             )
         serializer = QuestionnaireResponseSerializer(data=value, many=True)
         if not serializer.is_valid():
@@ -75,22 +59,6 @@ class ResponseSerializer(serializers.Serializer):
             raise serializers.ValidationError(error_list)
         return value
 
-    def validate_gender(self, value):
-        if value.lower() not in constants.GENDER:
-            raise serializers.ValidationError(
-                constants.INVALID_GENDER_PROVIDED)
-        return value
-
-    def validate_family(self, value):
-        if not value:
-            raise serializers.ValidationError(
-                constants.INVALID_FAMILY_DETAILS)
-        for member, age in value.items():
-            if not isinstance(age, int) and not age.isdigit():
-                raise serializers.ValidationError(
-                    constants.INVALID_FAMILY_DETAILS)
-        return value
-
 
 class QuestionnaireResponseSerializer(serializers.ModelSerializer):
     answer_id = serializers.IntegerField(required=True)
@@ -100,13 +68,13 @@ class QuestionnaireResponseSerializer(serializers.ModelSerializer):
     def validate_answer_id(self, value):
         if not Answer.objects.filter(id=value).exists():
             raise serializers.ValidationError(
-                constants.INVALID_ANSWER_ID % value)
+                Constants.INVALID_ANSWER_ID % value)
         return value
 
     def validate_question_id(self, value):
         if not Question.objects.filter(id=value).exists():
             raise serializers.ValidationError(
-                constants.INVALID_QUESTION_ID % value)
+                Constants.INVALID_QUESTION_ID % value)
         return value
 
     class Meta:
