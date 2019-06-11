@@ -305,7 +305,8 @@ class LeadDetailSerializer(serializers.ModelSerializer):
 
     def get_quotes(self, obj):
         return QuoteSerializer(
-            obj.quote_set.filter(ignore=False), many=True).data
+            obj.quote_set.filter(
+                ignore=False, status='accepted'), many=True).data
 
     def get_notes(self, obj):
         return NotesSerializer(obj.note_set.all(), many=True).data
