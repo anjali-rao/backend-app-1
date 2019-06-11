@@ -92,7 +92,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         validate_referral = User.validate_promo_code(value)
         if not validate_referral:
             raise serializers.ValidationError(
-                Constants.REFERRAL_CODE_EXCEPTION)
+                Constants.INVALID_PROMO_CODE)
         return value
 
     def validate_referral_code(self, value):
