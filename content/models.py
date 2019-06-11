@@ -106,7 +106,7 @@ class EnterprisePlaylist(BaseModel):
 class Article(BaseModel):
     heading = models.CharField(max_length=256)
     tags = models.CharField(max_length=32, choices=get_choices(
-        Category.objects.values_list('name', flat=True)))
+        Constants.CATEGORIES_AVAILABLE))
     url = models.URLField()
     short_descripton = models.CharField(max_length=512)
     image = models.ImageField(null=True)

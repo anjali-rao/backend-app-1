@@ -1,5 +1,8 @@
 # Choices  ==================================
 
+CATEGORIES_AVAILABLE = [
+    'Health Insurance', 'Travel Insurance', 'Personal Accident',
+    'Critical Illness', 'Cancer Cover', 'Term Life Insurance']
 GENDER = ('male', 'female', 'transgender')
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
 OCCUPATION_CHOICES = (
