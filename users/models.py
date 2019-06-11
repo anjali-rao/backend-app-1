@@ -254,8 +254,7 @@ class User(BaseModel):
         if enterprises.exists():
             return dict(
                 user_type='enterprise', enterprise_id=enterprises.get().id)
-        enterprise = Enterprise.objects.create(
-            name=name, enterprise_type='subscriber', promocode=promo_code)
+        enterprise = Enterprise.objects.create(name=name, promocode=promo_code)
         from product.models import Category, Company
         for category_id in Category.objects.values_list('id', flat=True):
             enterprise.categories.add(category_id)
@@ -297,6 +296,12 @@ class Enterprise(BaseModel):
         upload_to=Constants.ENTERPRISE_UPLOAD_PATH,
         default=Constants.DEFAULT_LOGO)
     commission = models.FloatField(default=0.0)
+
+    def save(self, *args, **kwargs):
+        if not self.__class__.objects.filter(pk=self.id).exists():
+            if self.promocode.code == 'OCOVR-1-3':
+                self.enterprise_type == 'pos'
+        super(self.__class__, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name

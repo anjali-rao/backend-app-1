@@ -74,7 +74,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     phone_no = serializers.CharField(required=True, max_length=10)
     transaction_id = serializers.CharField(required=True)
     password = serializers.CharField(required=False)
-    promo_code = serializers.CharField(required=False, default='OCOVR-1-4')
+    promo_code = serializers.CharField(required=False, default='OCOVR-2-4')
     referral_code = serializers.CharField(required=False)
     fcm_id = serializers.CharField(required=False)
     first_name = serializers.CharField(required=True)
