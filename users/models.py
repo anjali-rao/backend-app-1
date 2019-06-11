@@ -440,7 +440,10 @@ def user_post_save(sender, instance, created, **kwargs):
         from content.models import EnterprisePlaylist
         EnterprisePlaylist.objects.create(
             enterprise_id=instance.enterprise_id,
-            playlist_id=Constants.DEFAULT_PLAYLIST_ID)
+            playlist_id=Constants.DEFAULT_TRAINING_PLAYLIST_ID)
+        EnterprisePlaylist.objects.create(
+            enterprise_id=instance.enterprise_id,
+            playlist_id=Constants.DEFAULT_MARKETING_PLAYLIST_ID)
 # Currently Not required have to implement once product is lauched via cron
 #        if not instance.__class__.objects.filter(
 #                user_type=constants.DEFAULT_USER_TYPE).exists():
