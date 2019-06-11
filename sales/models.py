@@ -392,8 +392,9 @@ def application_post_save(sender, instance, created, **kwargs):
         Quote.objects.filter(lead_id=instance.quote.lead.id).exclude(
             id=instance.quote_id, status__in=['accepted', 'rejected']
         ).update(status='rejected')
-        instance.quote.status = 'accepted'
-        instance.quote.save()
+        quote = instance.quote
+        quote.status = 'accepted'
+        quote.save()
         instance.add_default_members()
         ContentType.objects.get(
             model=instance.application_type, app_label='sales'

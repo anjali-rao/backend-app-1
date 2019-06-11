@@ -3,8 +3,8 @@ from __future__ import absolute_import
 from celery.schedules import crontab
 
 TASKS = {
-    'half-hourly-sms-analysis': {
-        'task': 'users.tasks.analyze_smses',
-        'schedule': crontab(minute="*/10", hour="*"),
+    'daily_mark_ignore_rejected_quotes': {
+        'task': 'sales.tasks.mark_ignore_rejected_quotes',
+        'schedule': crontab(hour=15, minute=30),
     }
 }
