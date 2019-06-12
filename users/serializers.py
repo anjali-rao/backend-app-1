@@ -435,12 +435,11 @@ class UpdateUserSerializer(serializers.ModelSerializer):
                     set(Constants.USER_FILE_UPLOAD)))
 
     def get_address_id(self, acc, validated_data):
-        if validated_data['pincode_id'] != acc.address.pincode_id:
+        if validated_data['pincode'] != acc.address.pincode_id:
             address = Address.objects.create(
-                pincode_id=Pincode.get_pincode(
-                    validated_data['pincode']).id).id
+                pincode_id=validated_data['pincode'])
         else:
-            address = acc.address_id
+            address = acc.address
         validated_data['address_id'] = address.id
         for field_name in Constants.ADDRESS_UPDATE_FIELDS:
             setattr(address, field_name, validated_data.get(
