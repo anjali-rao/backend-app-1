@@ -495,6 +495,8 @@ class UserDetailSerializerV2(serializers.ModelSerializer):
     agent_id = serializers.UUIDField(source='id')
     categories = serializers.SerializerMethodField()
     phone_no = serializers.ReadOnlyField(source='account.phone_no')
+    first_name = serializers.ReadOnlyField(source='account.first_name')
+    last_name = serializers.ReadOnlyField(source='account.last_name')
     name = serializers.ReadOnlyField(source='account.get_full_name')
     pan_no = serializers.ReadOnlyField(source='account.pan_no')
     bank_details = serializers.SerializerMethodField()
@@ -543,7 +545,7 @@ class UserDetailSerializerV2(serializers.ModelSerializer):
             'agent_id', 'phone_no', 'name', 'categories', 'profile_pic',
             'certifications', 'location', 'short_description',
             'long_description', 'product_sold', 'user_type', 'pan_no',
-            'bank_details', 'email',
+            'bank_details', 'email', 'first_name', 'last_name'
         )
 
 

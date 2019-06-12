@@ -20,7 +20,7 @@ class GoPlannerAccountAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password', 'phone_no')}),
         ('Personal info', {
-            'fields': ('first_name', 'last_name', 'email',)}),
+            'fields': ('first_name', 'last_name', 'email')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
         ('Permissions', {
             'classes': ('collapse',),

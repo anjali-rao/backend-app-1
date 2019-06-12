@@ -193,8 +193,7 @@ class QuoteDetailsSerializer(serializers.ModelSerializer):
                 short_description__in=['Not Covered', 'Not covered', '']):
             benefits.append({
                 'name': f['feature_master__name'].title(),
-                'description': f['short_description']
-            })
+                'description': f['short_description']})
         return benefits
 
     def get_coverage(self, obj):
