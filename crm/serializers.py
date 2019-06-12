@@ -18,6 +18,13 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
     contact_name = serializers.CharField(required=False)
     contact_phone_no = serializers.CharField(required=False)
 
+    def validate_category_id(self, value):
+        from product.models import Category
+        categories = Category.objects.filter(id=value)
+        if not categories.exists() or not categories.get().is_active:
+            raise serializers.ValidationError(Constants.INVALID_CATEGORY_ID)
+        return value
+
     def validate_pincode(self, value):
         from users.models import Pincode
         if not Pincode.get_pincode(value):
