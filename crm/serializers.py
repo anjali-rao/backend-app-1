@@ -169,7 +169,7 @@ class QuoteSerializer(serializers.ModelSerializer):
     def get_application_id(self, obj):
         if hasattr(obj, 'application'):
             return obj.application.id
-        return ''
+        return 0
 
     class Meta:
         model = Quote

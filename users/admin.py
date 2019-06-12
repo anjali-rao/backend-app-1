@@ -18,7 +18,7 @@ class GoPlannerAccountAdmin(BaseUserAdmin):
     )
     search_fields = ('username', 'email', 'phone_no')
     fieldsets = (
-        (None, {'fields': ('username', 'password')}),
+        (None, {'fields': ('username', 'password', 'phone_no')}),
         ('Personal info', {
             'fields': ('first_name', 'last_name', 'email',)}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
