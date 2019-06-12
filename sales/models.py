@@ -46,10 +46,10 @@ class Quote(BaseModel):
         ordering = ['-recommendation_score', ]
 
     def get_feature_details(self):
-        return self.premium.product_variant.feature_set.values(
-            'feature_master__name', 'short_description',
-            'feature_master__long_description'
-        )
+        return self.premium.product_variant.feature_set.order_by(
+            'feature_master__order').values(
+                'feature_master__name', 'short_description',
+                'feature_master__long_description')
 
     def get_faq(self):
         company_category = self.premium.product_variant.company_category
