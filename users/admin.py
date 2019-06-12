@@ -18,9 +18,9 @@ class GoPlannerAccountAdmin(BaseUserAdmin):
     )
     search_fields = ('username', 'email', 'phone_no')
     fieldsets = (
-        (None, {'fields': ('username', 'password')}),
+        (None, {'fields': ('username', 'password', 'phone_no')}),
         ('Personal info', {
-            'fields': ('first_name', 'last_name', 'email',)}),
+            'fields': ('first_name', 'last_name', 'email')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
         ('Permissions', {
             'classes': ('collapse',),
@@ -73,12 +73,13 @@ class CampaignAdmin(admin.ModelAdmin):
 
 @admin.register(Enterprise)
 class EnterpriseAdmin(admin.ModelAdmin):
-    list_display = ('name', 'hexa_code')
-
-
-@admin.register(SubcriberEnterprise)
-class SubcriberEnterpriseAdmin(admin.ModelAdmin):
-    list_display = ('name', 'hexa_code')
+    list_display = ('name', 'promocode', 'enterprise_type', 'hexa_code')
+    search_fields = ('name', 'promocode__code',)
+    list_filter = ('enterprise_type',)
+#
+#@admin.register(SubcriberEnterprise)
+#class SubcriberEnterpriseAdmin(admin.ModelAdmin):
+#    list_display = ('name', 'hexa_code')
 
 
 @admin.register(State)
