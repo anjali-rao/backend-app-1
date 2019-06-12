@@ -41,7 +41,8 @@ export the configuration file after setup
 ```
 export GOPLANNR_CONFIG='/home/<user>/configurations/goplannr.json'
 ```
-Configuration file
+
+Configuration file or utils/sample_configuration_file.json
 
 ```
 {
