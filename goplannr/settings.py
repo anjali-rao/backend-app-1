@@ -164,6 +164,7 @@ CACHES = get_env_var('CACHING')
 # SMS API KEY
 SMS_API_KEY = get_env_var('SMS_API_KEY')
 SMS_API = get_env_var('SMS_API')
+SMS_OTP_HASH = get_env_var('SMS_OTP_HASH')
 
 # REST_FRAMEWORK
 

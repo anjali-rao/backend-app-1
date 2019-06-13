@@ -109,7 +109,7 @@ ADULT_AGE_LIMIT = 18
 API_CACHE_TIME = 3600
 
 # Success messages  ==================================
-OTP_MESSAGE = '<#> Your One Time Password for OneCover is %s XTmeqjNJd+R'
+OTP_MESSAGE = '<#> Your One Time Password for OneCover is %s %s'
 OTP_SUCCESS = 'OTP verified successfully.'
 OTP_GENERATED = 'OTP send successfully.'
 AUTHORIZATION_GENERATED = 'Authorization key generated successfully.'

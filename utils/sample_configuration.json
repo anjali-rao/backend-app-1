@@ -44,5 +44,6 @@
     "S3_BUCKET": "develop-goplannr",
     "CLOUDFRONT_ID": "EARJFRF2S989L",
     "CLOUDFRONT_DOMAIN": "d280c2inrydwgd.cloudfront.net",
-    "ENV": "localhost:8000"
+    "ENV": "localhost:8000",
+    "SMS_OTP_HASH": "XTmeqjNJd+R"
 }
