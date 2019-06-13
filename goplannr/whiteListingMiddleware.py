@@ -1,5 +1,6 @@
 from django.core.exceptions import PermissionDenied
 from users.models import IPAddress
+from django.db import transaction
 
 
 class AuthIPWhitelistMiddleware:
@@ -13,13 +14,14 @@ class AuthIPWhitelistMiddleware:
         return response
 
     def process_request(self, request):
-        auth_needed = dict(is_authentication_required=True)
-        # Check if IP is whitelisted
-        if self._is_ip_whitelisted(request):
-            auth_needed['is_authentication_required'] = False
-        if self._is_blocked(request):
-            raise PermissionDenied
-        request.META.update(auth_needed)
+        with transaction.atomic():
+            auth_needed = dict(is_authentication_required=True)
+            # Check if IP is whitelisted
+            if self._is_ip_whitelisted(request):
+                auth_needed['is_authentication_required'] = False
+            if self._is_blocked(request):
+                raise PermissionDenied
+            request.META.update(auth_needed)
         return
 
     def _get_client_ip(self, request):
@@ -40,8 +42,12 @@ class AuthIPWhitelistMiddleware:
         if self.client_ip in self._get_whitelisted_networks():
             self._ip = IPAddress.objects.get(ip_address=self.client_ip)
             return not self._ip.authentication_required
-        IPAddress.objects.get_or_create(ip_address=self.client_ip)
+        ip_address = IPAddress.objects.filter(ip_address=self.client_ip)
+        if not ip_address.exists():
+            IPAddress.objects.create(ip_address=self.client_ip)
         return False
 
     def _is_blocked(self, request):
-        return IPAddress.objects.get(ip_address=self.client_ip).blocked
+        ip_address = IPAddress.objects.filter(
+            ip_address=self.client_ip).first()
+        return ip_address.blocked
