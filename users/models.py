@@ -15,7 +15,7 @@ from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.fields import GenericRelation
 
-from goplannr.settings import JWT_SECRET, DEBUG
+from goplannr.settings import JWT_SECRET, DEBUG, SMS_OTP_HASH
 
 import jwt
 import uuid
@@ -68,7 +68,9 @@ class Account(AbstractUser):
         from users.tasks import send_sms
         return send_sms.delay(
             phone_no,
-            Constants.OTP_MESSAGE % cls.generate_otp(phone_no))
+            Constants.OTP_MESSAGE % (
+                cls.generate_otp(phone_no), SMS_OTP_HASH),
+        )
 
     @staticmethod
     def generate_otp(phone_no):
