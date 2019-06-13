@@ -92,7 +92,8 @@ Configuration file or utils/sample_configuration_file.json
     "S3_BUCKET": "staging-goplannr",
     "CLOUDFRONT_ID": "",
     "CLOUDFRONT_DOMAIN": "",
-    "ENV": "localhost:8000"
+    "ENV": "localhost:8000",
+    "SMS_OTP_HASH": "XTmeqjNJd+R"
 }
 ```
 
