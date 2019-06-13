@@ -7,8 +7,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from users.models import (
     Account, User, Campaign, AccountDetail, Document, BankAccount,
-    Enterprise, SubcriberEnterprise, State, Pincode, Address,
-    IPAddress, Referral, PromoCode)
+    Enterprise, State, Pincode, Address, IPAddress, Referral, PromoCode)
 
 
 @admin.register(Account)
@@ -76,10 +75,6 @@ class EnterpriseAdmin(admin.ModelAdmin):
     list_display = ('name', 'promocode', 'enterprise_type', 'hexa_code')
     search_fields = ('name', 'promocode__code',)
     list_filter = ('enterprise_type',)
-#
-#@admin.register(SubcriberEnterprise)
-#class SubcriberEnterpriseAdmin(admin.ModelAdmin):
-#    list_display = ('name', 'hexa_code')
 
 
 @admin.register(State)
