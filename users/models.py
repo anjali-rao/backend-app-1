@@ -113,7 +113,8 @@ class Account(AbstractUser):
             return docs.last().file
 
     def __str__(self):
-        return 'Account: %s' % self.phone_no
+        return 'Account: %s - %s' % (
+            self.phone_no, self.get_full_name())
 
     class Meta:
         verbose_name = _('Account')
