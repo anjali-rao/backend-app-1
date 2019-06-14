@@ -488,3 +488,20 @@ class UpdateApplicationSerializers(serializers.ModelSerializer):
     def data(self):
         self._data = dict(message='Application updated successfully')
         return self._data
+
+
+class VerifyProposerPhonenoSerializer(serializers.ModelSerializer):
+    application_id = serializers.ReadOnlyField(source='id')
+    application_reference_no = serializers.ReadOnlyField(source='reference_no')
+    otp = serializers.IntegerField(required=True)
+
+    def validate(self, data):
+        if not self.instance.verify_proposer(data['otp']):
+            raise serializers.ValidationError(Constants.OTP_VALIDATION_FAILED)
+        return data
+
+    class Meta:
+        model = Application
+        fields = (
+            'otp', 'application_id', 'application_reference_no',
+            'client_verified')

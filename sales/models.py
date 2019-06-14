@@ -77,6 +77,7 @@ class Application(BaseModel):
         choices=get_choices(Constants.APPLICATION_STAGES))
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
+    client_verified = models.BooleanField(default=False)
     payment_mode = models.CharField(max_length=64, choices=get_choices(
         Constants.AGGREGATOR_CHOICES), default='offline')
     terms_and_conditions = models.BooleanField(null=True)
@@ -94,7 +95,16 @@ class Application(BaseModel):
 
     def aggregator_operation(self):
         if not self.quote.premium.product_variant.aggregator_available:
-            return
+            return False
+        self.status = 'payment_due'
+        from aggregator.wallnut.models import Application as Aggregator
+        if not hasattr(self, 'application'):
+            Aggregator.objects.create(
+                reference_app_id=self.id,
+                insurance_type=self.application_type)
+            self.payment_mode = 'wallnut'
+        self.save()
+        return self.quote.premium.product_variant.aggregator_available
         from aggregator.wallnut.models import Application as Aggregator
         if not hasattr(self, 'application'):
             Aggregator.objects.create(
@@ -154,6 +164,16 @@ class Application(BaseModel):
         Member.objects.bulk_create(members)
         from sales.tasks import update_insurance_fields
         update_insurance_fields.delay(self.id)
+
+    def verify_proposer(self, otp):
+        from django.core.cache import cache
+        response = otp == cache.get('APP-%s:' % self.reference_no)
+        cache.delete('APP-%s:' % self.reference_no)
+        return response
+
+    def send_propser_otp(self):
+        from users.models import Account
+        Account.send_otp('APP-%s:' % self.reference_no, self.client.phone_no)
 
     def create_policy(self):
         return Policy.objects.create(application_id=self.id)

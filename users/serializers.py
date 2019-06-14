@@ -26,7 +26,7 @@ class OTPGenrationSerializer(serializers.Serializer):
         if not value.isdigit() or len(value) != 10:
             raise serializers.ValidationError(
                 Constants.INVALID_PHONE_NO)
-        Account.send_otp(value)
+        Account.send_otp('OTP:%s' % value, value)
         return value
 
     @property
