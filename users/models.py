@@ -110,12 +110,11 @@ class Account(AbstractUser):
 
     @property
     def profile_pic(self):
-        docs = Document.objects.filter(doc_type='photo')
+        docs = Document.objects.filter(doc_type='photo', account_id=self.id)
         if docs.exists():
             return docs.last().file
-        from goplannr.settings import ENV
-        return '%s://%smedia/documents/photo/default.png' % (
-            'http' if ENV == 'localhost:8000' else 'https', ENV)
+        return Document.objects.filter(
+            doc_type='photo', account_id=1).first().file
 
     def __str__(self):
         return 'Account: %s - %s' % (
