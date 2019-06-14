@@ -113,6 +113,9 @@ class Account(AbstractUser):
         docs = Document.objects.filter(doc_type='photo')
         if docs.exists():
             return docs.last().file
+        from goplannr.settings import ENV
+        return '%s://%smedia/documents/photo/default.png' % (
+            'http' if ENV == 'localhost:8000' else 'https', ENV)
 
     def __str__(self):
         return 'Account: %s - %s' % (

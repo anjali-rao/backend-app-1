@@ -177,13 +177,8 @@ class AccountSerializer(serializers.ModelSerializer):
         source='address.pincode.city', default=None)
     state = serializers.ReadOnlyField(
         source='address.pincode.state.name', default=None)
-    profile_pic = serializers.SerializerMethodField()
-
-    def get_profile_pic(self, obj):
-        photos = obj.document_set.filter(doc_type='photo')
-        if photos.exists():
-            return photos.latest('created').file.url
-        return ''
+    profile_pic = serializers.FileField(
+        source='account.profile_pic', default='')
 
     class Meta:
         model = Account
