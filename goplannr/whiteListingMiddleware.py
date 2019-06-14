@@ -22,7 +22,7 @@ class AuthIPWhitelistMiddleware:
             if self._is_blocked(request):
                 raise PermissionDenied
             request.META.update(auth_needed)
-        return
+            return
 
     def _get_client_ip(self, request):
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -40,7 +40,8 @@ class AuthIPWhitelistMiddleware:
         """
         self.client_ip = self._get_client_ip(request)
         if self.client_ip in self._get_whitelisted_networks():
-            self._ip = IPAddress.objects.get(ip_address=self.client_ip)
+            self._ip = IPAddress.objects.filter(
+                ip_address=self.client_ip).first()
             return not self._ip.authentication_required
         ip_address = IPAddress.objects.filter(ip_address=self.client_ip)
         if not ip_address.exists():
