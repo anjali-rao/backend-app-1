@@ -198,8 +198,8 @@ class GetCart(generics.ListAPIView):
         cached_queryset = cache.get('USER_CART:%s' % self.request.user.id)
         if cached_queryset:
             return cached_queryset
-        queryset = self.request.user.get_applications(
-            status=['pending', 'fresh', 'submitted', 'approved'])
+        queryset = self.request.user.get_applications(status=[
+            'pending', 'fresh', 'submitted', 'approved', 'payment_due'])
         cache.set(
             'USER_CART:%s' % self.request.user.id, queryset, Constants.API_TTL)
         return queryset

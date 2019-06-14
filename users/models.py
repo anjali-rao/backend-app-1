@@ -69,21 +69,21 @@ class Account(AbstractUser):
         return validated_data
 
     @classmethod
-    def send_otp(cls, phone_no):
+    def send_otp(cls, prefix, phone_no):
         from users.tasks import send_sms
         return send_sms.delay(
             phone_no,
             Constants.OTP_MESSAGE % (
-                cls.generate_otp(phone_no), SMS_OTP_HASH),
+                cls.generate_otp(prefix, phone_no), SMS_OTP_HASH),
         )
 
     @staticmethod
-    def generate_otp(phone_no):
+    def generate_otp(prefix, phone_no):
         import random
-        otp = cache.get('OTP:%s' % phone_no)
+        otp = cache.get(prefix)
         if not otp:
             otp = random.randint(1000, 9999)
-            cache.set('OTP:%s' % phone_no, otp, Constants.OTP_TTL)
+            cache.set(prefix, otp, Constants.OTP_TTL)
         return otp
 
     @staticmethod
