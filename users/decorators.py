@@ -5,8 +5,8 @@ from rest_framework import exceptions
 class UserAuthentication(BaseAuthentication):
 
     def authenticate(self, request):
-        if not request.META['is_authentication_required']:
-            return (None, None)
+#        if not request.META['is_authentication_required']:
+#            return (None, None)
         from users.models import User
         message = 'Authorization not provided.'
         if 'HTTP_AUTHORIZATION' in request.META:
