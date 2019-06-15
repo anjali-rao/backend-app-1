@@ -26,6 +26,7 @@ ALLOWED_HOSTS = get_env_var('ALLOWED_HOSTS').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
+    'rest_framework_swagger',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
