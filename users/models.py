@@ -229,6 +229,8 @@ class User(BaseModel):
             if not rule_code.isdigit():
                 rule_code = 1
             rules.update(Constants.PROMO_RULES[int(rule_code)])
+        if self.enterprise.enterprise_type != 'subscriber':
+            rules['kyc_allowed'] = True
         return rules
 
     def get_collaterals(self):
