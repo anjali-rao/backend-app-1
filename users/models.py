@@ -387,7 +387,7 @@ class Referral(BaseModel):
 class Document(BaseModel):
     account = models.ForeignKey('users.Account', on_delete=models.CASCADE)
     doc_type = models.CharField(
-        choices=get_choices(Constants.DOC_TYPES), max_length=16)
+        choices=get_choices(Constants.KYC_DOC_TYPES), max_length=16)
     file = models.FileField(upload_to=get_upload_path)
 
     def __str__(self):

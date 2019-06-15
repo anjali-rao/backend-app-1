@@ -28,16 +28,21 @@ APPLICATION_STAGES = (
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
     'ration_card', 'passport', 'birth_certificate', 'cancelled_cheque',
-    'photo')
+    'photo', 'educational_document')
+
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('all', 'sales_brochure', 'claim_form')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
 RELATION_CHOICES = (
     'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother',
     'sister', 'cousin')
-DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = dict(
-    pan='advisor/pan', license='advisor/license', photo='advisor/selfie')
+    pancard='advisor/pancard', driving_license='advisor/license',
+    photo='advisor/selfie', aadhaar_card='advisor/aadhaar_card',
+    bank_passbook='advisor/bank_passbook', ration_card='advisor/ration_card',
+    passport='advisor/passport', birth_certificate='advisor/birth_certificate',
+    cancelled_cheque='advisor/cancelled_cheque',
+    educational_document='advisor/educational_document')
 FEATURE_TYPES = (
     'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
     'Exclusion')
@@ -47,7 +52,6 @@ TIER_2_CITIES = ('Lucknow', 'Allahabad')
 EARNING_TYPES = ('commission', 'incentive', 'referral')
 MARITAL_STATUS = ('married', 'single', 'divorced')
 PLAYLIST_CHOICES = ('marketing', 'training')
-USER_FILE_UPLOAD = ['cancelled_cheque', 'photo']
 REQUEST_CHOICES = ['GET', 'POST', 'PUT', 'PATCH']
 AGGREGATOR_CHOICES = ['offline', 'wallnut']
 EARNING_STATUS = ('paid', 'pending', 'processing')
