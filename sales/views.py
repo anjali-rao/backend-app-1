@@ -259,7 +259,7 @@ class GetApplicationPaymentLink(views.APIView):
         try:
             app = Application.objects.get(id=pk)
             if not app.application.payment_ready:
-                app.application.insurer_operation()  # TODOs: async
+                app.application.insurer_operation()
             data.update(dict(
                 success=True, payment_link=app.application.get_payment_link()))
             app.stage = 'payment_due'

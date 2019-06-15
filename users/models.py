@@ -141,7 +141,7 @@ class User(BaseModel):
         'users.Enterprise', on_delete=models.PROTECT)
     flag = JSONField(default=Constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
-    manager_id = models.CharField(max_length=48, null=True)
+    manager_id = models.CharField(max_length=48, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         cache.delete('USER_DETAIL:%s' % self.id)
@@ -315,7 +315,16 @@ class Enterprise(BaseModel):
     commission = models.FloatField(default=0.0)
 
     def save(self, *args, **kwargs):
-        if not self.__class__.objects.filter(pk=self.id).exists():
+        try:
+            current = self.__class__.objects.get(pk=self.id)
+            if current.enterprise_type != self.enterprise_type and (
+                    self.enterprise_type != 'enterprise'):
+                users = User.objects.filter(enterprise_id=self.id)
+                if users.exists():
+                    user = users.get()
+                    user.user_type = self.enterprise_type
+                    user.save()
+        except self.__class__.DoesNotExist:
             if self.promocode.code == 'OCOVR-1-3':
                 self.enterprise_type == 'pos'
         super(self.__class__, self).save(*args, **kwargs)
