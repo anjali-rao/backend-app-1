@@ -69,12 +69,12 @@ class AdityaBirlaHealthInsurance(object):
         return response
 
     def get_data(self):
-        proposer_pannumber = self.application.client.kycdocument_set.filter(
+        pan_no = self.application.client.kycdocument_set.filter(
             document_type='pancard').last()
-        proposer_pannumber = proposer_pannumber if proposer_pannumber else ''
-        proposer_aadhar_no = self.application.client.kycdocument_set.filter(
+        proposer_pannumber = pan_no.document_number if pan_no else ''
+        aadhar_no = self.application.client.kycdocument_set.filter(
             document_type='aadhaar_card').last()
-        proposer_aadhar_no = proposer_aadhar_no if proposer_aadhar_no else ''
+        proposer_aadhar_no = aadhar_no.document_number if aadhar_no else ''
         data = dict(
             city_id=self.wallnut.city_code, me=self.wallnut.health_me,
             insu_id=self.wallnut.insurer_code,
