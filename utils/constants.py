@@ -235,7 +235,7 @@ CATEGORY_LEAD_FIELDS_MAPPER = dict(
 
 PROMO_RULES_KEYS = [
     'contact', 'earnings', 'native_application_journey',
-    'client_application_journey']
+    'client_application_journey', 'kyc_allowed']
 
 PROMO_RULES = {
     1: dict(
