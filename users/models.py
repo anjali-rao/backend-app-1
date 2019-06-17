@@ -74,8 +74,7 @@ class Account(AbstractUser):
         return send_sms.delay(
             phone_no,
             Constants.OTP_MESSAGE % (
-                cls.generate_otp(prefix, phone_no), SMS_OTP_HASH),
-        )
+                cls.generate_otp(prefix, phone_no), SMS_OTP_HASH))
 
     @staticmethod
     def generate_otp(prefix, phone_no):

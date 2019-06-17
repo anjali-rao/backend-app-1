@@ -7,14 +7,14 @@ GENDER = ('male', 'female', 'transgender')
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
 OCCUPATION_CHOICES = (
     'self_employed_or_business', 'salaried', 'retired', 'unemployed', 'others')
-LEAD_STATUS_CHOICES = (
-    ('fresh', 'Fresh'), ('inprogress', 'In Progress'),
-    ('closed', 'Closed'), ('dropped', 'Dropped'))
-LEAD_STAGE_CHOICES = (
-    ('new', 'New'), ('appointment_scheduled', 'Appointment Scheduled'),
-    ('needs', 'Needs'), ('quote', 'Quote'), ('cart', 'Cart'),
-    ('proposal', 'Proposal'), ('payment', 'Payment'),
-    ('submitted', 'Submitted'), ('issued', 'Issued'))
+# LEAD_STATUS_CHOICES = (
+#     ('fresh', 'Fresh'), ('inprogress', 'In Progress'),
+#     ('closed', 'Closed'), ('dropped', 'Dropped'))
+# LEAD_STAGE_CHOICES = (
+#     ('new', 'New'), ('appointment_scheduled', 'Appointment Scheduled'),
+#     ('needs', 'Needs'), ('quote', 'Quote'), ('cart', 'Cart'),
+#     ('proposal', 'Proposal'), ('payment', 'Payment'),
+#     ('submitted', 'Submitted'), ('issued', 'Issued'))
 STATUS_CHOICES = (
     ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'),
     ('completed', 'Completed'))
