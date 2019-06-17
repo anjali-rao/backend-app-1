@@ -14,6 +14,7 @@ from django.dispatch import receiver
 from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.fields import GenericRelation
+from django.db import IntegrityError
 
 from goplannr.settings import JWT_SECRET, DEBUG, SMS_OTP_HASH
 
@@ -93,7 +94,8 @@ class Account(AbstractUser):
     def get_account(cls, phone_no):
         accounts = cls.objects.filter(phone_no=phone_no)
         if accounts.exists():
-            return accounts.get()
+            raise IntegrityError(Constants.DUPLICATE_ACCOUNT)
+#            return accounts.get()
         acc = cls.objects.create(username=cls.generate_username())
         acc.phone_no = phone_no
         acc.save()
