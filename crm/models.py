@@ -15,16 +15,24 @@ class Lead(BaseModel):
     user = models.ForeignKey('users.user', on_delete=models.CASCADE)
     contact = models.ForeignKey(
         'crm.Contact', null=True, blank=True, on_delete=models.CASCADE)
-    category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
     campaign = models.ForeignKey(
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
-    status = models.CharField(
-        choices=Constants.LEAD_STATUS_CHOICES, default='fresh', max_length=32)
-    stage = models.CharField(
-        choices=Constants.LEAD_STAGE_CHOICES, default='new', max_length=32)
-    pincode = models.CharField(max_length=6, null=True)
     bookmark = models.BooleanField(default=False)
     ignore = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ('-bookmark',)
+
+    def __str__(self):
+        return "%s - Contact: %s" % (
+            self.user.get_full_name(),
+            self.contact.first_name if self.contact else 'Pending')
+
+
+class Opportunity(BaseModel):
+    lead = models.ForeignKey('crm.Lead', on_delete=models.CASCADE)
+    category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
+    pincode = models.CharField(max_length=6, null=True)
     details = None
 
     def __init__(self, *args, **kwargs):
@@ -32,27 +40,27 @@ class Lead(BaseModel):
         if self.category:
             self.category_name = self.category.name.replace(' ', '').lower()
             if hasattr(self, self.category_name):
-                self.category_lead = getattr(self, self.category_name)
+                self.category_opportunity = getattr(self, self.category_name)
 
     def save(self, *args, **kw):
         cache.delete('USER_CONTACTS:%s' % self.user_id)
         super(self.__class__, self).save(*args, **kw)
 
-    class Meta:
-        ordering = ('-bookmark',)
+    def create_category_opportunity(self):
+        ContentType.objects.get(
+            model=self.category_name, app_label='crm'
+        ).model_class().objects.create(base_id=self.id)
 
     def calculate_suminsured(self):
-        self.category_lead.calculate_suminsured()
+        self.category_opportunity.calculate_suminsured()
 
     def get_premiums(self, **kw):
-        return self.category_lead.get_premiums()
+        return self.category_opportunity.get_premiums()
 
     def refresh_quote_data(self, **kw):
-        return self.category_lead.refresh_quote_data(**kw)
+        return self.category_opportunity.refresh_quote_data(**kw)
 
     def get_quotes(self):
-        self.stage = 'quote'
-        self.save()
         return self.quote_set.filter(ignore=False).order_by(
             '%s__base_premium' % self.category_name)
 
@@ -80,16 +88,6 @@ class Lead(BaseModel):
     @property
     def companies_id(self):
         return self.user.enterprise.companies.values_list('id', flat=True)
-
-    def __str__(self):
-        return "%s - %s" % (
-            self.contact.first_name if self.contact else 'Contact Pending',
-            self.category.name)
-
-    def create_category_lead(self):
-        ContentType.objects.get(
-            model=self.category_name, app_label='crm'
-        ).model_class().objects.create(base_id=self.id)
 
 
 class Contact(BaseModel):

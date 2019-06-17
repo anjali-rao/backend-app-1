@@ -19,7 +19,8 @@ from utils.mixins import RecommendationException
 
 
 class Quote(BaseModel):
-    lead = models.ForeignKey('crm.Lead', on_delete=models.CASCADE)
+    opportunity = models.ForeignKey(
+        'crm.Opportunity', on_delete=models.CASCADE, null=True, blank=True)
     status = models.CharField(
         max_length=16, choices=Constants.STATUS_CHOICES,
         default='pending')
