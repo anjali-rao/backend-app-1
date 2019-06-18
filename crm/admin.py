@@ -58,8 +58,8 @@ class LeadAdmin(admin.ModelAdmin):
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
-    list_display = ('user', 'phone_no', 'email')
-    search_fields = ('phone_no', 'user__account__phone_no')
+    list_display = ('user', 'phone_no', 'email', 'modified', 'created')
+    search_fields = ('phone_no', 'user__account__phone_no', 'id', 'first_name')
     raw_id_fields = ('user', 'address',)
 
 
