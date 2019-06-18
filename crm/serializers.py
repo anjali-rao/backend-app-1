@@ -175,6 +175,7 @@ class LeadSerializer(serializers.ModelSerializer):
 
 class QuoteSerializer(serializers.ModelSerializer):
     quote_id = serializers.ReadOnlyField(source='id')
+    lead_id = serializers.ReadOnlyField(source='opportunity.lead_id')
     status = serializers.ReadOnlyField(source='get_status_display')
     sum_insured = serializers.ReadOnlyField(source='premium.sum_insured')
     premium = serializers.ReadOnlyField(source='premium.amount')
@@ -196,9 +197,9 @@ class QuoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quote
         fields = (
-            'quote_id', 'lead_id', 'sum_insured', 'premium',
+            'quote_id', 'opportunity_id', 'sum_insured', 'premium',
             'product', 'recommendation_score', 'status', 'sale_stage',
-            'application_id')
+            'application_id', 'lead_id')
 
 
 class QuoteDetailsSerializer(serializers.ModelSerializer):
@@ -293,6 +294,7 @@ class QuotesCompareSerializer(serializers.ModelSerializer):
 
 class QuoteRecommendationSerializer(serializers.ModelSerializer):
     quote_id = serializers.ReadOnlyField(source='id')
+    lead_id = serializers.ReadOnlyField(source='opportunity.lead_id')
     sum_insured = serializers.ReadOnlyField(source='premium.sum_insured')
     premium = serializers.ReadOnlyField(source='premium.amount')
     tax_saving = serializers.ReadOnlyField(
@@ -321,9 +323,9 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quote
         fields = (
-            'quote_id', 'lead_id', 'sum_insured', 'premium',
+            'quote_id', 'opportunity_id', 'sum_insured', 'premium',
             'tax_saving', 'wellness_rewards', 'health_checkups',
-            'product', 'features')
+            'product', 'features', 'lead_id')
 
 
 class LeadDetailSerializer(serializers.ModelSerializer):
