@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from utils import mixins, constants
+from utils import mixins, constants as Constants
 
 from users.decorators import UserAuthentication
 from crm.serializers import (
@@ -33,6 +33,8 @@ class UpdateLead(generics.UpdateAPIView):
 
     def perform_update(self, serializer):
         with transaction.atomic():
+            if 'opportunity_id' not in self.request.data:
+                raise mixins.APIException(Constants.OPPORTUNITY_DOES_NOT_EXIST)
             serializer.save(user_id=self.request.user.id)
 
 
@@ -51,12 +53,12 @@ class GetQuotes(generics.ListAPIView):
             lead.refresh_from_db()
             queryset = lead.get_quotes()
             if not queryset.exists():
-                raise mixins.NotFound(constants.NO_QUOTES_FOUND)
+                raise mixins.NotFound(Constants.NO_QUOTES_FOUND)
             return queryset
         except (KeyError, Lead.DoesNotExist):
-            raise mixins.APIException(constants.LEAD_ERROR)
+            raise mixins.APIException(Constants.LEAD_ERROR)
         except ValueError:
-            raise mixins.APIException(constants.INVALID_INPUT)
+            raise mixins.APIException(Constants.INVALID_INPUT)
 
 
 class QuoteDetails(generics.RetrieveAPIView):
@@ -74,16 +76,16 @@ class QuotesComparision(generics.ListAPIView):
             lead = Lead.objects.get(id=self.request.query_params['lead'])
             if not self.request.query_params.get('quotes') or len(
                     self.request.query_params['quotes'].split(',')) < 2:
-                raise mixins.NotAcceptable(constants.COMPARISION_ERROR)
+                raise mixins.NotAcceptable(Constants.COMPARISION_ERROR)
             quotes_ids = self.request.query_params['quotes'].split(',')
             queryset = lead.get_quotes().filter(id__in=quotes_ids)
             if not queryset.exists() or queryset.count() != len(quotes_ids):
-                raise mixins.APIException(constants.INVALID_INPUT)
+                raise mixins.APIException(Constants.INVALID_INPUT)
             return queryset
         except (KeyError, Lead.DoesNotExist):
-            raise mixins.APIException(constants.LEAD_ERROR)
+            raise mixins.APIException(Constants.LEAD_ERROR)
         except ValueError:
-            raise mixins.APIException(constants.INVALID_INPUT)
+            raise mixins.APIException(Constants.INVALID_INPUT)
 
 
 class GetRecommendatedQuotes(generics.ListAPIView):
@@ -103,9 +105,9 @@ class GetRecommendatedQuotes(generics.ListAPIView):
                 lead.refresh_from_db()
                 return lead.get_recommendated_quotes()
         except (KeyError, Lead.DoesNotExist):
-            raise mixins.APIException(constants.LEAD_ERROR)
+            raise mixins.APIException(Constants.LEAD_ERROR)
         except ValueError:
-            raise mixins.APIException(constants.INVALID_INPUT)
+            raise mixins.APIException(Constants.INVALID_INPUT)
         except IntegrityError:
             pass
         raise mixins.APIException(

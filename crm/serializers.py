@@ -15,7 +15,6 @@ class LeadCRUDSerializer(serializers.ModelSerializer):
     family = serializers.JSONField(required=False)
     contact_name = serializers.CharField(required=False)
     contact_phone_no = serializers.CharField(required=False)
-    opportunity_id = None
 
     def validate_pincode(self, value):
         from users.models import Pincode
@@ -82,6 +81,7 @@ class LeadCRUDSerializer(serializers.ModelSerializer):
 
 
 class CreateLeadSerializer(LeadCRUDSerializer):
+    opportunity_id = None
     category_id = serializers.IntegerField(required=False)
 
     def validate_category_id(self, value):
@@ -121,16 +121,19 @@ class CreateLeadSerializer(LeadCRUDSerializer):
             'contact_phone_no')
 
 
-class UpdateLeadSerializer(serializers.ModelSerializer):
-    opportunity = None
+class UpdateLeadSerializer(LeadCRUDSerializer):
     opportunity_id = serializers.IntegerField(required=True)
+    opportunity = None
 
-    def validate_opportunity_id(value):
+    def validate_opportunity_id(self, value):
         opportunitys = Opportunity.objects.filter(id=value)
         if not opportunitys.exists():
             raise serializers.ValidationError(
                 Constants.OPPORTUNITY_DOES_NOT_EXIST)
         self.opportunity = opportunitys.get()
+        if self.opportunity.lead_id != self.instance.id:
+            raise serializers.ValidationError(
+                Constants.OPPORTUNITY_DOES_NOT_EXIST)
         return value
 
     def update(self, instance, validated_data):
@@ -149,7 +152,7 @@ class UpdateLeadSerializer(serializers.ModelSerializer):
         self._data = dict(
             message='Lead updated successfully.',
             lead_id=self.instance.id,
-            opportunity_id=self.opportunity_id)
+            opportunity_id=self.opportunity.id)
         return self._data
 
     class Meta:
@@ -157,7 +160,6 @@ class UpdateLeadSerializer(serializers.ModelSerializer):
         fields = (
             'pincode', 'gender', 'family', 'contact_name',
             'contact_phone_no', 'opportunity_id')
-        read_only_fields = ('gender', 'family', 'contact_name')
 
 
 class LeadSerializer(serializers.ModelSerializer):
