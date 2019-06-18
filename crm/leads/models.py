@@ -103,9 +103,7 @@ class HealthInsurance(models.Model):
             if emp_resp.exists() and emp_resp.filter(
                     answer__answer='Self Employed or Business').exists():
                 segment_name = 'self_employed'
-        if effective_age < 40 and effective_age >= 1:
-            segment_name = 'young_family'
-        elif effective_age <= 35 and kw.get('adults', self.adults) == 1:
+        if effective_age <= 35 and kw.get('adults', self.adults) == 1:
             segment_name = 'young_adult'
         elif effective_age <= 35 and kw.get('adults', self.adults) == 2:
             segment_name = 'young_couple'
