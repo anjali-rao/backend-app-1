@@ -38,6 +38,8 @@ class RecordQuestionnaireResponse(generics.CreateAPIView):
         try:
             with transaction.atomic():
                 lead = Lead.objects.get(id=serializer.data['lead_id'])
+                from questionnaire.models import Response as QuestionResponse
+                QuestionResponse.objects.filter(lead_id=lead.id).delete()
                 for response in serializer.data['answers']:
                     ans_serializer = QuestionnaireResponseSerializer(
                         data=response)

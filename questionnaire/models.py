@@ -47,5 +47,4 @@ class Response(BaseModel):
 
     def __str__(self):
         return '%s - %s | %s' % (
-            self.question.title, self.answer.answer, self.lead.id
-        )
+            self.question.title, self.answer.answer, self.lead.id)
