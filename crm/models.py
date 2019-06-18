@@ -30,6 +30,12 @@ class Lead(BaseModel):
         instance.update_category_opportunity(validated_data)
         return instance
 
+    def get_quotes(self):
+        from sales.models import Quote
+        return Quote.objects.filter(
+            opportunity__lead_id=self.id,
+            ignore=False).exclude(status='rejected')
+
     def __str__(self):
         return "%s - Contact: %s" % (
             self.user.get_full_name(),
