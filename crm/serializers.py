@@ -48,6 +48,9 @@ class LeadCRUDSerializer(serializers.ModelSerializer):
             phone_no=validated_data['contact_phone_no'],
             first_name=first_name, middle_name=middle_name,
             last_name=last_name)
+        if created:
+            instance.user = validated_data['user_id']
+            instance.save()
         return instance
 
     def validate_contact_name(self, value):

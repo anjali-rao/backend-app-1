@@ -47,17 +47,17 @@ class RetrieveUpdateProposerDetails(
             self.__class__.__name__, lookup_url_kwarg)
         )
 
+        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+        try:
+            application = _get_object_or_404(queryset, **filter_kwargs)
+            self._obj = application.client or application.quote.opportunity.lead.contact # noqa
+        except (TypeError, ValueError, ValidationError):
+            self._obj = Http404
+
         if 'search' in self.request.query_params and self.request.method == 'GET': # noqa
             self._obj = Contact.objects.filter(
                 phone_no=self.request.query_params.get('search')
-            ).order_by('modified').first()
-        if not self._obj:
-            filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
-            try:
-                application = _get_object_or_404(queryset, **filter_kwargs)
-                self._obj = application.quote.lead.contact
-            except (TypeError, ValueError, ValidationError):
-                self._obj = Http404
+            ).order_by('modified', 'created').last()
         # May raise a permission denied
         self.check_object_permissions(self.request, self._obj)
         return self._obj

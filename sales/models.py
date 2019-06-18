@@ -129,7 +129,7 @@ class Application(BaseModel):
                 self.reference_no = genrate_random_string(10)
 
     def add_default_members(self):
-        lead = self.quote.lead.category_lead
+        category_opportunity = self.quote.opportunity.category_opportunity
         today = now()
         members = list()
 
@@ -140,17 +140,17 @@ class Application(BaseModel):
             if relation == 'self':
                 responses = Response.objects.filter(
                     question__category_id=self.company_category.category.id,
-                    lead_id=lead.id)
+                    opportunity_id=category_opportunity.opportunity_id)
                 occupation_res = responses.filter(question__title='Occupation')
                 if occupation_res.exists():
                     instance.occupation = responses.latest('created').answer.answer.replace(' ', '_').lower() # noqa
             return instance
 
-        for member, age in lead.family.items():
+        for member, age in category_opportunity.family.items():
             member = member.split('_')[0]
-            gender = lead.gender if member == 'self' else 'male'
+            gender = category_opportunity.gender if member == 'self' else 'male' # noqa
             if member == 'spouse':
-                gender = 'male' if lead.gender == 'female' else 'female'
+                gender = 'male' if category_opportunity.gender == 'female' else 'female' # noqa
             elif member == 'mother':
                 gender = 'female'
             elif member in ['son', 'daughter']:
@@ -358,7 +358,7 @@ class HealthInsurance(Insurance):
         self.save()
 
     def switch_premium(self, adults, childrens):
-        lead = self.application.quote.lead
+        opportunity = self.application.quote.opportunity
         data = dict(
             effective_age=(
                 now().year - self.application.active_members.aggregate(
@@ -369,10 +369,9 @@ class HealthInsurance(Insurance):
             members = self.application.active_members.filter(relation=member)
             if members.exists() and member not in ['son', 'daughter']:
                 data['%s_age' % (member)] = members.get().age
-        data['customer_segment_id'] = lead.category_lead.get_customer_segment(
-            **data).id
-        lead.refresh_quote_data(**data)
-        quote = lead.get_quotes().first()
+        data['customer_segment_id'] = opportunity.category_opportunity.get_customer_segment(**data).id # noqa
+        opportunity.refresh_quote_data(**data)
+        quote = opportunity.get_quotes().first()
         if not quote:
             raise RecommendationException('No quote found for this creteria')
         self.application.quote_id = quote.id
@@ -418,12 +417,14 @@ class Policy(BaseModel):
 @receiver(post_save, sender=Application, dispatch_uid="action%s" % str(now()))
 def application_post_save(sender, instance, created, **kwargs):
     if created:
-        Quote.objects.filter(lead_id=instance.quote.lead.id).exclude(
-            id=instance.quote_id, status__in=['accepted', 'rejected']
+        Quote.objects.filter(
+            opportunity_id=instance.quote.opportunity_id).exclude(
+                id=instance.quote_id, status__in=['accepted', 'rejected']
         ).update(status='rejected')
         quote = instance.quote
         quote.status = 'accepted'
         quote.save()
+        # do this thing async
         instance.add_default_members()
         ContentType.objects.get(
             model=instance.application_type, app_label='sales'
