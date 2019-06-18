@@ -184,6 +184,7 @@ DUPLICATE_LEAD = 'Lead already exists with similar contact_name and contact_phon
 CONTACT_FORBIDDEN = 'Update conatct to lead is forbidden.'
 DUPLICATE_ACCOUNT = 'Account already exists with the provided details.'
 OPPORTUNITY_DOES_NOT_EXIST = 'Opportunity id provided does not exists or invalid' # noqa
+OPPORTUNITY_ID_REQUIRED = 'Invalid or missing opportunity id'
 
 
 # Creation Fields  ==================================

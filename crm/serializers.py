@@ -175,6 +175,8 @@ class LeadSerializer(serializers.ModelSerializer):
 
 class QuoteSerializer(serializers.ModelSerializer):
     quote_id = serializers.ReadOnlyField(source='id')
+    category = serializers.ReadOnlyField(source='opportunity.category.name')
+    category_logo = serializers.ImageField(source='opportunity.category.logo')
     lead_id = serializers.ReadOnlyField(source='opportunity.lead_id')
     status = serializers.ReadOnlyField(source='get_status_display')
     sum_insured = serializers.ReadOnlyField(source='premium.sum_insured')
@@ -199,7 +201,7 @@ class QuoteSerializer(serializers.ModelSerializer):
         fields = (
             'quote_id', 'opportunity_id', 'sum_insured', 'premium',
             'product', 'recommendation_score', 'status', 'sale_stage',
-            'application_id', 'lead_id')
+            'application_id', 'lead_id', 'category', 'category_logo')
 
 
 class QuoteDetailsSerializer(serializers.ModelSerializer):
