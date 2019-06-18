@@ -159,6 +159,9 @@ class User(BaseModel):
             {'user_id': str(self.id)},
             JWT_SECRET, algorithm='HS256')
 
+    def get_full_name(self):
+        return self.account.get_full_name()
+
     @classmethod
     def get_authenticated_user(cls, token):
         try:

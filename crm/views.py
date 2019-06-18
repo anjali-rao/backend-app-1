@@ -10,8 +10,8 @@ from users.decorators import UserAuthentication
 from crm.serializers import (
     QuoteSerializer, QuoteDetailsSerializer, Quote,
     QuotesCompareSerializer, QuoteRecommendationSerializer,
-    CreateUpdateLeadSerializer, LeadDetailSerializer, Lead,
-    NotesSerializer
+    UpdateLeadSerializer, LeadDetailSerializer, Lead,
+    NotesSerializer, CreateLeadSerializer
 )
 
 from django.db import transaction, IntegrityError
@@ -19,7 +19,7 @@ from django.db import transaction, IntegrityError
 
 class CreateLead(generics.CreateAPIView):
     authentication_classes = (UserAuthentication,)
-    serializer_class = CreateUpdateLeadSerializer
+    serializer_class = CreateLeadSerializer
 
     def perform_create(self, serializer):
         with transaction.atomic():
@@ -28,7 +28,7 @@ class CreateLead(generics.CreateAPIView):
 
 class UpdateLead(generics.UpdateAPIView):
     authentication_classes = (UserAuthentication,)
-    serializer_class = CreateUpdateLeadSerializer
+    serializer_class = UpdateLeadSerializer
     queryset = Lead.objects.all()
 
     def perform_update(self, serializer):

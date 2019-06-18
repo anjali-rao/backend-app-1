@@ -183,6 +183,7 @@ CONTACT_DETAILS_REQUIRED = 'Contact name and Contact phone_no is required'
 DUPLICATE_LEAD = 'Lead already exists with similar contact_name and contact_phone_no' # noqa
 CONTACT_FORBIDDEN = 'Update conatct to lead is forbidden.'
 DUPLICATE_ACCOUNT = 'Account already exists with the provided details.'
+OPPORTUNITY_DOES_NOT_EXIST = 'Opportunity id provided does not exists or invalid' # noqa
 
 
 # Creation Fields  ==================================
@@ -198,7 +199,7 @@ CONTACT_CREATION_FIELDS = (
     'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
     'occupation', 'marital_status', 'email')
 GENERIC_LEAD_FIELDS = (
-    'category_id', 'pincode', 'bookmark', 'user_id', 'ignore', 'contact_id')
+    'bookmark', 'user_id', 'ignore', 'contact_id', 'pincode')
 
 
 # Upload paths  ==================================
@@ -230,9 +231,9 @@ REFERRAL_TEXT = 'Referring to %s'
 INCENTIVE_TEXT = 'Incentive for %s'
 
 
-# Category Lead - Mapper  ==================================
+# Category Opportunity - Mapper  ==================================
 
-CATEGORY_LEAD_FIELDS_MAPPER = dict(
+CATEGORY_OPPORTUNITY_FIELDS_MAPPER = dict(
     healthinsurance=['gender', 'family', 'effective_age']
 )
 
