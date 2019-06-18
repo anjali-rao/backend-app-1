@@ -17,11 +17,18 @@ class Lead(BaseModel):
         'crm.Contact', null=True, blank=True, on_delete=models.CASCADE)
     campaign = models.ForeignKey(
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
+    pincode = models.CharField(max_length=6, null=True)
     bookmark = models.BooleanField(default=False)
     ignore = models.BooleanField(default=False)
 
     class Meta:
         ordering = ('-bookmark',)
+
+    def create_opportunity(self, validated_data):
+        instance = Opportunity.objects.create(
+            lead_id=self.id, category_id=validated_data['category_id'])
+        instance.update_category_opportunity(validated_data)
+        return instance
 
     def __str__(self):
         return "%s - Contact: %s" % (
@@ -32,8 +39,10 @@ class Lead(BaseModel):
 class Opportunity(BaseModel):
     lead = models.ForeignKey('crm.Lead', on_delete=models.CASCADE)
     category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
-    pincode = models.CharField(max_length=6, null=True)
     details = None
+
+    def __str__(self):
+        return '%s: %s' % (self.category.name, self.lead.__str__())
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
@@ -49,7 +58,7 @@ class Opportunity(BaseModel):
     def create_category_opportunity(self):
         ContentType.objects.get(
             model=self.category_name, app_label='crm'
-        ).model_class().objects.create(base_id=self.id)
+        ).model_class().objects.create(opportunity_id=self.id)
 
     def calculate_suminsured(self):
         self.category_opportunity.calculate_suminsured()
@@ -71,6 +80,19 @@ class Opportunity(BaseModel):
         for field in kw.keys():
             setattr(self, field, kw[field])
         self.save()
+
+    def update_category_opportunity(self, validated_data):
+        self.refresh_from_db()
+        category_opportunity = getattr(self, self.category_name)
+        fields = dict.fromkeys(Constants.CATEGORY_OPPORTUNITY_FIELDS_MAPPER[
+            self.category_name], None)
+        for field in fields.keys():
+            fields[field] = validated_data.get(field, getattr(
+                category_opportunity, field))
+            if isinstance(fields[field], str):
+                fields[field] = fields[field].lower()
+        category_opportunity.update_fields(**fields)
+        return category_opportunity
 
     @property
     def city(self):
@@ -145,7 +167,7 @@ class KYCDocument(BaseModel):
         upload_to=get_kyc_upload_path, null=True, blank=True)
 
 
-@receiver(post_save, sender=Lead, dispatch_uid="action%s" % str(now()))
-def lead_post_save(sender, instance, created, **kwargs):
+@receiver(post_save, sender=Opportunity, dispatch_uid="action%s" % str(now()))
+def opportunity_post_save(sender, instance, created, **kwargs):
     if created:
-        instance.create_category_lead()
+        instance.create_category_opportunity()
