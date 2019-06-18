@@ -34,7 +34,7 @@ class Quote(BaseModel):
 
     def save(self, *args, **kwargs):
         self.__class__.objects.filter(
-            lead_id=self.lead_id, premium_id=self.premium_id
+            opportunity_id=self.opportunity_id, premium_id=self.premium_id
         ).exclude(status='accepted').update(ignore=True)
         super(Quote, self).save(*args, **kwargs)
 

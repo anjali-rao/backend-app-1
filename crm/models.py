@@ -97,19 +97,19 @@ class Opportunity(BaseModel):
     @property
     def city(self):
         from users.models import Pincode
-        pincodes = Pincode.objects.filter(pincode=self.pincode)
+        pincodes = Pincode.objects.filter(pincode=self.lead.pincode)
         if pincodes.exists():
             return pincodes.get().city
 
     @property
     def citytier(self):
-        if self.pincode in Constants.NCR_PINCODES or self.city in Constants.MUMBAI_AREA_TIER: # noqa
+        if self.lead.pincode in Constants.NCR_PINCODES or self.city in Constants.MUMBAI_AREA_TIER: # noqa
             return Constants.MUMBAI_NCR_TIER
         return Constants.ALL_INDIA_TIER
 
     @property
     def companies_id(self):
-        return self.user.enterprise.companies.values_list('id', flat=True)
+        return self.lead.user.enterprise.companies.values_list('id', flat=True)
 
 
 class Contact(BaseModel):
