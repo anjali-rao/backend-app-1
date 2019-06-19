@@ -178,6 +178,18 @@ class GetEarnings(generics.RetrieveAPIView):
     def get_object(self):
         return self.request.user
 
+    def retrieve(self, request, *args, **kwargs):
+        cached_response = cache.get('USER_EARNINGS:%s' % self.request.user.id)
+        if cached_response:
+            return Response(cached_response)
+        self.object = self.get_object()
+        serializer = self.get_serializer(self.object)
+        response = serializer.data
+        cache.set(
+            'USER_EARNINGS:%s' % self.request.user.id, response,
+            Constants.API_TTL)
+        return Response(serializer.data)
+
 
 class GetCart(generics.ListAPIView):
     authentication_classes = (UserAuthentication,)
