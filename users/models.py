@@ -34,6 +34,12 @@ class Account(AbstractUser):
     address = models.ForeignKey(
         'users.Address', null=True, blank=True, on_delete=models.CASCADE)
 
+    def save(self, *args, **kwargs):
+        user = self.get_default_user()
+        if user:
+            cache.delete('USER_DETAIL:%s' % self.user.id)
+        super(self.__class__, self).save(*args, **kwargs)
+
     def send_notification(self, **kwargs):
         return getattr(self, 'send_%s' % kwargs['type'])(kwargs)
 
@@ -136,6 +142,10 @@ class User(BaseModel):
     flag = JSONField(default=Constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
     manager_id = models.CharField(max_length=48, null=True)
+
+    def save(self, *args, **kwargs):
+        cache.delete('USER_DETAIL:%s' % self.id)
+        super(self.__class__, self).save(*args, **kwargs)
 
     class Meta:
         unique_together = ('user_type', 'account')
