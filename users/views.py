@@ -16,7 +16,7 @@ from users.serializers import (
 )
 from sales.serializers import SalesApplicationSerializer
 from users.decorators import UserAuthentication
-from utils import constants
+from utils import constants as Constants
 from utils.mixins import APIException
 from content.serializers import (
     EnterprisePlaylistSerializer, AppoinmentSerializer, Appointment)
@@ -50,12 +50,12 @@ class RegisterUser(generics.CreateAPIView):
         try:
             with transaction.atomic():
                 if 'manager_id' not in request.data and 'password' not in request.data:  # noqa
-                    raise APIException(constants.PASSWORD_REQUIRED)
+                    raise APIException(Constants.PASSWORD_REQUIRED)
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
         except IntegrityError:
-            raise APIException(constants.DUPLICATE_ACCOUNT)
+            raise APIException(Constants.DUPLICATE_ACCOUNT)
         return Response(serializer.response, status=status.HTTP_201_CREATED)
 
 
@@ -184,8 +184,14 @@ class GetCart(generics.ListAPIView):
     serializer_class = SalesApplicationSerializer
 
     def get_queryset(self):
-        return self.request.user.get_applications(
-            status=['pending', 'fresh', 'submitted'])
+        cached_queryset = cache.get('USER_CART:%s' % self.request.user.id)
+        if cached_queryset:
+            return cached_queryset
+        queryset = self.request.user.get_applications(
+            status=['pending', 'fresh', 'submitted', 'approved'])
+        cache.set(
+            'USER_CART:%s' % self.request.user.id, queryset, Constants.API_TTL)
+        return queryset
 
 
 class GetLeads(generics.ListAPIView):
@@ -218,12 +224,12 @@ class GetPlaylist(generics.ListAPIView):
             'playlist')
         if playlists.exists():
             if 'playlist_type' in data:
-                if data['playlist_type'] in constants.PLAYLIST_CHOICES:
+                if data['playlist_type'] in Constants.PLAYLIST_CHOICES:
                     return playlists.filter(
                         playlist__playlist_type=data['playlist_type'])
-                raise APIException(constants.INVALID_PLAYLIST_TYPE)
+                raise APIException(Constants.INVALID_PLAYLIST_TYPE)
             return playlists
-        raise APIException(constants.PLAYLIST_UNAVAILABLE)
+        raise APIException(Constants.PLAYLIST_UNAVAILABLE)
 
 
 class UpdateUser(generics.UpdateAPIView):
@@ -251,7 +257,9 @@ class GetUserDetails(generics.RetrieveAPIView):
         self.object = self.get_object()
         serializer = self.get_serializer(self.object)
         response = serializer.data
-        cache.set('USER_DETAIL:%s' % kwargs.get('pk', ''), response, constants.API_TTL)
+        cache.set(
+            'USER_DETAIL:%s' % kwargs.get('pk', ''), response,
+            Constants.API_TTL)
         return Response(serializer.data)
 
 
