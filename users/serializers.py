@@ -10,6 +10,8 @@ from users.models import (
 from content.models import BankBranch
 
 from earnings.serializers import EarningSerializer
+from crm.serializers import LeadSerializer, Lead
+from sales.serializers import ClientSerializer
 
 from django.db import transaction
 
@@ -561,3 +563,22 @@ class UserDetailSerializerV3(serializers.ModelSerializer):
         model = User
         fields = (
             'details', 'enterprise', 'rules', 'categories')
+
+
+class ContactSerializers(serializers.ModelSerializer):
+    leads = serializers.SerializerMethodField()
+    clients = serializers.SerializerMethodField()
+
+    def get_leads(self, obj):
+        return LeadSerializer(
+            Lead.objects.filter(
+                user_id=obj.id,
+                ignore=False).exclude(contact=None), many=True).data
+
+    def get_clients(self, obj):
+        return ClientSerializer(
+            obj.get_applications(status=['completed']), many=True).data
+
+    class Meta:
+        model = User
+        fields = ('leads', 'clients')
