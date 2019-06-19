@@ -13,7 +13,6 @@ from django.db import IntegrityError
 from django.dispatch import receiver
 from django.utils.timezone import now
 from django.contrib.contenttypes.fields import GenericForeignKey
-from django.core.cache import cache
 
 from questionnaire.models import Response
 from utils.mixins import RecommendationException
@@ -156,6 +155,12 @@ class Application(BaseModel):
 
     def create_policy(self):
         return Policy.objects.create(application_id=self.id)
+
+    def invalidate_cache(self):
+        from django.core.cache import cache
+        cache.delete('USER_CART:%s' % self.quote.lead.user_id)
+        cache.delete('USER_CONTACTS:%s' % self.quote.lead.user_id)
+        cache.delete('USER_EARNINGS:%s' % self.user_id)
 
     @property
     def adults(self):
@@ -386,10 +391,6 @@ class Policy(BaseModel):
         upload_to=Constants.POLICY_UPLOAD_PATH,
         null=True, blank=True)
 
-    def save(self, *args, **kw):
-        cache.delete('USER_EARNINGS:%s' % self.user_id)
-        super(self.__class__, self).save(*args, **kw)
-
 
 @receiver(post_save, sender=Application, dispatch_uid="action%s" % str(now()))
 def application_post_save(sender, instance, created, **kwargs):
@@ -404,4 +405,4 @@ def application_post_save(sender, instance, created, **kwargs):
         ContentType.objects.get(
             model=instance.application_type, app_label='sales'
         ).model_class().objects.create(application_id=instance.id)
-    cache.delete('USER_CART:%s' % instance.quote.lead.user_id)
+    instance.invalidate_cache()
