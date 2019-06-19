@@ -399,3 +399,5 @@ def application_post_save(sender, instance, created, **kwargs):
         ContentType.objects.get(
             model=instance.application_type, app_label='sales'
         ).model_class().objects.create(application_id=instance.id)
+    from django.core.cache import cache
+    cache.delete('USER_CART:%s' % instance.quote.lead.user_id)
