@@ -5,14 +5,13 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 
-from crm.serializers import LeadSerializer
-from sales.serializers import ClientSerializer
 from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
     AccountSearchSerializers, User, PincodeSerializer, Pincode,
     UpdateUserSerializer, UserEarningSerializer, UserDetailSerializerV2,
-    UserDetailSerializerV3
+    UserDetailSerializerV3, LeadSerializer, ContactSerializers,
+    ClientSerializer
 )
 from sales.serializers import SalesApplicationSerializer
 from users.decorators import UserAuthentication
@@ -223,6 +222,23 @@ class GetClients(generics.ListAPIView):
     def get_queryset(self):
         return self.request.user.get_applications(status=[
             'submitted', 'approved', 'completed'])
+
+
+class GetContact(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = ContactSerializers
+
+    def retrieve(self, request, *args, **kwargs):
+        self.object = self.request.user
+        cache_response = cache.get('USER_CONTACTS:%s' % self.object.id)
+        if cache_response:
+            return Response(cache_response)
+        serializer = self.get_serializer(self.object)
+        response = serializer.data
+        cache.set(
+            'USER_CONTACTS:%s' % self.object.id, response,
+            Constants.API_TTL)
+        return Response(serializer.data)
 
 
 class GetPlaylist(generics.ListAPIView):
