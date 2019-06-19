@@ -106,7 +106,6 @@ DEFAULT_BASE_PREMIUM = 0.0
 DEFAULT_GST = 0.18
 DEFAULT_COMMISSION = 0.20
 ADULT_AGE_LIMIT = 18
-API_CACHE_TIME = 3600
 
 # Success messages  ==================================
 OTP_MESSAGE = '<#> Your One Time Password for OneCover is %s %s'
@@ -127,6 +126,8 @@ SEND_TO_AGGREGATOR = 'Application (%s) successfully send to aggregator.'
 
 OTP_TTL = 900
 TRANSACTION_TTL = 900
+API_CACHE_TIME = 3600
+API_TTL = 172800
 
 
 # Exception messages  ==================================

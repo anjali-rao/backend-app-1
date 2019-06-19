@@ -209,32 +209,32 @@ class AvailableUserSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    account = serializers.SerializerMethodField()
-    enterprise = serializers.SerializerMethodField()
-    available_users = serializers.SerializerMethodField()
+    user_id = serializers.ReadOnlyField(source='id')
+    first_name = serializers.ReadOnlyField(source='account.first_name')
+    last_name = serializers.ReadOnlyField(source='account.last_name')
+    email = serializers.ReadOnlyField(source='account.email')
+    phone_no = serializers.ReadOnlyField(source='account.phone_no')
+    gender = serializers.ReadOnlyField(source='account.gender', default='')
+    flat_no = serializers.ReadOnlyField(
+        source='account.address.flat_no', default='')
+    street = serializers.ReadOnlyField(
+        source='account.address.street', default='')
+    city = serializers.ReadOnlyField(
+        source='account.address.pincode.city', default='')
+    state = serializers.ReadOnlyField(
+        source='account.address.pincode.state.name', default='')
+    pincode = serializers.ReadOnlyField(
+        source='account.address.pincode.pincode', default='')
+    profile_pic = serializers.FileField(
+        source='account.profile_pic', default='')
     referral_code = serializers.ReadOnlyField(source='referral.code')
-    bank_details = serializers.SerializerMethodField()
-
-    def get_account(self, obj):
-        return AccountSerializer(obj.account).data
-
-    def get_enterprise(self, obj):
-        return EnterpriseSerializer(obj.enterprise).data
-
-    def get_available_users(self, obj):
-        return AvailableUserSerializer(
-            User.objects.filter(account_id=obj.account_id), many=True).data
-
-    def get_bank_details(self, obj):
-        return BankAccountSerializer(
-            obj.bankaccount_set.all(), many=True).data
 
     class Meta:
         model = User
         fields = (
-            'id', 'user_type', 'account', 'enterprise', 'available_users',
-            'rating', 'referral_code', 'bank_details'
-        )
+            'user_id', 'first_name', 'last_name', 'email', 'phone_no',
+            'gender', 'flat_no', 'street', 'city', 'state', 'pincode',
+            'profile_pic', 'rating', 'referral_code')
 
 
 class AuthorizationSerializer(serializers.Serializer):
@@ -273,12 +273,16 @@ class AuthorizationSerializer(serializers.Serializer):
         return account.get_default_user()
 
     @property
-    def response(self):
-        return {
-            'authorization': self.get_user().get_authorization_key(),
-            'message': Constants.AUTHORIZATION_GENERATED,
-            'details': UserSerializer(self.get_user()).data,
-        }
+    def data(self):
+        user = self.get_user()
+        self._data = dict(
+            authorization=self.get_user().get_authorization_key(),
+            message=Constants.AUTHORIZATION_GENERATED,
+            details=UserSerializer(user).data,
+            enterprise=EnterpriseSerializer(user.enterprise).data,
+            rules=user.get_rules(),
+            categories=user.get_categories())
+        return self._data
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -545,24 +549,15 @@ class UserDetailSerializerV2(serializers.ModelSerializer):
 
 
 class UserDetailSerializerV3(serializers.ModelSerializer):
-    phone_no = serializers.ReadOnlyField(source='account.phone_no')
-    name = serializers.ReadOnlyField(source='account.get_full_name')
-    pan_no = serializers.ReadOnlyField(source='account.pan_no')
-    profile_pic = serializers.FileField(
-        source='account.profile_pic', default='')
-    pincode = serializers.ReadOnlyField(
-        source='account.address.pincode.pincode', default='')
-    flat_no = serializers.ReadOnlyField(
-        source='account.address.flat_no', default='')
-    street = serializers.ReadOnlyField(
-        source='account.address.street', default='')
-    city = serializers.ReadOnlyField(
-        source='account.address.pincode.city', default='')
-    email = serializers.ReadOnlyField(source='account.email', default='')
+    details = serializers.SerializerMethodField()
+    enterprise = EnterpriseSerializer(read_only=True)
     rules = serializers.ReadOnlyField(source='get_rules')
+    categories = serializers.ReadOnlyField(source='get_categories')
+
+    def get_details(self, obj):
+        return UserSerializer(obj).data
 
     class Meta:
         model = User
         fields = (
-            'phone_no', 'name', 'profile_pic', 'user_type', 'pan_no', 'rating',
-            'email', 'flat_no', 'street', 'city', 'pincode', 'rules')
+            'details', 'enterprise', 'rules', 'categories')

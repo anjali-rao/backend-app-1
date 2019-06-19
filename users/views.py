@@ -23,6 +23,7 @@ from content.serializers import (
 
 from django.db.models import Q
 from django.db import transaction, IntegrityError
+from django.core.cache import cache
 
 
 @api_view(['POST'])
@@ -53,9 +54,8 @@ class RegisterUser(generics.CreateAPIView):
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
-        except IntegrityError as e:
-            raise APIException(constants.USER_ALREADY_EXISTS)
-
+        except IntegrityError:
+            raise APIException(constants.DUPLICATE_ACCOUNT)
         return Response(serializer.response, status=status.HTTP_201_CREATED)
 
 
@@ -64,7 +64,7 @@ def generate_authorization(request, version):
     serializer = AuthorizationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     return Response(
-        serializer.response, status=status.HTTP_200_OK)
+        serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -243,6 +243,16 @@ class GetUserDetails(generics.RetrieveAPIView):
     def get_serializer_class(self):
         return self.version_serializer.get(
             self.kwargs['version'], UserDetailSerializerV2)
+
+    def retrieve(self, request, *args, **kwargs):
+        cache_response = cache.get('USER_DETAIL:%s' % kwargs.get('pk', ''))
+        if cache_response:
+            return Response(cache_response)
+        self.object = self.get_object()
+        serializer = self.get_serializer(self.object)
+        response = serializer.data
+        cache.set('USER_DETAIL:%s' % kwargs.get('pk', ''), response, constants.API_TTL)
+        return Response(serializer.data)
 
 
 class CreateAppointment(generics.CreateAPIView):
