@@ -35,7 +35,7 @@ class Lead(BaseModel):
                 self.category_lead = getattr(self, self.category_name)
 
     def save(self, *args, **kw):
-        cache.delete('USER_CONTACTS:%s' % self.quote.lead.user_id)
+        cache.delete('USER_CONTACTS:%s' % self.user_id)
         super(self.__class__, self).save(*args, **kw)
 
     class Meta:

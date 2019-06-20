@@ -160,7 +160,7 @@ class Application(BaseModel):
         from django.core.cache import cache
         cache.delete('USER_CART:%s' % self.quote.lead.user_id)
         cache.delete('USER_CONTACTS:%s' % self.quote.lead.user_id)
-        cache.delete('USER_EARNINGS:%s' % self.user_id)
+        cache.delete('USER_EARNINGS:%s' % self.quote.lead.user_id)
 
     @property
     def adults(self):
