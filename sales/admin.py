@@ -47,7 +47,7 @@ class QuoteAdmin(admin.ModelAdmin):
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = (
-        'reference_no', 'application_type', 'status', 'stage',
+        'reference_no', 'application_type', 'variant_name', 'status', 'stage',
         'terms_and_conditions', 'aggregator_operation', 'payment_link',
         'payment_captured', 'created')
     list_filter = ('application_type', 'terms_and_conditions', 'status')
@@ -55,7 +55,7 @@ class ApplicationAdmin(admin.ModelAdmin):
     search_fields = (
         'reference_no', 'quote__id', 'quote__lead__id', 'id',
         'client__phone_no', 'client__address__pincode__pincode',
-        'client__address__pincode__city'
+        'client__address__pincode__city',
     )
     actions = ['send_to_Aggregator', 'generate_Aggregator_Payment_Link']
     _inlines_class_set = dict(
@@ -76,6 +76,9 @@ class ApplicationAdmin(admin.ModelAdmin):
 
     def get_inline_class(self, keywords):
         return self._inlines_class_set.get(keywords)
+
+    def variant_name(self, obj):
+        return obj.quote.premium.product_variant.__str__()
 
     def send_to_Aggregator(self, request, queryset):
         for query in queryset:

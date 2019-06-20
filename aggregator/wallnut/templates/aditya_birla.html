@@ -33,9 +33,27 @@
 		}
 	</style>
 	<script type="text/javascript">
-		window.onload=function(){ 
-    		window.setTimeout(function() { document.forms.payment_modal_form.submit(); }, 2000);
-		};
+//		window.onload=function(){ 
+    		//window.setTimeout(function() { document.forms.payment_modal_form.submit(); }, 2000);
+//		};
+        $.ajax({
+                type: "GET",
+                url: "",
+                success: function (response) {
+                    console.log(response)
+                    $('#Email').val(response.email)
+                    $('#PhoneNo').val(response.phone_no)
+                    $('#SourceCode').val(response.source_code)
+                    $('#OrderAmount').val(response.premium)
+                    $('#secSignature').val(response.secSignature)
+                    $('#ReturnURL').val(response.return_url)
+                    $('#QuoteId').val(response.quoteId)
+                    $('#GrossPremium').val(response.premium)
+                    $('#FinalPremium').val(response.premium)
+                    $('#SourceTxnId').val(response.source_txn_id)
+                 	$('#payment_modal_form').submit()
+                }
+            })
 	</script>
 </head>
 <body>
