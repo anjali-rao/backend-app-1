@@ -28,8 +28,8 @@ class AdityaBirlaPaymentGateway(views.View):
                     source_code='WMGR0026', premium=app.premium,
                     secSignature=self._secSignature,
                     return_url=self.return_url % (
-                        'http' if DEBUG else 'https', ENV, app.id),
-                    source_txn_id=self.get_transaction_id(app))
+                        'http' if DEBUG else 'https', ENV, app.id))
+                context.update(self.get_paramaters(app))
                 ApplicationRequestLog.objects.create(
                     application_id=app.reference_app.id,
                     url=self.return_url, payload=context)
@@ -41,15 +41,21 @@ class AdityaBirlaPaymentGateway(views.View):
             pass
         raise PermissionDenied()
 
-    def get_transaction_id(self, app):
+    def get_paramaters(self, app):
         import re
         import requests
-        url = self._summary_url % (
-            app.proposal_id2, app.customer_id)
+        url = self._summary_url % (app.proposal_id2, app.customer_id)
         res = requests.get(url)
         page_content = str(res.content)
-        pattern = re.compile(r'id="SourceTxnId" value="(\w*)')
-        return pattern.findall(page_content)[0]
+        patterns = dict(
+            source_txn_id=re.compile(r'id="SourceTxnId" value="(\w*)'),
+            quote_id=re.compile(r'id="QuoteId" value="(\w*)'),
+            SourceCode=re.compile(r'id="SourceCode" value="(\w*)'),
+            secSignature=re.compile(r'id="secSignature" value="(\w*)')
+        )
+        for pattern in patterns.keys():
+            patterns[pattern] = patterns[pattern].findall(page_content)[0]
+        return patterns
 
 
 class AdityaBirlaPaymentCapture(views.View):
