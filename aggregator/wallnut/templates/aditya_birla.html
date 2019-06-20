@@ -40,14 +40,13 @@
                 type: "GET",
                 url: "",
                 success: function (response) {
-                    console.log(response)
                     $('#Email').val(response.email)
                     $('#PhoneNo').val(response.phone_no)
                     $('#SourceCode').val(response.source_code)
                     $('#OrderAmount').val(response.premium)
                     $('#secSignature').val(response.secSignature)
                     $('#ReturnURL').val(response.return_url)
-                    $('#QuoteId').val(response.quoteId)
+                    $('#QuoteId').val(response.quote_id)
                     $('#GrossPremium').val(response.premium)
                     $('#FinalPremium').val(response.premium)
                     $('#SourceTxnId').val(response.source_txn_id)

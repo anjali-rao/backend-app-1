@@ -119,19 +119,22 @@ class HDFCPaymentGateway(views.View):
             app = Application.objects.get(id=kwargs['pk'])
             if app.company_name != self.company_name:
                 raise PermissionDenied()
-            if app.regenerate_payment_link:
+            if request.is_ajax():
                 app.insurer_product.perform_creation()
                 app.regenerate_payment_link = True
                 app.save()
-            context = self.get_paramaters(app)
-            context.update(dict(
-                customer_email=app.reference_app.client.email,
-                customer_name=app.reference_app.client.get_full_name(),
-                premium=int(app.premium)))
-            ApplicationRequestLog.objects.create(
-                application_id=app.reference_app.id,
-                payload=context, request_type='POST')
-            return render(request, self.template_name, context)
+                context = self.get_paramaters(app)
+                context.update(dict(
+                    customer_email=app.reference_app.client.email,
+                    customer_name=app.reference_app.client.get_full_name(),
+                    premium=int(app.premium)))
+                ApplicationRequestLog.objects.create(
+                    url='https://netinsure.hdfcergo.com/onlineproducts/healthonline/tim.aspx', # noqa
+                    application_id=app.reference_app.id,
+                    payload=context, request_type='POST')
+                context.update(self.get_paramaters(app))
+                return JsonResponse(context, status=200)
+            return render(request, self.template_name)
         except (KeyError, Application.DoesNotExist):
             pass
         raise PermissionDenied()
