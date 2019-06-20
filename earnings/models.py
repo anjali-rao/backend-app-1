@@ -2,9 +2,8 @@
 from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
-from utils import (
-    constants as Constants, get_choices
-)
+from utils import constants as Constants, get_choices
+from django.core.cache import cache
 
 
 class Earning(BaseModel):
@@ -29,6 +28,7 @@ class Earning(BaseModel):
             self.text = (getattr(
                 Constants, ('%s_TEXT' % self.earning_type).upper()
             ) % self.get_text_paramaters())
+        cache.delete('USER_EARNINGS:%s' % self.user_id)
         super(self.__class__, self).save(*args, **kwargs)
 
     def get_text_paramaters(self):
@@ -57,8 +57,10 @@ class Commission(BaseModel):
 
     def save(self, *args, **kwargs):
         if self.updated and not self.__class__.objects.get(pk=self.id).updated:
+            # To do replace with policy
             earning_text = Constants.COMMISSION_TEXT % (
-                '10884022', '17/05/2019', 'Amit Kumar Gupta')
+                '10884022', '17/05/2019',
+                self.application.client.get_full_name())
             self.earning = Earning.objects.create(
                 user_id=self.application.quote.lead.user_id,
                 amount=self.amount, earning_type='commission',

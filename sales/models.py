@@ -156,6 +156,12 @@ class Application(BaseModel):
     def create_policy(self):
         return Policy.objects.create(application_id=self.id)
 
+    def invalidate_cache(self):
+        from django.core.cache import cache
+        cache.delete('USER_CART:%s' % self.quote.lead.user_id)
+        cache.delete('USER_CONTACTS:%s' % self.quote.lead.user_id)
+        cache.delete('USER_EARNINGS:%s' % self.user_id)
+
     @property
     def adults(self):
         return self.active_members.filter(
@@ -399,3 +405,4 @@ def application_post_save(sender, instance, created, **kwargs):
         ContentType.objects.get(
             model=instance.application_type, app_label='sales'
         ).model_class().objects.create(application_id=instance.id)
+    instance.invalidate_cache()

@@ -4,7 +4,7 @@ from users.views import (
     RegisterUser, verify_otp, generate_otp, generate_authorization,
     update_password, SearchAccount, PincodeSearch, GetEarnings,
     GetLeads, GetClients, GetCart, GetPlaylist, UpdateUser,
-    GetUserDetails, CreateAppointment
+    GetUserDetails, CreateAppointment, GetContact
 )
 
 urlpatterns = [
@@ -19,6 +19,7 @@ urlpatterns = [
     path('user/cart', GetCart.as_view()),
     path('user/playlist', GetPlaylist.as_view()),
     path('user/earnings', GetEarnings.as_view()),
+    path('user/contacts', GetContact.as_view()),
     path('user/<slug:pk>/details', GetUserDetails.as_view()),
     path('user/appointment/create', CreateAppointment.as_view()),
     path('users/account/search', SearchAccount.as_view()),

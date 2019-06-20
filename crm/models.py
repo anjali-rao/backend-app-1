@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.utils.timezone import now
 from django.dispatch import receiver
+from django.core.cache import cache
 
 
 class Lead(BaseModel):
@@ -32,6 +33,10 @@ class Lead(BaseModel):
             self.category_name = self.category.name.replace(' ', '').lower()
             if hasattr(self, self.category_name):
                 self.category_lead = getattr(self, self.category_name)
+
+    def save(self, *args, **kw):
+        cache.delete('USER_CONTACTS:%s' % self.quote.lead.user_id)
+        super(self.__class__, self).save(*args, **kw)
 
     class Meta:
         ordering = ('-bookmark',)
