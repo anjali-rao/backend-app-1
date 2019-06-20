@@ -12,7 +12,7 @@ def send_sms(phone_no, message):
         "sms": [{
             "to": phone_no,
             "message": message,
-            'sender': 'GOPLNR'
+            'sender': 'ONCOVR'
         }]
     }
     url = '%s%s' % (SMS_API, SMS_API_KEY)
