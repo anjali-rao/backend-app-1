@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
 from django import views
+from django.http import JsonResponse
 
 from payment.models import ApplicationPayment, ApplicationRequestLog
 from goplannr.settings import ENV, DEBUG
@@ -20,33 +21,41 @@ class AdityaBirlaPaymentGateway(views.View):
             app = Application.objects.get(id=kwargs['pk'])
             if app.company_name != self.company_name:
                 raise PermissionDenied()
+            if request.is_ajax():
+                context = dict(
+                    email=app.reference_app.client.email,
+                    phone_no=app.reference_app.client.phone_no,
+                    source_code='WMGR0026', premium=app.premium,
+                    secSignature=self._secSignature,
+                    return_url=self.return_url % (
+                        'http' if DEBUG else 'https', ENV, app.id))
+                context.update(self.get_paramaters(app))
+                ApplicationRequestLog.objects.create(
+                    application_id=app.reference_app.id,
+                    url=self.return_url, payload=context)
+                return JsonResponse(context, status=200)
             if app.payment_captured:
                 return render(request, 'successful.html', dict(app=app))
-            context = dict(
-                email=app.reference_app.client.email,
-                phone_no=app.reference_app.client.phone_no,
-                source_code='WMGR0026', premium=app.premium,
-                secSignature=self._secSignature,
-                return_url=self.return_url % (
-                    'http' if DEBUG else 'https', ENV, app.id),
-                source_txn_id=self.get_transaction_id(app))
-            ApplicationRequestLog.objects.create(
-                application_id=app.reference_app.id,
-                url=self.return_url, payload=context)
-            return render(request, self.template_name, context)
+            return render(request, self.template_name)
         except (KeyError, Application.DoesNotExist):
             pass
         raise PermissionDenied()
 
-    def get_transaction_id(self, app):
+    def get_paramaters(self, app):
         import re
         import requests
-        url = self._summary_url % (
-            app.proposal_id2, app.customer_id)
+        url = self._summary_url % (app.proposal_id2, app.customer_id)
         res = requests.get(url)
         page_content = str(res.content)
-        pattern = re.compile(r'id="SourceTxnId" value="(\w*)')
-        return pattern.findall(page_content)[0]
+        patterns = dict(
+            source_txn_id=re.compile(r'id="SourceTxnId" value="(\w*)'),
+            quote_id=re.compile(r'id="QuoteId" value="(\w*)'),
+            SourceCode=re.compile(r'id="SourceCode" value="(\w*)'),
+            secSignature=re.compile(r'id="secSignature" value="(\w*)')
+        )
+        for pattern in patterns.keys():
+            patterns[pattern] = patterns[pattern].findall(page_content)[0]
+        return patterns
 
 
 class AdityaBirlaPaymentCapture(views.View):
@@ -110,19 +119,22 @@ class HDFCPaymentGateway(views.View):
             app = Application.objects.get(id=kwargs['pk'])
             if app.company_name != self.company_name:
                 raise PermissionDenied()
-            if app.regenerate_payment_link:
+            if request.is_ajax():
                 app.insurer_product.perform_creation()
                 app.regenerate_payment_link = True
                 app.save()
-            context = self.get_paramaters(app)
-            context.update(dict(
-                customer_email=app.reference_app.client.email,
-                customer_name=app.reference_app.client.get_full_name(),
-                premium=int(app.premium)))
-            ApplicationRequestLog.objects.create(
-                application_id=app.reference_app.id,
-                payload=context, request_type='POST')
-            return render(request, self.template_name, context)
+                context = self.get_paramaters(app)
+                context.update(dict(
+                    customer_email=app.reference_app.client.email,
+                    customer_name=app.reference_app.client.get_full_name(),
+                    premium=int(app.premium)))
+                ApplicationRequestLog.objects.create(
+                    url='https://netinsure.hdfcergo.com/onlineproducts/healthonline/tim.aspx', # noqa
+                    application_id=app.reference_app.id,
+                    payload=context, request_type='POST')
+                context.update(self.get_paramaters(app))
+                return JsonResponse(context, status=200)
+            return render(request, self.template_name)
         except (KeyError, Application.DoesNotExist):
             pass
         raise PermissionDenied()
@@ -159,9 +171,11 @@ class BajajAlianzGICGateway(views.View):
             app = Application.objects.get(id=kwargs['pk'])
             if app.company_name != self.company_name:
                 raise PermissionDenied()
-            app.insurer_product.perform_creation()
-            context = dict(payment_link=self.get_paramaters(app))
-            return render(request, self.template_name, context)
+            if request.is_ajax():
+                app.insurer_product.perform_creation()
+                context = dict(payment_link=self.get_paramaters(app))
+                return JsonResponse(context, status=200)
+            return render(request, self.template_name)
         except (KeyError, Application.DoesNotExist):
             pass
         raise PermissionDenied()
