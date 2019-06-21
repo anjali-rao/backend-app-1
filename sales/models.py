@@ -93,7 +93,7 @@ class Application(BaseModel):
         super(Application, self).save(*args, **kwargs)
 
     def aggregator_operation(self):
-        if self.quote.premium.product_variant.company_category.company.name not in Constants.ACTIVE_AGGREGATOR_COMPANIES: # noqa
+        if not self.quote.premium.product_variant.aggregator_available:
             return
         from aggregator.wallnut.models import Application as Aggregator
         if not hasattr(self, 'application'):
