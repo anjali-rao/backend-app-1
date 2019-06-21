@@ -132,50 +132,50 @@ API_TTL = 172800
 
 # Exception messages  ==================================
 
-REFERRAL_CODE_EXCEPTION = 'Invalid referral code provided.'
-OTP_VALIDATION_FAILED = 'Invalid otp provided.'
-INVALID_TRANSACTION_ID = 'Invalid transaction id provided.'
-INVALID_PHONE_NO = 'Invalid phone no entered.'
-INVALID_USERNAME = 'Invalid username provided.'
-INVALID_PASSWORD = 'Invalid password provided.'
-INVALID_PROMO_CODE = 'Invalid prmo code provided.'
-INVALID_USERNAME_PHONE_COMBINATION = 'Invalid username and phone no combination.' # noqa
+REFERRAL_CODE_EXCEPTION = 'Invalid referral code provided'
+OTP_VALIDATION_FAILED = 'Invalid otp provided'
+INVALID_TRANSACTION_ID = 'Invalid transaction id provided'
+INVALID_PHONE_NO = 'Invalid phone no entered'
+INVALID_USERNAME = 'Invalid username provided'
+INVALID_PASSWORD = 'Invalid password provided'
+INVALID_PROMO_CODE = 'Invalid prmo code provided'
+INVALID_USERNAME_PHONE_COMBINATION = 'Invalid username and phone no combination' # noqa
 PASSWORD_MISMATCH = 'Password and confirm password mismatch'
 ACCOUNT_DISABLED = 'Account is unactive. Please contact OneCover for reactivation' # noqa
-INVALID_CATEGORY_ID = 'Category id passed is invalid or category doesnot exists.' # noqa
+INVALID_CATEGORY_ID = 'Category id passed is invalid or category doesnot exists' # noqa
 INVALID_CUSTOMER_SEGMENT = 'Invalid Customer Segment id'
-INVALID_ANSWER_ID = 'Answer id: %s is invalid.'
-INVALID_QUESTION_ID = 'Question id: %s is invalid.'
-INVALID_GENDER_PROVIDED = 'Invalid gender input provided.'
-INVALID_PINCODE = 'Invalid pincode provided.'
-USER_ALREADY_EXISTS = 'User already exists with provided input.'
-FAILED_APPLICATION_CREATION = 'Failed to add contact. Please contact OneCover.'
-APPLICATION_ALREAY_EXISTS = 'Application already exists with quote id.'
-ANSWER_CANNOT_BE_LEFT_BLANK = 'Answers are required.'
-INVALID_FAMILY_DETAILS = 'Please provide valid family details.'
-LEAD_ERROR = 'Lead not provided or invalid lead id provided.'
-NO_QUOTES_FOUND = 'No Quotes found for given suminsured.'
-INVALID_INPUT = 'Invalid input provided.'
+INVALID_ANSWER_ID = 'Answer id: %s is invalid'
+INVALID_QUESTION_ID = 'Question id: %s is invalid'
+INVALID_GENDER_PROVIDED = 'Invalid gender input provided'
+INVALID_PINCODE = 'Invalid pincode provided'
+USER_ALREADY_EXISTS = 'User already exists with provided input'
+FAILED_APPLICATION_CREATION = 'Failed to add contact. Please contact OneCover'
+APPLICATION_ALREAY_EXISTS = 'Application already exists with quote id'
+ANSWER_CANNOT_BE_LEFT_BLANK = 'Answers are required'
+INVALID_FAMILY_DETAILS = 'Please provide valid family details'
+LEAD_ERROR = 'Lead not provided or invalid lead id provided'
+NO_QUOTES_FOUND = 'No Quotes found for given suminsured'
+INVALID_INPUT = 'Invalid input provided'
 COMPARISION_ERROR = 'Atleast two quotes are required for comparision'
 INCOMPLETE_APPLICATION = 'Application not completed, please fill %s'
 LOOKUP_ERROR = 'Expected view %s to be called with a URL keyword argument '
 'named "%s". Fix your URL conf, or set the `.lookup_field` '
 'attribute on the view correctly.'
 APPLICATION_UNMAPPED = 'Application not mapped to any insurance or inproper application type' # noqa
-INVALID_QUOTE_ID = 'Invalid Quote id provided.'
+INVALID_QUOTE_ID = 'Invalid Quote id provided'
 INVALID_QUESTION_ANSWER_COMBINATION = 'Invalid question and answer combination provided'  # noqa
-INVALID_LEAD_ID = 'Invalid / missing Lead id.'
-INVALID_PHONE_NO_FORMAT = 'Phone number is not valid'
-INVALID_PLAYLIST_TYPE = 'Playlist type provided is invalid.'
-PLAYLIST_UNAVAILABLE = 'No playlist available. Please Contact Admin.'
-INVALID_CONTACT_ID = 'Invalid contact id provided.'
-INVALID_LEAD_STAGE = 'Invalid lead stage'
-PASSWORD_NOT_SET = 'Password is not set.'
+INVALID_LEAD_ID = 'Invalid / missing Lead id'
+INVALID_PHONE_NO_FORMAT = 'Phone number is not vali'
+INVALID_PLAYLIST_TYPE = 'Playlist type provided is invalid'
+PLAYLIST_UNAVAILABLE = 'No playlist available. Please Contact Admin'
+INVALID_CONTACT_ID = 'Invalid contact id provided'
+INVALID_LEAD_STAGE = 'Invalid lead stag'
+PASSWORD_NOT_SET = 'Password is not set'
 PAYMENT_LINK_GENERATION_FAILED = 'Failed to generate payment link for application (%s), due to exception:%s' # noqa
 FAILED_TO_SEND_TO_AGGREGATOR = 'Failed to send application (%s) to aggregator due to exception: %s' # noqa
 CONTACT_DETAILS_REQUIRED = 'Contact name and Contact phone_no is required'
-DUPLICATE_LEAD = 'Lead already exists with similar contact_name and contact_phone_no' # noqa
-CONTACT_FORBIDDEN = 'Update conatct to lead is forbidden.'
+DUPLICATE_LEAD = 'Lead already exists with similar contact name and contact number' # noqa
+CONTACT_FORBIDDEN = 'Update conatct to lead is forbidden'
 
 
 # Creation Fields  ==================================

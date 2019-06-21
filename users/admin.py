@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from django.contrib import admin
 
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from extended_filters.filters import DateRangeFilter
 
 from users.models import (
     Account, User, Campaign, AccountDetail, Document, BankAccount,
@@ -34,8 +35,10 @@ class GoPlannerAccountAdmin(BaseUserAdmin):
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = (
-        'account', 'user_type', 'campaign', 'is_active')
-    list_filter = ('is_active', 'user_type')
+        'account', 'user_type', 'campaign', 'is_active', 'created')
+    list_filter = (
+        'is_active', 'user_type', ('created', DateRangeFilter),
+        ('modified', DateRangeFilter))
     search_fields = (
         'account__phone_no', 'account__alternate_no', 'account__aadhar_no')
     raw_id_fields = ('account', 'campaign', 'enterprise')
