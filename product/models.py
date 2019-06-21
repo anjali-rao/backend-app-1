@@ -72,12 +72,15 @@ class ProductVariant(BaseModel):
     company_category = models.ForeignKey(
         'product.CompanyCategory', null=True, blank=True,
         on_delete=models.CASCADE)
+    parent = models.ForeignKey(
+        'self', null=True, blank=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=256, default="")
     parent_product = models.CharField(
         max_length=128, null=True, blank=True, default='GoPlannr')
     feature_variant = models.CharField(max_length=256, default='base')
     short_description = models.CharField(max_length=128, null=True, blank=True)
     long_description = models.TextField(null=True, blank=True)
+    aggregator_available = models.BooleanField(default=False)
     chronic = models.BooleanField(default=True)
 
     def get_product_details(self):
