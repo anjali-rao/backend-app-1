@@ -163,10 +163,9 @@ class User(BaseModel):
         try:
             payload = jwt.decode(token, JWT_SECRET)
             return cls.objects.get(id=payload.get('user_id'))
-        except cls.DoesNotExist:
-            return None
-        except jwt.InvalidTokenError:
-            return None
+        except Exception:
+            pass
+        return None
 
     def get_accounts(self):
         return self.bankaccount_set.filter(is_active=True)
