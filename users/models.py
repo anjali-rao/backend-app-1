@@ -37,7 +37,7 @@ class Account(AbstractUser):
     def save(self, *args, **kwargs):
         user = self.get_default_user()
         if user:
-            cache.delete('USER_DETAIL:%s' % self.user.id)
+            cache.delete('USER_DETAIL:%s' % user.id)
         super(self.__class__, self).save(*args, **kwargs)
 
     def send_notification(self, **kwargs):
