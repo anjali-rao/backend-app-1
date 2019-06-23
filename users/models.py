@@ -18,7 +18,6 @@ from django.contrib.contenttypes.fields import GenericRelation
 from goplannr.settings import JWT_SECRET, DEBUG, SMS_OTP_HASH
 
 import jwt
-import uuid
 
 
 class Account(AbstractUser):
@@ -125,7 +124,6 @@ class Account(AbstractUser):
 
 
 class User(BaseModel):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     account = models.ForeignKey('users.Account', on_delete=models.CASCADE)
     user_type = models.CharField(
         choices=get_choices(Constants.USER_TYPE), max_length=16,
