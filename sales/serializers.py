@@ -402,11 +402,14 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
     existing_policies = serializers.SerializerMethodField()
 
     def get_proposer_details(self, obj):
-        return GetProposalDetailsSerializer(self.instance.client).data
+        proposer = self.instance.client or self.instance.quote.lead.contact
+        return GetProposalDetailsSerializer(proposer).data
 
     def get_insured_members(self, obj):
+        members = self.instance.active_members or Member.objects.filter(
+            application_id=self.instance.id)
         members = sorted(
-            self.instance.active_members,
+            members,
             key=lambda member: Constants.MEMBER_ORDER.get(
                 member.relation, 0))
         return GetApplicationMembersSerializer(
