@@ -152,6 +152,8 @@ class Application(BaseModel):
                 today.year - int(age), today.month, today.day))
             members.append(instance)
         Member.objects.bulk_create(members)
+        from sales.tasks import update_insurance_fields
+        update_insurance_fields.delay(self.id)
 
     def create_policy(self):
         return Policy.objects.create(application_id=self.id)
