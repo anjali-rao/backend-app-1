@@ -102,13 +102,8 @@ class Collateral(BaseModel):
 class Playlist(BaseModel):
     name = models.CharField(max_length=32)
     url = models.URLField()
-    collaterals_type = models.CharField(
-        max_length=16, choices=get_choices(Constants.COLLATERALS_TYPE),
-        default='videos')
     playlist_type = models.CharField(
         max_length=32, choices=get_choices(Constants.PLAYLIST_CHOICES))
-    short_descripton = models.CharField(max_length=256)
-    long_descripton = models.TextField()
 
     def __str__(self):
         return '%s | %s: %s' % (self.name, self.playlist_type, self.url)
