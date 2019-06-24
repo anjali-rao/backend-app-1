@@ -1,4 +1,5 @@
 import csv
+from django.db import transaction
 
 
 def readcsv(filename):
@@ -39,27 +40,36 @@ def upload_suminsurred(filename):
 
 
 def upload_company(filename):
-    from product.models import Company, Category
-    data = readcsv(filename)
-    for row in data:
-        category = Category.objects.get(name=row['category'].title())
-        instance, created = Company.objects.get_or_create(
-            name=row['company_name'])
-        instance.categories.add(category.id)
-        instance.short_name = row['company_shortname']
-        instance.website = row['website']
-        instance.spoc = row['spoc']
-        instance.website = row['website']
-        instance.save()
+    with transaction.atomic():
+        from product.models import Company, Category
+        data = readcsv(filename)
+        for row in data:
+            category = Category.objects.get(name=row['category'].replace('{','').replace('}','').title()) # noqa
+            instance, created = Company.objects.get_or_create(pk=row['id'])
+            instance.name = row['company_name']
+            instance.categories.add(category.id)
+            instance.short_name = row['company_shortname']
+            instance.website = row['website']
+            instance.spoc = row['spoc']
+            instance.website = row['website']
+            instance.toll_free_number = row['tollfree'].split(',')
+            instance.long_description = row['long description']
+            instance.small_description = row['short description']
+            instance.commission = float(row['commission'] or 0.0)
+            instance.save()
 
 
 def upload_companycategory(filename):
     from product.models import Company, CompanyCategory
-    for row in readcsv(filename):
-        company = Company.objects.get(short_name=row['company'])
-        instance, created = CompanyCategory.objects.get_or_create(
-            company_id=company.id, category_id=row['category_id']
-        )
+    with transaction.atomic():
+        for row in readcsv(filename):
+            company = Company.objects.get(short_name=row['company name'])
+            instance, created = CompanyCategory.objects.get_or_create(
+                company_id=company.id, category_id=row['category_id'])
+            instance.company_id = company.id
+            instance.category_id = row['category_id']
+            instance.claim_settlement = row['claim_settlement']
+            instance.save()
 
 
 def upload_customersegment():
@@ -84,13 +94,19 @@ def upload_feature_master(filename):
 
 
 def upload_product_variant(filename):
-    from product.models import ProductVariant
-    for row in readcsv(filename):
-        instance, created = ProductVariant.objects.get_or_create(pk=row['id'])
-        instance.company_category_id = row['companycategory_id']
-        instance.name = row['product_short_name']
-        instance.parent_product = row['parent_product']
-        instance.save()
+    with transaction.atomic():
+        from product.models import ProductVariant
+        for row in readcsv(filename):
+            instance, created = ProductVariant.objects.get_or_create(pk=row['id'])
+            instance.company_category_id = row['companycategory id']
+            instance.name = row['product name']
+            instance.feature_variant = row['variant feature']
+            instance.short_description = row['short description']
+            instance.long_description = row['long description']
+            if instance.id != int(row['parent product']):
+                instance.parent_id = row['parent product']
+            instance.chronic = False
+            instance.save()
 
 
 def upload_feature(filename):
