@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import get_choices, constants as Constants
-from product.models import Category
 
 
 class Faq(BaseModel):
@@ -84,11 +83,32 @@ class PromoBook(BaseModel):
         super(PromoBook, self).save(*args, **kwargs)
 
 
+class Collateral(BaseModel):
+    name = models.CharField(max_length=256)
+    url = models.URLField()
+    collateral_type = models.CharField(
+        max_length=16, choices=get_choices(Constants.COLLATERALS_TYPE))
+    collateral = models.CharField(
+        max_length=32, choices=get_choices(Constants.COLLATERALS_CHOICES))
+    promocode = models.ForeignKey('users.PromoCode', on_delete=models.PROTECT)
+    short_descripton = models.CharField(max_length=256, null=True, blank=True)
+    long_descripton = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return '%s | %s: %s' % (
+            self.name, self.collateral_type, self.collateral)
+
+
 class Playlist(BaseModel):
     name = models.CharField(max_length=32)
     url = models.URLField()
+    collaterals_type = models.CharField(
+        max_length=16, choices=get_choices(Constants.COLLATERALS_TYPE),
+        default='videos')
     playlist_type = models.CharField(
         max_length=32, choices=get_choices(Constants.PLAYLIST_CHOICES))
+    short_descripton = models.CharField(max_length=256)
+    long_descripton = models.TextField()
 
     def __str__(self):
         return '%s | %s: %s' % (self.name, self.playlist_type, self.url)

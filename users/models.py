@@ -231,6 +231,11 @@ class User(BaseModel):
             rules.update(Constants.PROMO_RULES[int(rule_code)])
         return rules
 
+    def get_collaterals(self):
+        from content.models import Collateral
+        return Collateral.objects.filter(
+            promocode_id=self.enterprise.promocode_id)
+
     @staticmethod
     def validate_referral_code(code):
         return Referral.objects.filter(code=code).exists()
@@ -454,6 +459,7 @@ class IPAddress(BaseModel):
 @receiver(post_save, sender=User, dispatch_uid="action%s" % str(now()))
 def user_post_save(sender, instance, created, **kwargs):
     if created:
+        # To Dos remove this
         from content.models import EnterprisePlaylist
         EnterprisePlaylist.objects.create(
             enterprise_id=instance.enterprise_id,

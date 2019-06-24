@@ -2,11 +2,12 @@
 from __future__ import unicode_literals
 
 from django.contrib import admin
+from django.utils.html import format_html
 
 from content.models import (
     Faq, HelpFile, ContactUs, NetworkHospital, NewsletterSubscriber,
     PromoBook, HelpLine, Playlist, EnterprisePlaylist, Article,
-    Coverages, Note, Appointment, Bank, BankBranch)
+    Coverages, Note, Appointment, Bank, BankBranch, Collateral)
 
 
 @admin.register(Faq)
@@ -124,3 +125,11 @@ class BankBranchAdmin(admin.ModelAdmin):
     search_fields = ('branch_name', 'bank__name', 'ifsc', 'city')
     raw_id_fields = ('bank',)
     list_filter = ('bank__name',)
+
+
+@admin.register(Collateral)
+class CollateralAdmin(admin.ModelAdmin):
+    list_display = (
+        'name', 'collateral_type', 'collateral', 'url', 'promocode')
+    search_fields = ('collateral_type', 'collateral', 'url', 'promocode')
+    list_filter = ('collateral_type', 'collateral')
