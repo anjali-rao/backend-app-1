@@ -3,7 +3,8 @@ from rest_framework import serializers
 
 from content.models import (
     Faq, ContactUs, NewsletterSubscriber, PromoBook,
-    NetworkHospital, EnterprisePlaylist, Note, Appointment)
+    NetworkHospital, EnterprisePlaylist, Note, Appointment,
+    Collateral)
 
 from product.models import ProductVariant, Company
 
@@ -120,3 +121,12 @@ class AppoinmentSerializer(serializers.ModelSerializer):
         fields = (
             'name', 'phone_no', 'address', 'date', 'category',
             'lead_id', 'user')
+
+
+class CollateralSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Collateral
+        fields = (
+            'name', 'url', 'collateral_type', 'collateral', 'short_descripton',
+            'long_descripton')
