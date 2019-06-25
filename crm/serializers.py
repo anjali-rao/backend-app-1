@@ -306,11 +306,11 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
     sum_insured = serializers.ReadOnlyField(source='premium.sum_insured')
     premium = serializers.ReadOnlyField(source='premium.amount')
     tax_saving = serializers.ReadOnlyField(
-        source='lead.category_lead.tax_saving')
+        source='opportunity.category_opportunity.tax_saving')
     wellness_rewards = serializers.ReadOnlyField(
-        source='lead.category_lead.wellness_reward')
+        source='opportunity.category_opportunity.wellness_reward')
     health_checkups = serializers.ReadOnlyField(
-        source='lead.category_lead.adults')
+        source='opportunity.category_opportunity.adults')
     product = serializers.ReadOnlyField(
         source='premium.product_variant.get_product_details')
     features = serializers.SerializerMethodField()
