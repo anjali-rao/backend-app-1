@@ -1,33 +1,35 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from django.urls import include, path
 from django.test import TestCase
-from rest_framework.test import APIClient
+
 from rest_framework import status
+from rest_framework.test import URLPatternsTestCase, APITestCase
 
-
-class UserAPISTestCases(TestCase):
+class UserAPISTestCases(APITestCase, URLPatternsTestCase):
     """
     This Test related to testing Generate OTP apis
     """
 
-    def setUp(self):
-        self.client = APIClient()
+    urlpatterns = [
+        path('', include('goplannr.apis_urls')),
+    ]
 
     def test_generate_otp(self):
         data = dict(phone_no=6362843965)
         response = self.client.post('/v2/user/otp/generate', data)
-        self.assertTrue(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_invalid_phone_no(self):
         data = dict(phone_no=636284396)
         response = self.client.post('/v2/user/otp/generate', data)
-        self.assertTrue(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_invalid_data(self):
-        data = dict(phone_nos=636284396)
+        data = dict(phone_no='qwerty123')
         response = self.client.post('/v2/user/otp/generate', data)
-        self.assertTrue(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class PostmanAPITestCase(TestCase):
