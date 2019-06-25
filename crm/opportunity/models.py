@@ -145,8 +145,13 @@ class HealthInsurance(models.Model):
         content_id = ContentType.objects.get(
             app_label='product', model='healthpremium').id
         for premium in self.get_premiums(**kw):
-            feature_masters = premium.product_variant.feature_set.values_list(
-                'feature_master_id', flat=True)
+            variant = premium.product_variant
+            feature_masters = list(variant.feature_set.values_list(
+                'feature_master_id', flat=True))
+            if variant.parent:
+                feature_masters.extend(list(
+                    variant.parent.feature_set.values_list(
+                        'feature_master_id', flat=True)))
             quote = Quote.objects.create(
                 opportunity_id=self.opportunity.id, premium_id=premium.id,
                 content_type_id=content_id)
