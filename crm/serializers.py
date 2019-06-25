@@ -317,16 +317,24 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
 
     def get_features(self, obj):
         features = list()
-        feature_set = sorted(
-            obj.premium.product_variant.feature_set.exclude(
-                short_description__in=[
-                    'Data unavailable', '', 'Not covered', 'Not Covered']
-            ), key=lambda feature: Constants.RECOMMENDATION_FEATURE_ORDER.get(
-                feature.feature_master.name, 999))
+        feature_set = list()
+        if obj.premium.product_variant.parent:
+            feature_set = list(self.get_sorted_features(
+                obj.premium.product_variant.parent))
+        feature_set.extend(self.get_sorted_features(
+            obj.premium.product_variant))
         for f in feature_set[:5]:
             features.append('%s: %s' % (
                 f.feature_master.name, f.short_description))
         return features
+
+    def get_sorted_features(self, variant):
+        return sorted(
+            variant.feature_set.exclude(
+                short_description__in=[
+                    'Data unavailable', '', 'Not covered', 'Not Covered']
+            ), key=lambda feature: Constants.RECOMMENDATION_FEATURE_ORDER.get(
+                feature.feature_master.name, 999))
 
     class Meta:
         model = Quote
