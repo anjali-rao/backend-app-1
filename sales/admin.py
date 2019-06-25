@@ -37,8 +37,8 @@ class ApplicationRequestLogInline(admin.StackedInline):
 
 @admin.register(Quote)
 class QuoteAdmin(admin.ModelAdmin):
-    list_display = ('lead', 'status', 'premium')
-    raw_id_fields = ('lead', )
+    list_display = ('opportunity', 'status', 'premium')
+    raw_id_fields = ('opportunity', )
     list_filter = ('status',)
     readonly_fields = ('premium_id', 'content_type', 'ignore')
     can_delete = False
@@ -151,5 +151,5 @@ class PolicyAdmin(admin.ModelAdmin):
     search_fields = (
         'application__quote__lead__user_phone_no',
         'application__client_phone_no', 'application__client_email')
-    list_filter = ('application__quote__lead__category',)
+    list_filter = ('application__quote__opportunity__category',)
     raw_id_fields = ('application',)

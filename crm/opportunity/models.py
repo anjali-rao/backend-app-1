@@ -13,7 +13,8 @@ import math
 
 
 class HealthInsurance(models.Model):
-    base = models.OneToOneField('crm.Lead', on_delete=models.PROTECT)
+    opportunity = models.OneToOneField(
+        'crm.Opportunity', on_delete=models.PROTECT)
     customer_segment = models.ForeignKey(
         'product.CustomerSegment', null=True, blank=True,
         on_delete=models.CASCADE)
@@ -35,7 +36,6 @@ class HealthInsurance(models.Model):
             current = self.__class__.objects.get(pk=self.id)
             if self.predicted_suminsured != current.predicted_suminsured:
                 self.refresh_quote_data()
-                self.stage = 'inprogress'
             if self.family != current.family:
                 self.parse_family_details()
         except self.__class__.DoesNotExist:
@@ -58,7 +58,7 @@ class HealthInsurance(models.Model):
     def calculate_suminsured(self):
         score = math.ceil(
             Response.objects.select_related('answer').filter(
-                lead_id=self.base_id).aggregate(
+                opportunity_id=self.opportunity_id).aggregate(
                 s=models.Sum('answer__score'))['s'])
         if score <= 3:
             score = 3
@@ -78,7 +78,7 @@ class HealthInsurance(models.Model):
     def get_customer_segment(self, **kw):
         from product.models import CustomerSegment
         responses = Response.objects.select_related(
-            'answer', 'question').filter(lead_id=self.id)
+            'answer', 'question').filter(opportunity_id=self.id)
         segment_name = 'young_adult'
         effective_age = kw.get('effective_age', self.effective_age)
         childrens = kw.get('childrens', self.childrens)
@@ -120,7 +120,7 @@ class HealthInsurance(models.Model):
             suminsured_range__contains=int(kw.get(
                 'score', self.predicted_suminsured)),
             adults=kw.get('adults', self.adults), ignore=False,
-            citytier__in=kw.get('citytier', self.base.citytier),
+            citytier__in=kw.get('citytier', self.opportunity.citytier),
         )
         if 'product_variant_id' in kw:
             query['product_variant_id'] = kw['product_variant_id']
@@ -130,7 +130,7 @@ class HealthInsurance(models.Model):
             query['childrens'] = kw.get('childrens', self.childrens)
         query.update(dict(
             age_range__contains=kw.get('effective_age', self.effective_age),
-            product_variant__company_category__company_id__in=self.base.companies_id # noqa
+            product_variant__company_category__company_id__in=self.opportunity.companies_id # noqa
         ))
         premiums = queryset.filter(**query)
         if not premiums.exists():
@@ -139,7 +139,7 @@ class HealthInsurance(models.Model):
         return premiums or queryset[:5]
 
     def refresh_quote_data(self, **kw):
-        quotes = self.base.get_quotes()
+        quotes = self.opportunity.get_quotes()
         if quotes.exists():
             quotes.update(ignore=True)
         content_id = ContentType.objects.get(
@@ -148,7 +148,7 @@ class HealthInsurance(models.Model):
             feature_masters = premium.product_variant.feature_set.values_list(
                 'feature_master_id', flat=True)
             quote = Quote.objects.create(
-                lead_id=self.base.id, premium_id=premium.id,
+                opportunity_id=self.opportunity.id, premium_id=premium.id,
                 content_type_id=content_id)
             changed_made = False
             for feature_master_id in feature_masters:

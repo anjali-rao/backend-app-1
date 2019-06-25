@@ -28,7 +28,8 @@ class AnswerAdmin(admin.ModelAdmin):
 
 @admin.register(Response)
 class ResponseAdmin(admin.ModelAdmin):
-    list_display = ('question', 'answer', 'lead')
+    list_display = ('question', 'answer', 'opportunity')
     search_fields = (
-        'question__id', 'lead__id', 'lead__user__account__phone_no')
-    raw_id_fields = ('lead', 'question', 'answer')
+        'question__id', 'opportunity__lead__id',
+        'opportunity__lead__user__account__phone_no')
+    raw_id_fields = ('opportunity', 'question', 'answer')

@@ -7,14 +7,14 @@ GENDER = ('male', 'female', 'transgender')
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
 OCCUPATION_CHOICES = (
     'self_employed_or_business', 'salaried', 'retired', 'unemployed', 'others')
-LEAD_STATUS_CHOICES = (
-    ('fresh', 'Fresh'), ('inprogress', 'In Progress'),
-    ('closed', 'Closed'), ('dropped', 'Dropped'))
-LEAD_STAGE_CHOICES = (
-    ('new', 'New'), ('appointment_scheduled', 'Appointment Scheduled'),
-    ('needs', 'Needs'), ('quote', 'Quote'), ('cart', 'Cart'),
-    ('proposal', 'Proposal'), ('payment', 'Payment'),
-    ('submitted', 'Submitted'), ('issued', 'Issued'))
+# LEAD_STATUS_CHOICES = (
+#     ('fresh', 'Fresh'), ('inprogress', 'In Progress'),
+#     ('closed', 'Closed'), ('dropped', 'Dropped'))
+# LEAD_STAGE_CHOICES = (
+#     ('new', 'New'), ('appointment_scheduled', 'Appointment Scheduled'),
+#     ('needs', 'Needs'), ('quote', 'Quote'), ('cart', 'Cart'),
+#     ('proposal', 'Proposal'), ('payment', 'Payment'),
+#     ('submitted', 'Submitted'), ('issued', 'Issued'))
 STATUS_CHOICES = (
     ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'),
     ('completed', 'Completed'))
@@ -28,16 +28,21 @@ APPLICATION_STAGES = (
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
     'ration_card', 'passport', 'birth_certificate', 'cancelled_cheque',
-    'photo')
+    'photo', 'educational_document')
+
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('all', 'sales_brochure', 'claim_form')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
 RELATION_CHOICES = (
     'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother',
     'sister', 'cousin')
-DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = dict(
-    pan='advisor/pan', license='advisor/license', photo='advisor/selfie')
+    pancard='advisor/pancard', driving_license='advisor/license',
+    photo='advisor/selfie', aadhaar_card='advisor/aadhaar_card',
+    bank_passbook='advisor/bank_passbook', ration_card='advisor/ration_card',
+    passport='advisor/passport', birth_certificate='advisor/birth_certificate',
+    cancelled_cheque='advisor/cancelled_cheque',
+    educational_document='advisor/educational_document')
 FEATURE_TYPES = (
     'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
     'Exclusion')
@@ -47,7 +52,6 @@ TIER_2_CITIES = ('Lucknow', 'Allahabad')
 EARNING_TYPES = ('commission', 'incentive', 'referral')
 MARITAL_STATUS = ('married', 'single', 'divorced')
 PLAYLIST_CHOICES = ('marketing', 'training')
-USER_FILE_UPLOAD = ['cancelled_cheque', 'photo']
 REQUEST_CHOICES = ['GET', 'POST', 'PUT', 'PATCH']
 AGGREGATOR_CHOICES = ['offline', 'wallnut']
 EARNING_STATUS = ('paid', 'pending', 'processing')
@@ -156,7 +160,7 @@ APPLICATION_ALREAY_EXISTS = 'Application already exists with quote id'
 ANSWER_CANNOT_BE_LEFT_BLANK = 'Answers are required'
 INVALID_FAMILY_DETAILS = 'Please provide valid family details'
 LEAD_ERROR = 'Lead not provided or invalid lead id provided'
-NO_QUOTES_FOUND = 'No Quotes found for given suminsured'
+NO_QUOTES_FOUND = 'No Quotes found for given inputs'
 INVALID_INPUT = 'Invalid input provided'
 COMPARISION_ERROR = 'Atleast two quotes are required for comparision'
 INCOMPLETE_APPLICATION = 'Application not completed, please fill %s'
@@ -176,8 +180,12 @@ PASSWORD_NOT_SET = 'Password is not set'
 PAYMENT_LINK_GENERATION_FAILED = 'Failed to generate payment link for application (%s), due to exception:%s' # noqa
 FAILED_TO_SEND_TO_AGGREGATOR = 'Failed to send application (%s) to aggregator due to exception: %s' # noqa
 CONTACT_DETAILS_REQUIRED = 'Contact name and Contact phone_no is required'
-DUPLICATE_LEAD = 'Lead already exists with similar contact name and contact number' # noqa
-CONTACT_FORBIDDEN = 'Update conatct to lead is forbidden'
+DUPLICATE_LEAD = 'Lead already exists with similar contact_name and contact_phone_no' # noqa
+CONTACT_FORBIDDEN = 'Update conatct to lead is forbidden.'
+DUPLICATE_ACCOUNT = 'Account already exists with the provided details.'
+OPPORTUNITY_DOES_NOT_EXIST = 'Opportunity id provided does not exists or invalid' # noqa
+OPPORTUNITY_ID_REQUIRED = 'Invalid or missing opportunity id'
+OPPORTUNITY_OR_OPPERATION_ID_REQUIRED = 'Category id or opportunity id is required to perform opperation' # noqa
 
 
 # Creation Fields  ==================================
@@ -193,7 +201,7 @@ CONTACT_CREATION_FIELDS = (
     'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
     'occupation', 'marital_status', 'email')
 GENERIC_LEAD_FIELDS = (
-    'category_id', 'pincode', 'bookmark', 'user_id', 'ignore', 'contact_id')
+    'bookmark', 'user_id', 'ignore', 'contact_id', 'pincode')
 
 
 # Upload paths  ==================================
@@ -225,9 +233,9 @@ REFERRAL_TEXT = 'Referring to %s'
 INCENTIVE_TEXT = 'Incentive for %s'
 
 
-# Category Lead - Mapper  ==================================
+# Category Opportunity - Mapper  ==================================
 
-CATEGORY_LEAD_FIELDS_MAPPER = dict(
+CATEGORY_OPPORTUNITY_FIELDS_MAPPER = dict(
     healthinsurance=['gender', 'family', 'effective_age']
 )
 
@@ -235,7 +243,7 @@ CATEGORY_LEAD_FIELDS_MAPPER = dict(
 
 PROMO_RULES_KEYS = [
     'contact', 'earnings', 'native_application_journey',
-    'client_application_journey']
+    'client_application_journey', 'kyc_allowed']
 
 PROMO_RULES = {
     1: dict(

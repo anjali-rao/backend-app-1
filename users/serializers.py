@@ -26,7 +26,7 @@ class OTPGenrationSerializer(serializers.Serializer):
         if not value.isdigit() or len(value) != 10:
             raise serializers.ValidationError(
                 Constants.INVALID_PHONE_NO)
-        Account.send_otp(value)
+        Account.send_otp('OTP:%s' % value, value)
         return value
 
     @property
@@ -83,10 +83,14 @@ class CreateUserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
     email = serializers.CharField(required=True)
-    cancelled_cheque = serializers.FileField(required=False)
-    photo = serializers.FileField(required=False)
     manager_id = serializers.CharField(required=False)
     user_type = serializers.CharField(default=Constants.DEFAULT_USER_TYPE)
+    photo = serializers.FileField(required=False)
+    pancard = serializers.FileField(required=False)
+    cancelled_cheque = serializers.FileField(required=False)
+    aadhaar_card = serializers.FileField(required=False)
+    educational_document = serializers.FileField(required=False)
+    driving_license = serializers.FileField(required=False)
 
     def validate_password(self, value):
         return make_password(value)
@@ -136,10 +140,10 @@ class CreateUserSerializer(serializers.ModelSerializer):
             manager_id=validated_data.get('manager_id'))
         self.instance = User.objects.create(**data)
         self.instance.generate_referral(validated_data.get('referral_code'))
-        if any(x in validated_data.keys() for x in Constants.USER_FILE_UPLOAD):
+        if any(x in validated_data.keys() for x in Constants.KYC_DOC_TYPES):
             account.upload_docs(
                 validated_data, set(validated_data).intersection(
-                    set(Constants.USER_FILE_UPLOAD)))
+                    set(Constants.KYC_DOC_TYPES)))
         return self.instance
 
     def get_account(self, validated_data):
@@ -166,8 +170,9 @@ class CreateUserSerializer(serializers.ModelSerializer):
             'first_name', 'last_name', 'email', 'password',
             'referral_code', 'user_type', 'pincode', 'pan_no',
             'phone_no', 'transaction_id', 'cancelled_cheque',
-            'photo', 'manager_id', 'user_type', 'fcm_id', 'promo_code'
-        )
+            'photo', 'manager_id', 'user_type', 'fcm_id', 'promo_code',
+            'pancard', 'cancelled_cheque', 'aadhaar_card',
+            'educational_document', 'driving_license')
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -391,12 +396,16 @@ class UpdateUserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
     email = serializers.CharField(required=False)
-    cancelled_cheque = serializers.FileField(required=False)
-    photo = serializers.FileField(required=False)
     manager_id = serializers.CharField(required=False)
     street = serializers.CharField(required=False)
     flat_no = serializers.CharField(required=False)
     landmark = serializers.CharField(required=False)
+    photo = serializers.FileField(required=False)
+    pancard = serializers.FileField(required=False)
+    cancelled_cheque = serializers.FileField(required=False)
+    aadhaar_card = serializers.FileField(required=False)
+    educational_document = serializers.FileField(required=False)
+    driving_license = serializers.FileField(required=False)
 
     def validate_password(self, value):
         return make_password(value)
@@ -432,11 +441,11 @@ class UpdateUserSerializer(serializers.ModelSerializer):
                 field_name, getattr(acc, field_name)))
         acc.save()
         if any(
-            x in validated_data.keys() for x in Constants.USER_FILE_UPLOAD
+            x in validated_data.keys() for x in Constants.KYC_DOC_TYPES
         ):
             self.initial_data = acc.upload_docs(
                 validated_data, set(validated_data).intersection(
-                    set(Constants.USER_FILE_UPLOAD)))
+                    set(Constants.KYC_DOC_TYPES)))
 
     def get_address_id(self, acc, validated_data):
         if validated_data['pincode'] != acc.address.pincode_id:
@@ -463,8 +472,8 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         fields = (
             'first_name', 'last_name', 'email', 'password', 'manager_id',
             'pincode', 'pan_no', 'cancelled_cheque', 'photo', 'street',
-            'flat_no', 'landmark'
-        )
+            'flat_no', 'landmark', 'pancard', 'aadhaar_card',
+            'educational_document', 'driving_license')
 
 
 class UserEarningSerializer(serializers.ModelSerializer):

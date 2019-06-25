@@ -14,6 +14,7 @@ from django.dispatch import receiver
 from django.core.cache import cache
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.contenttypes.fields import GenericRelation
+from django.db import IntegrityError
 
 from goplannr.settings import JWT_SECRET, DEBUG, SMS_OTP_HASH
 
@@ -69,21 +70,20 @@ class Account(AbstractUser):
         return validated_data
 
     @classmethod
-    def send_otp(cls, phone_no):
+    def send_otp(cls, prefix, phone_no):
         from users.tasks import send_sms
         return send_sms.delay(
             phone_no,
             Constants.OTP_MESSAGE % (
-                cls.generate_otp(phone_no), SMS_OTP_HASH),
-        )
+                cls.generate_otp(prefix, phone_no), SMS_OTP_HASH))
 
     @staticmethod
-    def generate_otp(phone_no):
+    def generate_otp(prefix, phone_no):
         import random
-        otp = cache.get('OTP:%s' % phone_no)
+        otp = cache.get(prefix)
         if not otp:
             otp = random.randint(1000, 9999)
-            cache.set('OTP:%s' % phone_no, otp, Constants.OTP_TTL)
+            cache.set(prefix, otp, Constants.OTP_TTL)
         return otp
 
     @staticmethod
@@ -94,7 +94,8 @@ class Account(AbstractUser):
     def get_account(cls, phone_no):
         accounts = cls.objects.filter(phone_no=phone_no)
         if accounts.exists():
-            return accounts.get()
+            raise IntegrityError(Constants.DUPLICATE_ACCOUNT)
+#            return accounts.get()
         acc = cls.objects.create(username=cls.generate_username())
         acc.phone_no = phone_no
         acc.save()
@@ -141,7 +142,7 @@ class User(BaseModel):
         'users.Enterprise', on_delete=models.PROTECT)
     flag = JSONField(default=Constants.USER_FLAG)
     is_active = models.BooleanField(default=False)
-    manager_id = models.CharField(max_length=48, null=True)
+    manager_id = models.CharField(max_length=48, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         cache.delete('USER_DETAIL:%s' % self.id)
@@ -157,6 +158,9 @@ class User(BaseModel):
         return jwt.encode(
             {'user_id': str(self.id)},
             JWT_SECRET, algorithm='HS256')
+
+    def get_full_name(self):
+        return self.account.get_full_name()
 
     @classmethod
     def get_authenticated_user(cls, token):
@@ -206,7 +210,7 @@ class User(BaseModel):
 
     def get_applications(self, status=None):
         from sales.models import Application
-        query = dict(quote__lead__user_id=self.id)
+        query = dict(quote__opportunity__lead__user_id=self.id)
         if status and isinstance(status, list):
             query['status__in'] = status
         elif status:
@@ -216,7 +220,7 @@ class User(BaseModel):
     def get_policies(self):
         from sales.models import Policy
         return Policy.objects.filter(
-            application__quote__lead__user_id=self.id)
+            application__quote__opportunity__lead__user_id=self.id)
 
     def get_earnings(self, earning_type=None):
         from earnings.models import Earning
@@ -229,6 +233,8 @@ class User(BaseModel):
             if not rule_code.isdigit():
                 rule_code = 1
             rules.update(Constants.PROMO_RULES[int(rule_code)])
+        if self.enterprise.enterprise_type != 'subscriber':
+            rules['kyc_allowed'] = True
         return rules
 
     def get_collaterals(self):
@@ -315,7 +321,16 @@ class Enterprise(BaseModel):
     commission = models.FloatField(default=0.0)
 
     def save(self, *args, **kwargs):
-        if not self.__class__.objects.filter(pk=self.id).exists():
+        try:
+            current = self.__class__.objects.get(pk=self.id)
+            if current.enterprise_type != self.enterprise_type and (
+                    self.enterprise_type != 'enterprise'):
+                users = User.objects.filter(enterprise_id=self.id)
+                if users.exists():
+                    user = users.get()
+                    user.user_type = self.enterprise_type
+                    user.save()
+        except self.__class__.DoesNotExist:
             if self.promocode.code == 'OCOVR-1-3':
                 self.enterprise_type == 'pos'
         super(self.__class__, self).save(*args, **kwargs)
@@ -376,7 +391,7 @@ class Referral(BaseModel):
 class Document(BaseModel):
     account = models.ForeignKey('users.Account', on_delete=models.CASCADE)
     doc_type = models.CharField(
-        choices=get_choices(Constants.DOC_TYPES), max_length=16)
+        choices=get_choices(Constants.KYC_DOC_TYPES), max_length=16)
     file = models.FileField(upload_to=get_upload_path)
 
     def __str__(self):
