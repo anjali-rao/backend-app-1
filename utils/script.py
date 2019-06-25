@@ -12,6 +12,22 @@ def readcsv(filename):
     return data
 
 
+def create_csv(data, file_name=None):
+    """
+    Use create_csv method instead of this.
+    Accepts list of dictionaries and save them as csvfile
+    Created for upload type dashboards
+    """
+    import csv
+    filepath = file_name
+    keys = sorted(data[0].keys())
+    with open(filepath, 'w') as csvfile:
+        dict_writer = csv.DictWriter(csvfile, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(data)
+    return filepath
+
+
 def update_pincode(filename):
     from users.models import Pincode, State
     data = readcsv(filename)
