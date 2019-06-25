@@ -332,7 +332,7 @@ class Enterprise(BaseModel):
                     user.save()
         except self.__class__.DoesNotExist:
             if self.promocode.code == 'OCOVR-1-3':
-                self.enterprise_type == 'pos'
+                self.enterprise_type = 'pos'
         super(self.__class__, self).save(*args, **kwargs)
 
     def __str__(self):
