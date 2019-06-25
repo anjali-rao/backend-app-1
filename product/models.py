@@ -99,9 +99,7 @@ class ProductVariant(BaseModel):
 
     @cached_property
     def product_short_name(self):
-        if self.feature_variant.lower() == 'base':
-            return self.parent_product
-        return '%s - %s' % (self.parent_product, self.feature_variant.title())
+        return self.name
 
     def get_basic_details(self):
         return {
