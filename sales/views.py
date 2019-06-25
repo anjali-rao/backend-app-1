@@ -13,7 +13,7 @@ from sales.serializers import (
     CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
     TravalInsuranceSerializer, TermsSerializer, ExistingPolicySerializer,
     GetInsuranceFieldsSerializer, ApplicationSummarySerializer,
-    UpdateApplicationSerializers
+    UpdateApplicationSerializers, VerifyProposerPhonenoSerializer
 )
 
 from django.core.exceptions import ValidationError
@@ -47,17 +47,17 @@ class RetrieveUpdateProposerDetails(
             self.__class__.__name__, lookup_url_kwarg)
         )
 
+        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+        try:
+            application = _get_object_or_404(queryset, **filter_kwargs)
+            self._obj = application.client or application.quote.opportunity.lead.contact # noqa
+        except (TypeError, ValueError, ValidationError):
+            self._obj = Http404
+
         if 'search' in self.request.query_params and self.request.method == 'GET': # noqa
             self._obj = Contact.objects.filter(
                 phone_no=self.request.query_params.get('search')
-            ).order_by('modified').first()
-        if not self._obj:
-            filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
-            try:
-                application = _get_object_or_404(queryset, **filter_kwargs)
-                self._obj = application.quote.lead.contact
-            except (TypeError, ValueError, ValidationError):
-                self._obj = Http404
+            ).order_by('modified', 'created').last()
         # May raise a permission denied
         self.check_object_permissions(self.request, self._obj)
         return self._obj
@@ -241,25 +241,14 @@ class SubmitApplication(generics.UpdateAPIView):
     queryset = Application.objects.all()
     serializer_class = TermsSerializer
 
-    def update(self, request, *args, **kwargs):
+    def perform_update(self, serializer):
         with transaction.atomic():
-            partial = kwargs.pop('partial', False)
-            instance = self.get_object()
-            serializer = self.get_serializer(
-                instance, data=request.data, partial=partial)
-            serializer.is_valid(raise_exception=True)
-            self.perform_update(serializer)
-            instance.refresh_from_db()
-            response = serializer.data
-            try:
-                instance.aggregator_operation()
-                response['payment_status'] = True
-                instance.stage = 'payment_due'
-            except Exception:
-                response['payment_status'] = False
-                instance.stage = 'completed'
-            instance.save()
-        return Response(response)
+            serializer.save()
+        instance = serializer.instance
+        instance.refresh_from_db()
+        instance.send_propser_otp()
+        from sales.tasks import aggregator_operation
+        aggregator_operation.delay(instance)
 
 
 class GetApplicationPaymentLink(views.APIView):
@@ -284,3 +273,20 @@ class UpdateApplicationStatus(generics.UpdateAPIView):
     authentication_classes = (UserAuthentication,)
     serializer_class = UpdateApplicationSerializers
     queryset = Application.objects.all()
+
+
+class VerifyProposerPhoneno(views.APIView):
+    authentication_classes = (UserAuthentication,)
+
+    def post(self, request, pk, version):
+        try:
+            instance = Application.objects.get(id=pk)
+            serializer = VerifyProposerPhonenoSerializer(
+                instance, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(client_verified=True)
+            response = serializer.data
+            response['payment_status'] = instance.payment_mode != 'offline'
+            return Response(serializer.data)
+        except Application.DoesNotExist:
+            raise mixins.APIException(constants.INVALID_APPLICATION_ID)

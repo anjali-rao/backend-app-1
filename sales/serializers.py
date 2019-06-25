@@ -23,7 +23,6 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        full_name = validated_data['contact_name'].split(' ')
         try:
             with transaction.atomic():
                 quote = Quote.objects.get(id=validated_data['quote_id'])
@@ -31,20 +30,31 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     quote_id=validated_data['quote_id'],
                     premium=quote.premium.amount,
                     suminsured=quote.premium.sum_insured)
-                lead = quote.lead
-                contact, created = Contact.objects.get_or_create(
-                    phone_no=validated_data['contact_no'],
-                    user_id=lead.user.id)
-                if created:
-                    contact.update_fields(**dict(first_name=full_name[0]))
-                lead.update_fields(**dict(
-                    contact_id=contact.id, status='inprogress', stage='cart'))
+                contact = self.get_contact(validated_data, **dict(
+                    user_id=quote.opportunity.lead.user_id))
+                quote.opportunity.lead.contact_id = contact.id
+                quote.opportunity.lead.save()
             return instance
-        except IntegrityError as e:
+        except IntegrityError:
             raise mixins.NotAcceptable(
                 Constants.APPLICATION_ALREAY_EXISTS)
         raise mixins.NotAcceptable(
             Constants.FAILED_APPLICATION_CREATION)
+
+    def get_contact(self, validated_data, **kwargs):
+        name = validated_data['contact_name'].split(' ')
+        first_name = name[0]
+        middle_name = name[1] if len(name) == 3 else ''
+        last_name = name[2] if len(name) > 2 else (
+            name[1] if len(name) == 2 else '')
+        instance, created = Contact.objects.get_or_create(
+            phone_no=validated_data['contact_no'],
+            first_name=first_name, middle_name=middle_name,
+            last_name=last_name)
+        if created:
+            instance.user_id = kwargs['user_id']
+            instance.save()
+        return instance
 
     class Meta:
         model = Application
@@ -131,7 +141,8 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             if self.instance.phone_no != validated_data['phone_no']:
                 instances = self.Meta.model.objects.filter(
                     phone_no=validated_data['phone_no'],
-                    user_id=validated_data['user_id'])
+                    first_name=validated_data['first_name'],
+                    last_name=validated_data['last_name'])
                 if instances.exists():
                     self.instance = instances.latest('modified')
                 else:
@@ -222,10 +233,7 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
 
     @property
     def data(self):
-        self._data = dict(
-            message='Contact updated successfully'
-        )
-        return self._data
+        return dict(message='Contact updated successfully')
 
     class Meta:
         model = Contact
@@ -333,7 +341,7 @@ class HealthInsuranceSerializer(serializers.ModelSerializer):
         # TO DOS: Remove this when app is build
         super(HealthInsuranceSerializer, self).data
         self._data = dict(
-            message='Contact updated successfully'
+            message='Health Insurance fields updated successfully'
         )
         return self._data
 
@@ -402,7 +410,7 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
     existing_policies = serializers.SerializerMethodField()
 
     def get_proposer_details(self, obj):
-        proposer = self.instance.client or self.instance.quote.lead.contact
+        proposer = self.instance.client or self.instance.quote.opportunity.lead.contact # noqa
         return GetProposalDetailsSerializer(proposer).data
 
     def get_insured_members(self, obj):
@@ -448,7 +456,7 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         return self.context.get('section', '-')
 
     def get_proposer_name(self, obj):
-        instance = obj.client or obj.quote.lead.contact
+        instance = obj.client or obj.quote.opportunity.lead.contact
         return instance.get_full_name()
 
     class Meta:
@@ -488,3 +496,20 @@ class UpdateApplicationSerializers(serializers.ModelSerializer):
     def data(self):
         self._data = dict(message='Application updated successfully')
         return self._data
+
+
+class VerifyProposerPhonenoSerializer(serializers.ModelSerializer):
+    application_id = serializers.ReadOnlyField(source='id')
+    application_reference_no = serializers.ReadOnlyField(source='reference_no')
+    otp = serializers.IntegerField(required=True)
+
+    def validate(self, data):
+        if not self.instance.verify_proposer(data['otp']):
+            raise serializers.ValidationError(Constants.OTP_VALIDATION_FAILED)
+        return data
+
+    class Meta:
+        model = Application
+        fields = (
+            'otp', 'application_id', 'application_reference_no',
+            'client_verified')

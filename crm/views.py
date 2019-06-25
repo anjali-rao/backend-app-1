@@ -4,14 +4,14 @@ from __future__ import unicode_literals
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from utils import mixins, constants
+from utils import mixins, constants as Constants
 
 from users.decorators import UserAuthentication
 from crm.serializers import (
     QuoteSerializer, QuoteDetailsSerializer, Quote,
     QuotesCompareSerializer, QuoteRecommendationSerializer,
-    CreateUpdateLeadSerializer, LeadDetailSerializer, Lead,
-    NotesSerializer
+    UpdateLeadSerializer, LeadDetailSerializer, Lead,
+    NotesSerializer, CreateLeadSerializer, Opportunity
 )
 
 from django.db import transaction, IntegrityError
@@ -19,7 +19,7 @@ from django.db import transaction, IntegrityError
 
 class CreateLead(generics.CreateAPIView):
     authentication_classes = (UserAuthentication,)
-    serializer_class = CreateUpdateLeadSerializer
+    serializer_class = CreateLeadSerializer
 
     def perform_create(self, serializer):
         with transaction.atomic():
@@ -28,11 +28,15 @@ class CreateLead(generics.CreateAPIView):
 
 class UpdateLead(generics.UpdateAPIView):
     authentication_classes = (UserAuthentication,)
-    serializer_class = CreateUpdateLeadSerializer
+    serializer_class = UpdateLeadSerializer
     queryset = Lead.objects.all()
 
     def perform_update(self, serializer):
         with transaction.atomic():
+            data = self.request.data
+            if 'opportunity_id' not in data and 'category_id' not in data:
+                raise mixins.APIException(
+                    Constants.OPPORTUNITY_OR_OPPERATION_ID_REQUIRED)
             serializer.save(user_id=self.request.user.id)
 
 
@@ -42,21 +46,29 @@ class GetQuotes(generics.ListAPIView):
 
     def get_queryset(self):
         try:
-            lead = Lead.objects.get(id=self.request.query_params['lead'])
-            if 'suminsured' in self.request.query_params:
-                category_lead = lead.category_lead
-                category_lead.predicted_suminsured = self.request.query_params[
-                    'suminsured']
-                category_lead.save()
-            lead.refresh_from_db()
-            queryset = lead.get_quotes()
+            data = self.request.query_params
+            lead = Lead.objects.get(id=data['lead'])
+            opportunities = Opportunity.objects.filter(
+                id=data.get('opportunity_id'))
+            if 'suminsured' in data and not opportunities.exists():
+                raise mixins.APIException(Constants.OPPORTUNITY_ID_REQUIRED)
+            if opportunities.exists():
+                opportunity = opportunities.get()
+                if 'suminsured' in data:
+                    category_oppor = opportunity.category_opportunity
+                    category_oppor.predicted_suminsured = data['suminsured']
+                    category_oppor.save()
+                opportunity.refresh_from_db()
+                queryset = opportunity.get_quotes()
+            else:
+                queryset = lead.get_quotes()
             if not queryset.exists():
-                raise mixins.NotFound(constants.NO_QUOTES_FOUND)
+                raise mixins.NotFound(Constants.NO_QUOTES_FOUND)
             return queryset
         except (KeyError, Lead.DoesNotExist):
-            raise mixins.APIException(constants.LEAD_ERROR)
+            raise mixins.APIException(Constants.LEAD_ERROR)
         except ValueError:
-            raise mixins.APIException(constants.INVALID_INPUT)
+            raise mixins.APIException(Constants.INVALID_INPUT)
 
 
 class QuoteDetails(generics.RetrieveAPIView):
@@ -71,19 +83,20 @@ class QuotesComparision(generics.ListAPIView):
 
     def get_queryset(self):
         try:
-            lead = Lead.objects.get(id=self.request.query_params['lead'])
+            data = self.request.query_params
+            opportunity = Opportunity.objects.get(id=data['opportunity_id'])
             if not self.request.query_params.get('quotes') or len(
                     self.request.query_params['quotes'].split(',')) < 2:
-                raise mixins.NotAcceptable(constants.COMPARISION_ERROR)
+                raise mixins.NotAcceptable(Constants.COMPARISION_ERROR)
             quotes_ids = self.request.query_params['quotes'].split(',')
-            queryset = lead.get_quotes().filter(id__in=quotes_ids)
+            queryset = opportunity.get_quotes().filter(id__in=quotes_ids)
             if not queryset.exists() or queryset.count() != len(quotes_ids):
-                raise mixins.APIException(constants.INVALID_INPUT)
+                raise mixins.APIException(Constants.INVALID_INPUT)
             return queryset
-        except (KeyError, Lead.DoesNotExist):
-            raise mixins.APIException(constants.LEAD_ERROR)
+        except (KeyError, Opportunity.DoesNotExist):
+            raise mixins.APIException(Constants.OPPORTUNITY_ID_REQUIRED)
         except ValueError:
-            raise mixins.APIException(constants.INVALID_INPUT)
+            raise mixins.APIException(Constants.INVALID_INPUT)
 
 
 class GetRecommendatedQuotes(generics.ListAPIView):
@@ -92,20 +105,25 @@ class GetRecommendatedQuotes(generics.ListAPIView):
 
     def get_queryset(self):
         try:
-            lead = Lead.objects.get(id=self.request.query_params['lead'])
+            data = self.request.query_params
+            Lead.objects.get(id=data['lead'])
+            opportunities = Opportunity.objects.filter(
+                id=data.get('opportunity_id'), lead_id=data['lead'])
+            if not opportunities.exists():
+                raise mixins.APIException(Constants.OPPORTUNITY_DOES_NOT_EXIST)
             with transaction.atomic():
-                if self.request.query_params.get('suminsured'):
-                    lead.category_lead.update_fields(**dict(
+                opportunity = opportunities.get()
+                if data.get('suminsured'):
+                    opportunity = opportunities.get()
+                    opportunity.category_opportunity.update_fields(**dict(
                         predicted_suminsured=self.request.query_params[
                             'suminsured']))
-                elif self.request.query_params.get('reset'):
-                    lead.calculate_suminsured()
-                lead.refresh_from_db()
-                return lead.get_recommendated_quotes()
+                opportunity.refresh_from_db()
+                return opportunity.get_recommendated_quotes()
         except (KeyError, Lead.DoesNotExist):
-            raise mixins.APIException(constants.LEAD_ERROR)
+            raise mixins.APIException(Constants.LEAD_ERROR)
         except ValueError:
-            raise mixins.APIException(constants.INVALID_INPUT)
+            raise mixins.APIException(Constants.INVALID_INPUT)
         except IntegrityError:
             pass
         raise mixins.APIException(

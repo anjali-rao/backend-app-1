@@ -15,44 +15,67 @@ class Lead(BaseModel):
     user = models.ForeignKey('users.user', on_delete=models.CASCADE)
     contact = models.ForeignKey(
         'crm.Contact', null=True, blank=True, on_delete=models.CASCADE)
-    category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
     campaign = models.ForeignKey(
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
-    status = models.CharField(
-        choices=Constants.LEAD_STATUS_CHOICES, default='fresh', max_length=32)
-    stage = models.CharField(
-        choices=Constants.LEAD_STAGE_CHOICES, default='new', max_length=32)
     pincode = models.CharField(max_length=6, null=True)
     bookmark = models.BooleanField(default=False)
     ignore = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ('-bookmark',)
+
+    def create_opportunity(self, validated_data):
+        instance = Opportunity.objects.create(
+            lead_id=self.id, category_id=validated_data['category_id'])
+        instance.update_category_opportunity(validated_data)
+        return instance
+
+    def get_quotes(self):
+        from sales.models import Quote
+        return Quote.objects.filter(
+            opportunity__lead_id=self.id,
+            ignore=False).exclude(status='rejected')
+
+    def __str__(self):
+        return "%s - Contact: %s" % (
+            self.user.get_full_name(),
+            self.contact.first_name if self.contact else 'Pending')
+
+
+class Opportunity(BaseModel):
+    lead = models.ForeignKey('crm.Lead', on_delete=models.CASCADE)
+    category = models.ForeignKey('product.Category', on_delete=models.CASCADE)
     details = None
+
+    def __str__(self):
+        return '%s: %s' % (self.category.name, self.lead.__str__())
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
         if self.category:
             self.category_name = self.category.name.replace(' ', '').lower()
             if hasattr(self, self.category_name):
-                self.category_lead = getattr(self, self.category_name)
+                self.category_opportunity = getattr(self, self.category_name)
 
     def save(self, *args, **kw):
-        cache.delete('USER_CONTACTS:%s' % self.user_id)
+        cache.delete('USER_CONTACTS:%s' % self.lead.user_id)
         super(self.__class__, self).save(*args, **kw)
 
-    class Meta:
-        ordering = ('-bookmark',)
+    def create_category_opportunity(self):
+        ContentType.objects.get(
+            model=self.category_name, app_label='crm'
+        ).model_class().objects.create(opportunity_id=self.id)
 
     def calculate_suminsured(self):
-        self.category_lead.calculate_suminsured()
+        self.category_opportunity.calculate_suminsured()
 
     def get_premiums(self, **kw):
-        return self.category_lead.get_premiums()
+        return self.category_opportunity.get_premiums()
 
     def refresh_quote_data(self, **kw):
-        return self.category_lead.refresh_quote_data(**kw)
+        return self.category_opportunity.refresh_quote_data(**kw)
 
     def get_quotes(self):
-        self.stage = 'quote'
-        self.save()
         return self.quote_set.filter(ignore=False).order_by(
             '%s__base_premium' % self.category_name)
 
@@ -64,32 +87,35 @@ class Lead(BaseModel):
             setattr(self, field, kw[field])
         self.save()
 
+    def update_category_opportunity(self, validated_data):
+        self.refresh_from_db()
+        category_opportunity = getattr(self, self.category_name)
+        fields = dict.fromkeys(Constants.CATEGORY_OPPORTUNITY_FIELDS_MAPPER[
+            self.category_name], None)
+        for field in fields.keys():
+            fields[field] = validated_data.get(field, getattr(
+                category_opportunity, field))
+            if isinstance(fields[field], str):
+                fields[field] = fields[field].lower()
+        category_opportunity.update_fields(**fields)
+        return category_opportunity
+
     @property
     def city(self):
         from users.models import Pincode
-        pincodes = Pincode.objects.filter(pincode=self.pincode)
+        pincodes = Pincode.objects.filter(pincode=self.lead.pincode)
         if pincodes.exists():
             return pincodes.get().city
 
     @property
     def citytier(self):
-        if self.pincode in Constants.NCR_PINCODES or self.city in Constants.MUMBAI_AREA_TIER: # noqa
+        if self.lead.pincode in Constants.NCR_PINCODES or self.city in Constants.MUMBAI_AREA_TIER: # noqa
             return Constants.MUMBAI_NCR_TIER
         return Constants.ALL_INDIA_TIER
 
     @property
     def companies_id(self):
-        return self.user.enterprise.companies.values_list('id', flat=True)
-
-    def __str__(self):
-        return "%s - %s" % (
-            self.contact.first_name if self.contact else 'Contact Pending',
-            self.category.name)
-
-    def create_category_lead(self):
-        ContentType.objects.get(
-            model=self.category_name, app_label='crm'
-        ).model_class().objects.create(base_id=self.id)
+        return self.lead.user.enterprise.companies.values_list('id', flat=True)
 
 
 class Contact(BaseModel):
@@ -147,7 +173,7 @@ class KYCDocument(BaseModel):
         upload_to=get_kyc_upload_path, null=True, blank=True)
 
 
-@receiver(post_save, sender=Lead, dispatch_uid="action%s" % str(now()))
-def lead_post_save(sender, instance, created, **kwargs):
+@receiver(post_save, sender=Opportunity, dispatch_uid="action%s" % str(now()))
+def opportunity_post_save(sender, instance, created, **kwargs):
     if created:
-        instance.create_category_lead()
+        instance.create_category_opportunity()

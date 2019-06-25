@@ -40,8 +40,8 @@ class Answer(BaseModel):
 class Response(BaseModel):
     question = models.ForeignKey(
         'questionnaire.Question', on_delete=models.CASCADE)
-    lead = models.ForeignKey(
-        'crm.Lead', on_delete=models.CASCADE)
+    opportunity = models.ForeignKey(
+        'crm.Opportunity', on_delete=models.CASCADE, null=True, blank=True)
     answer = models.ForeignKey(
         'questionnaire.Answer', on_delete=models.CASCADE)
 

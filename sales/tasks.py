@@ -28,3 +28,8 @@ def mark_ignore_rejected_quotes():
         status='rejected', modified__gte=now() - relativedelta(hours=24),
         ignore=False)
     quotes.update(ignore=True)
+
+
+@shared_task(name='sales.tasks.aggregator_operation')
+def aggregator_operation(application):
+    application.aggregator_operation()

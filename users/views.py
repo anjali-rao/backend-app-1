@@ -61,6 +61,11 @@ class RegisterUser(generics.CreateAPIView):
 @api_view(['POST'])
 def generate_authorization(request, version):
     serializer = AuthorizationSerializer(data=request.data)
+    if 'phone_no' in request.data:
+        from users.models import Account
+        acc = Account.objects.filter(phone_no=request.data['phone_no'])
+        if not acc.exists():
+            raise APIException(Constants.INVALID_PHONE_NO)
     serializer.is_valid(raise_exception=True)
     return Response(
         serializer.data, status=status.HTTP_200_OK)
@@ -198,8 +203,8 @@ class GetCart(generics.ListAPIView):
         cached_queryset = cache.get('USER_CART:%s' % self.request.user.id)
         if cached_queryset:
             return cached_queryset
-        queryset = self.request.user.get_applications(
-            status=['pending', 'fresh', 'submitted', 'approved'])
+        queryset = self.request.user.get_applications(status=[
+            'pending', 'fresh', 'submitted', 'approved', 'payment_due'])
         cache.set(
             'USER_CART:%s' % self.request.user.id, queryset, Constants.API_TTL)
         return queryset
