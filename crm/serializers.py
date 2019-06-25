@@ -10,6 +10,7 @@ from django.db import transaction
 
 
 class LeadCRUDSerializer(serializers.ModelSerializer):
+    category_id = serializers.IntegerField(required=False)
     pincode = serializers.CharField(required=False, max_length=6)
     gender = serializers.CharField(required=False)
     family = serializers.JSONField(required=False)
@@ -49,7 +50,7 @@ class LeadCRUDSerializer(serializers.ModelSerializer):
             first_name=first_name, middle_name=middle_name,
             last_name=last_name)
         if created:
-            instance.user = validated_data['user_id']
+            instance.user_id = validated_data['user_id']
             instance.save()
         return instance
 
@@ -85,7 +86,6 @@ class LeadCRUDSerializer(serializers.ModelSerializer):
 
 class CreateLeadSerializer(LeadCRUDSerializer):
     opportunity_id = None
-    category_id = serializers.IntegerField(required=False)
 
     def validate_category_id(self, value):
         from product.models import Category
@@ -125,7 +125,7 @@ class CreateLeadSerializer(LeadCRUDSerializer):
 
 
 class UpdateLeadSerializer(LeadCRUDSerializer):
-    opportunity_id = serializers.IntegerField(required=True)
+    opportunity_id = serializers.IntegerField(required=False)
     opportunity = None
 
     def validate_opportunity_id(self, value):
@@ -147,7 +147,10 @@ class UpdateLeadSerializer(LeadCRUDSerializer):
             fields[field] = validated_data.get(
                 field, getattr(self.instance, field))
         self.instance = super(self.__class__, self).update(instance, fields)
-        self.opportunity.update_category_opportunity(validated_data)
+        if 'opportunity_id' in validated_data:
+            self.opportunity.update_category_opportunity(validated_data)
+        elif 'category_id' in validated_data:
+            self.opportunity = self.instance.create_opportunity(validated_data)
         return self.instance
 
     @property
@@ -162,7 +165,7 @@ class UpdateLeadSerializer(LeadCRUDSerializer):
         model = Lead
         fields = (
             'pincode', 'gender', 'family', 'contact_name',
-            'contact_phone_no', 'opportunity_id')
+            'contact_phone_no', 'opportunity_id', 'category_id')
 
 
 class LeadSerializer(serializers.ModelSerializer):
@@ -285,7 +288,7 @@ class QuotesCompareSerializer(serializers.ModelSerializer):
             name='hospitals',
             value=NetworkHospital.objects.select_related(
                 'pincode', 'company').filter(
-                    pincode__pincode=obj.lead.pincode,
+                    pincode__pincode=obj.opportunity.lead.pincode,
                     company__name=company).count()
         )]
 
@@ -346,7 +349,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
 
     def get_quotes(self, obj):
         return QuoteSerializer(
-            obj.quote_set.filter(
+            obj.get_quotes().filter(
                 ignore=False, status='accepted'), many=True).data
 
     def get_notes(self, obj):

@@ -210,7 +210,7 @@ class User(BaseModel):
 
     def get_applications(self, status=None):
         from sales.models import Application
-        query = dict(quote__lead__user_id=self.id)
+        query = dict(quote__opportunity__lead__user_id=self.id)
         if status and isinstance(status, list):
             query['status__in'] = status
         elif status:
@@ -220,7 +220,7 @@ class User(BaseModel):
     def get_policies(self):
         from sales.models import Policy
         return Policy.objects.filter(
-            application__quote__lead__user_id=self.id)
+            application__quote__opportunity__lead__user_id=self.id)
 
     def get_earnings(self, earning_type=None):
         from earnings.models import Earning

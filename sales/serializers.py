@@ -35,7 +35,7 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                 quote.opportunity.lead.contact_id = contact.id
                 quote.opportunity.lead.save()
             return instance
-        except IntegrityError as e:
+        except IntegrityError:
             raise mixins.NotAcceptable(
                 Constants.APPLICATION_ALREAY_EXISTS)
         raise mixins.NotAcceptable(
@@ -410,7 +410,7 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
     existing_policies = serializers.SerializerMethodField()
 
     def get_proposer_details(self, obj):
-        proposer = self.instance.client or self.instance.quote.lead.contact
+        proposer = self.instance.client or self.instance.quote.opportunity.lead.contact # noqa
         return GetProposalDetailsSerializer(proposer).data
 
     def get_insured_members(self, obj):
@@ -456,7 +456,7 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         return self.context.get('section', '-')
 
     def get_proposer_name(self, obj):
-        instance = obj.client or obj.quote.lead.contact
+        instance = obj.client or obj.quote.opportunity.lead.contact
         return instance.get_full_name()
 
     class Meta:
