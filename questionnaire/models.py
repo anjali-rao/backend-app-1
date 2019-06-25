@@ -41,7 +41,7 @@ class Response(BaseModel):
     question = models.ForeignKey(
         'questionnaire.Question', on_delete=models.CASCADE)
     opportunity = models.ForeignKey(
-        'crm.Opportunity', on_delete=models.CASCADE)
+        'crm.Opportunity', on_delete=models.CASCADE, null=True, blank=True)
     answer = models.ForeignKey(
         'questionnaire.Answer', on_delete=models.CASCADE)
 
