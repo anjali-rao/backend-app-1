@@ -14,7 +14,7 @@ import math
 
 class HealthInsurance(models.Model):
     opportunity = models.OneToOneField(
-        'crm.Opportunity', on_delete=models.PROTECT)
+        'crm.Opportunity', on_delete=models.PROTECT, null=True, blank=True)
     customer_segment = models.ForeignKey(
         'product.CustomerSegment', null=True, blank=True,
         on_delete=models.CASCADE)
