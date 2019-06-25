@@ -61,6 +61,11 @@ class RegisterUser(generics.CreateAPIView):
 @api_view(['POST'])
 def generate_authorization(request, version):
     serializer = AuthorizationSerializer(data=request.data)
+    if 'phone_no' in request.data:
+        from users.models import Account
+        acc = Account.objects.filter(phone_no=request.data['phone_no'])
+        if not acc.exists():
+            raise APIException(Constants.INVALID_PHONE_NO)
     serializer.is_valid(raise_exception=True)
     return Response(
         serializer.data, status=status.HTTP_200_OK)
