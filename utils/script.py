@@ -97,7 +97,8 @@ def upload_product_variant(filename):
     with transaction.atomic():
         from product.models import ProductVariant
         for row in readcsv(filename):
-            instance, created = ProductVariant.objects.get_or_create(pk=row['id'])
+            instance, created = ProductVariant.objects.get_or_create(
+                pk=row['id'])
             instance.company_category_id = row['companycategory id']
             instance.name = row['product name']
             instance.feature_variant = row['variant feature']
