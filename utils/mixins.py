@@ -60,6 +60,14 @@ def custom_exception_handler(exc, context):
         response.data = dict()
         errors = []
         for field, value in data.items():
+            error_value = []
+            if isinstance(value, list):
+                for error in value:
+                    if error.code == 'required':
+                        error_value.append(
+                            '%s is required' % field.title().replace('_', ' '))
+            if error_value:
+                value = error_value
             errors.extend(value)
         if 'detail' not in data:
             exc = ' & '.join(errors)
