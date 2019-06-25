@@ -123,26 +123,28 @@ def upload_feature(filename):
 
 
 def upload_premiums(filename):
-    from product.models import HealthPremium as Premium
-    from psycopg2.extras import NumericRange
-    import re
-    for row in readcsv(filename):
-        suminsured = int(float(re.sub('[ ,]', '', row['sum_insured'])))
-        min_suminsured = int(float(re.sub('[ ,]', '', row['min_sum_insured'])))
-        instance, created = Premium.objects.get_or_create(pk=row['id'])
-        instance.base_premium = row['base_premium'].replace(',', '').replace(',', '') # noqa
-        instance.age_rage = NumericRange(
-            lower=int(row['min_age']), upper=int(row['max_age']) + 1)
-        instance.suminsured_range = NumericRange(
-            lower=min_suminsured, upper=suminsured + 1)
-        instance.adults = int(row['adults'])
-        instance.childrens = int(row['children'])
-        instance.citytier = row['variant_city_tier']
-        instance.product_variant_id = row['productvariant_id']
-        instance.gst = float(int(row['gst'].replace('%', ''))) / 100
-        instance.commission = float(
-            int(row['commission'].replace('%', ''))) / 100
-        instance.save()
+    with transaction.atomic():
+        from product.models import HealthPremium as Premium
+        from psycopg2.extras import NumericRange
+        import re
+        for row in readcsv(filename):
+            suminsured = int(float(re.sub('[ ,]', '', row['sum_insured'])))
+            min_suminsured = int(float(re.sub('[ ,]', '', row['min_sum_insured'])))
+            instance, created = Premium.objects.get_or_create(pk=row['id'])
+            instance.sum_insured = suminsured
+            instance.base_premium = re.sub('[ ,]', '', row['base_premium'])
+            instance.age_range = NumericRange(
+                lower=int(row['min_age']), upper=int(row['max_age']) + 1)
+            instance.suminsured_range = NumericRange(
+                lower=min_suminsured, upper=suminsured + 1)
+            instance.adults = int(row['adults'])
+            instance.childrens = int(row['children'])
+            instance.citytier = row['variant_city_tier']
+            instance.product_variant_id = row['productvariant_id']
+            instance.gst = float(int(row['gst'].replace('%', ''))) / 100
+            instance.commission = float(
+                int(row['commission'].replace('%', ''))) / 100
+            instance.save()
 
 
 def upload_customersegmentfeaturescore(filename):
