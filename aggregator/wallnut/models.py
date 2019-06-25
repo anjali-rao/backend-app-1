@@ -210,7 +210,7 @@ class Application(BaseModel):
         self.user_id = self.get_user_id()
         self.save()
         self.insurer_product.perform_creation()
-        self.send_payment_link()
+        # self.send_payment_link()
         return True
 
     @cached_property
