@@ -36,7 +36,6 @@ class HealthInsurance(models.Model):
             current = self.__class__.objects.get(pk=self.id)
             if self.predicted_suminsured != current.predicted_suminsured:
                 self.refresh_quote_data()
-                self.stage = 'inprogress'
             if self.family != current.family:
                 self.parse_family_details()
         except self.__class__.DoesNotExist:

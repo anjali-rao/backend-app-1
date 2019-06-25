@@ -160,7 +160,7 @@ APPLICATION_ALREAY_EXISTS = 'Application already exists with quote id'
 ANSWER_CANNOT_BE_LEFT_BLANK = 'Answers are required'
 INVALID_FAMILY_DETAILS = 'Please provide valid family details'
 LEAD_ERROR = 'Lead not provided or invalid lead id provided'
-NO_QUOTES_FOUND = 'No Quotes found for given suminsured'
+NO_QUOTES_FOUND = 'No Quotes found for given inputs'
 INVALID_INPUT = 'Invalid input provided'
 COMPARISION_ERROR = 'Atleast two quotes are required for comparision'
 INCOMPLETE_APPLICATION = 'Application not completed, please fill %s'
@@ -185,6 +185,7 @@ CONTACT_FORBIDDEN = 'Update conatct to lead is forbidden.'
 DUPLICATE_ACCOUNT = 'Account already exists with the provided details.'
 OPPORTUNITY_DOES_NOT_EXIST = 'Opportunity id provided does not exists or invalid' # noqa
 OPPORTUNITY_ID_REQUIRED = 'Invalid or missing opportunity id'
+OPPORTUNITY_OR_OPPERATION_ID_REQUIRED = 'Category id or opportunity id is required to perform opperation' # noqa
 
 
 # Creation Fields  ==================================

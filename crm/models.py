@@ -58,7 +58,7 @@ class Opportunity(BaseModel):
                 self.category_opportunity = getattr(self, self.category_name)
 
     def save(self, *args, **kw):
-        cache.delete('USER_CONTACTS:%s' % self.user_id)
+        cache.delete('USER_CONTACTS:%s' % self.lead.user_id)
         super(self.__class__, self).save(*args, **kw)
 
     def create_category_opportunity(self):

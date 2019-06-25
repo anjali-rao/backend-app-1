@@ -33,8 +33,10 @@ class UpdateLead(generics.UpdateAPIView):
 
     def perform_update(self, serializer):
         with transaction.atomic():
-            if 'opportunity_id' not in self.request.data:
-                raise mixins.APIException(Constants.OPPORTUNITY_DOES_NOT_EXIST)
+            data = self.request.data
+            if 'opportunity_id' not in data and 'category_id' not in data:
+                raise mixins.APIException(
+                    Constants.OPPORTUNITY_OR_OPPERATION_ID_REQUIRED)
             serializer.save(user_id=self.request.user.id)
 
 

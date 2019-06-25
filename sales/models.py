@@ -34,7 +34,8 @@ class Quote(BaseModel):
 
     def save(self, *args, **kwargs):
         self.__class__.objects.filter(
-            opportunity_id=self.opportunity_id, premium_id=self.premium_id
+            opportunity_id=self.opportunity_id, premium_id=self.premium_id,
+            ignore=False
         ).exclude(status='accepted').update(ignore=True)
         super(Quote, self).save(*args, **kwargs)
 
@@ -181,9 +182,9 @@ class Application(BaseModel):
 
     def invalidate_cache(self):
         from django.core.cache import cache
-        cache.delete('USER_CART:%s' % self.quote.lead.user_id)
-        cache.delete('USER_CONTACTS:%s' % self.quote.lead.user_id)
-        cache.delete('USER_EARNINGS:%s' % self.quote.lead.user_id)
+        cache.delete('USER_CART:%s' % self.quote.opportunity.lead.user_id)
+        cache.delete('USER_CONTACTS:%s' % self.quote.opportunity.lead.user_id)
+        cache.delete('USER_EARNINGS:%s' % self.quote.opportunity.lead.user_id)
 
     @property
     def adults(self):
