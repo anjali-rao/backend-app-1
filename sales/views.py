@@ -242,14 +242,34 @@ class SubmitApplication(generics.UpdateAPIView):
     queryset = Application.objects.all()
     serializer_class = TermsSerializer
 
-    def perform_update(self, serializer):
+    def update(self, request, version, *args, **kwargs):
         with transaction.atomic():
-            serializer.save()
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+            serializer = self.get_serializer(
+                instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+        return Response(self.get_response(
+            version, serializer))
+
+    def get_response(self, version, serializer):
+        response = serializer.data
         instance = serializer.instance
         instance.refresh_from_db()
-        instance.send_propser_otp()
-        from sales.tasks import aggregator_operation
-        aggregator_operation.delay(instance)
+        if version == 'v3':
+            from sales.tasks import aggregator_operation
+            aggregator_operation(instance)
+            return response
+        response = serializer.data
+        instance.stage = 'payment_due'
+        try:
+            instance.aggregator_operation()
+            response['payment_status'] = True
+        except Exception:
+            response['payment_status'] = False
+        instance.save()
+        return response
 
 
 class GetApplicationPaymentLink(views.APIView):
