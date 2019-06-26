@@ -11,7 +11,7 @@ from users.serializers import (
     AccountSearchSerializers, User, PincodeSerializer, Pincode,
     UpdateUserSerializer, UserEarningSerializer, UserDetailSerializerV2,
     UserDetailSerializerV3, LeadSerializer, ContactSerializers,
-    ClientSerializer
+    ClientSerializer, AdvisorSerializer
 )
 from sales.serializers import SalesApplicationSerializer
 from users.decorators import UserAuthentication
@@ -315,3 +315,10 @@ class CreateAppointment(generics.CreateAPIView):
             headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class AdvisorProfile(generics.RetrieveAPIView):
+    permissions = [permissions.AllowAny]
+    serializer_class = AdvisorSerializer
+    queryset = User.objects.all()
+    lookup_field = 'account__username'
