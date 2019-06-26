@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from django.urls import include, path
 from django.test import TestCase
+from django.core.cache import cache
 
 from rest_framework import status
 from rest_framework.test import URLPatternsTestCase, APITestCase
@@ -12,12 +13,13 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
     This Test related to testing Generate OTP apis
     """
 
+    PHONE_NO = 6362843965
     urlpatterns = [
         path('', include('goplannr.apis_urls')),
     ]
 
     def test_generate_otp(self):
-        data = dict(phone_no=6362843965)
+        data = dict(phone_no=self.PHONE_NO)
         response = self.client.post('/v2/user/otp/generate', data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -31,6 +33,33 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
         response = self.client.post('/v2/user/otp/generate', data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def otp_verification(self, otp, phone_no, status_code):
+        data = dict(otp=otp, phone_no=phone_no)
+        response = self.client.post('/v2/user/otp/verify', data)
+        self.assertEqual(response.status_code, status_code)
+
+    def test_valid_otp_verification(self):
+        otp = cache.get('OTP:' + str(self.PHONE_NO) + '')
+        self.otp_verification(
+            otp=otp,
+            phone_no=self.PHONE_NO,
+            status_code=status.HTTP_200_OK
+        )
+
+    def test_invalid_otp_verification(self):
+        self.otp_verification(
+            otp=12345,
+            phone_no=self.PHONE_NO,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+
+    def test_otp_verification_invalid_phone_no(self):
+        otp = cache.get('OTP:' + str(self.PHONE_NO) + '')
+        self.otp_verification(
+            otp=otp,
+            phone_no=1234567890,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 class PostmanAPITestCase(TestCase):
 
