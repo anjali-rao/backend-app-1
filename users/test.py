@@ -39,11 +39,13 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
         Playlist.objects.create(
             name='Health Insurance Training',
             url='https://www.youtube.com/playlist?list=PLO72qwRGaNMxOxhIvu5cc5C89jMrE6QFN',
-            playlist_type='training')
+            playlist_type='training',
+            id=1)
         Playlist.objects.create(
             name='Marketing',
             url='https://www.youtube.com/playlist?list=PLO72qwRGaNMxWeOuJPJPl0fQuFoUINbVn',
-            playlist_type='marketing')
+            playlist_type='marketing',
+            id=2)
 
     def generate_otp(self, phone_no, status_code):
         data = dict(phone_no=phone_no)
@@ -133,17 +135,23 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
     def check_user_type(self, user_id, user_type):
         self.assertEqual(User.objects.get(id=user_id).user_type, user_type)
 
-    def test_registration(self):
+    def test_register_subscriber(self):
         self.add_data()
-
         user_id = self.register_user(self.PHONE_NO, "OCOVR-2-4")
         self.check_user_type(user_id, "subscriber")
 
+    def test_register_existing_user(self):
+        self.add_data()
+        user_id = self.register_user(self.PHONE_NO, "OCOVR-2-4")
         self.register_user(self.PHONE_NO, "OCOVR-2-4", status.HTTP_400_BAD_REQUEST)
 
+    def test_register_transaction_user(self):
+        self.add_data()
         user_id = self.register_user(6362843967, "OCOVR-1-3")
         self.check_user_type(user_id, "pos")
 
+    def test_register_enterprise_user(self):
+        self.add_data()
         user_id = self.register_user(6362843968, "HDFC-1-3")
         self.check_user_type(user_id, "enterprise")
 
