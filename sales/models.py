@@ -169,8 +169,6 @@ class Application(BaseModel):
                 today.year - int(age), today.month, today.day))
             members.append(instance)
         Member.objects.bulk_create(members)
-        from sales.tasks import update_insurance_fields
-        update_insurance_fields.delay(self.id)
 
     def verify_proposer(self, otp):
         from django.core.cache import cache
@@ -394,8 +392,6 @@ class HealthInsurance(Insurance):
             if isinstance(field_value, list):
                 values = list()
                 for row in field_value:
-                    if not row['value']:
-                        continue
                     values.append(Member.objects.get(id=row['id']).relation)
                 field_value = None
                 if values:
@@ -404,6 +400,28 @@ class HealthInsurance(Insurance):
                 continue
             response[field.name] = field_value
         return response
+
+    def get_insurance_fields(self):
+        data = list()
+        from sales.serializers import (
+            MemberSerializer, GetInsuranceFieldsSerializer)
+        members = self.application.active_members or Member.objects.filter(
+            application_id=self.application_id)
+        members = MemberSerializer(members, many=True).data
+        for field in self._meta.fields:
+            if field.name in Constants.INSURANCE_EXCLUDE_FIELDS:
+                continue
+            serializer = GetInsuranceFieldsSerializer(data=dict(
+                text=field.help_text,
+                field_name=field.name,
+                field_requirements=[{
+                    'relation': "None"
+                }] if field.__class__.__name__ in [
+                    'BooleanField', 'IntegerField'] else members
+            ))
+            serializer.is_valid(raise_exception=True)
+            data.append(serializer.data)
+        return data
 
 
 class TravelInsurance(Insurance):
@@ -435,4 +453,6 @@ def application_post_save(sender, instance, created, **kwargs):
         ContentType.objects.get(
             model=instance.application_type, app_label='sales'
         ).model_class().objects.create(application_id=instance.id)
+        from sales.tasks import update_insurance_fields
+        update_insurance_fields(instance.id)
     instance.invalidate_cache()
