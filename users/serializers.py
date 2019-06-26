@@ -601,3 +601,36 @@ class ContactSerializers(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('leads', 'clients')
+
+
+class AdvisorSerializer(serializers.ModelSerializer):
+    name = serializers.ReadOnlyField(source='account.get_full_name')
+    phone_no = serializers.ReadOnlyField(source='account.phone_no')
+    email_id = serializers.ReadOnlyField(source='account.email')
+    profile_pic = serializers.FileField(
+        source='account.profile_pic', default='')
+    pincode = serializers.ReadOnlyField(
+        source='account.address.pincode.pincode', default='')
+    city = serializers.ReadOnlyField(
+        source='account.address.pincode.city', default='')
+    state = serializers.ReadOnlyField(
+        source='account.address.pincode.state.name', default='')
+    products = serializers.SerializerMethodField()
+
+    def get_products(self, obj):
+        data = list()
+        companies = obj.enterprise.companies.all()
+        from product.serializers import BrandSerializers
+        for category in obj.enterprise.categories.filter(is_active=True):
+            data.append(dict(
+                category=category.name,
+                brands=BrandSerializers(
+                    companies.filter(
+                        categories__in=[category.id]), many=True).data))
+        return data
+
+    class Meta:
+        model = User
+        fields = (
+            'name', 'phone_no', 'email_id', 'profile_pic', 'pincode', 'city',
+            'state', 'products')
