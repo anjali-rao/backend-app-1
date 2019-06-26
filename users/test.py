@@ -92,17 +92,22 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
 
     def test_register_invalid_user(self):
         data = dict(
-            first_name="test",
-            last_name="user",
-            phone_no="6362843965",
-            password="password",
-            email="test@test.com",
-            pan_no="APOPG3676B",
+            first_name='test',
+            last_name='user',
+            phone_no='6362843965',
+            password='password',
+            email='test@test.com',
+            pan_no='APOPG3676B',
             pincode=560034,
-            promo_code="OCOVR-2-4"
+            promo_code='OCOVR-2-4'
         )
 
         response = self.client.post('/v2/user/register', data)
+
+        '''
+        returns the following response:
+        'Invalid pincode provided & Transaction Id is required & Invalid prmo code provided'
+        '''
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def register_user(self, phone_no, promo_code, status_code=status.HTTP_201_CREATED):
@@ -113,7 +118,8 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
             phone_no=phone_no,
             status_code=status.HTTP_200_OK
         )
-        transaction_id = response.json()['transaction_id']
+        transaction_id = response.json().get('transaction_id', '')
+        self.assertEqual(not transaction_id, False)
 
         data = dict(
             first_name="enterprise",
