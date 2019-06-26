@@ -607,7 +607,8 @@ class AdvisorSerializer(serializers.ModelSerializer):
     name = serializers.ReadOnlyField(source='account.get_full_name')
     phone_no = serializers.ReadOnlyField(source='account.phone_no')
     email_id = serializers.ReadOnlyField(source='account.email')
-    profile_pic = serializers.ReadOnlyField(source='account.profile_pic')
+    profile_pic = serializers.FileField(
+        source='account.profile_pic', default='')
     pincode = serializers.ReadOnlyField(
         source='account.address.pincode.pincode', default='')
     city = serializers.ReadOnlyField(
