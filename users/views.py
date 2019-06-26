@@ -184,7 +184,7 @@ class GetEarnings(generics.RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         cached_response = cache.get('USER_EARNINGS:%s' % self.request.user.id)
-        if cached_response:
+        if cached_response is not None:
             return Response(cached_response)
         self.object = self.get_object()
         serializer = self.get_serializer(self.object)
@@ -201,7 +201,7 @@ class GetCart(generics.ListAPIView):
 
     def get_queryset(self):
         cached_queryset = cache.get('USER_CART:%s' % self.request.user.id)
-        if cached_queryset:
+        if cached_queryset is not None:
             return cached_queryset
         queryset = self.request.user.get_applications(status=[
             'pending', 'fresh', 'submitted', 'approved', 'payment_due'])
