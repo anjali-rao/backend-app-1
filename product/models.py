@@ -85,7 +85,7 @@ class ProductVariant(BaseModel):
 
     def get_product_details(self):
         return {
-            'name': self.parent_product,
+            'name': self.product_short_name,
             'company': self.company_category.company.name,
             'logo': self.logo, 'variant_name': self.product_short_name
         }
@@ -102,11 +102,11 @@ class ProductVariant(BaseModel):
         return self.name
 
     def get_basic_details(self):
-        return {
-            'toll_free_number': ', '.join(self.company_category.company.toll_free_number), # noqa
-            'brochure': self.get_help_file('sales_brochure'),
-            'claim_form': self.get_help_file('claim_form')
-        }
+        return dict(
+            toll_free_number=', '.join(
+                self.company_category.company.toll_free_number),
+            brochure=self.get_help_file('sales_brochure'),
+            claim_form=self.get_help_file('claim_form'))
 
     def get_help_file(self, file_type):
         from content.models import HelpFile
@@ -172,8 +172,7 @@ class FeatureCustomerSegmentScore(BaseModel):
 
     def __str__(self):
         return '%s - %s' % (
-            self.feature_master.name, self.customer_segment.name
-        )
+            self.feature_master.name, self.customer_segment.name)
 
 
 class SumInsuredMaster(models.Model):
