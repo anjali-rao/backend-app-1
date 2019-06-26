@@ -91,22 +91,24 @@ class Account(AbstractUser):
         return otp == cache.get('OTP:%s' % phone_no)
 
     @classmethod
-    def get_account(cls, phone_no):
+    def get_account(cls, phone_no, first_name, last_name):
         accounts = cls.objects.filter(phone_no=phone_no)
         if accounts.exists():
             raise IntegrityError(Constants.DUPLICATE_ACCOUNT)
 #            return accounts.get()
-        acc = cls.objects.create(username=cls.generate_username())
+        acc = cls.objects.create(username=cls.generate_username(
+            first_name, last_name))
         acc.phone_no = phone_no
         acc.save()
         return acc
 
     @classmethod
-    def generate_username(cls):
-        username = genrate_random_string(10)
-        if cls.objects.filter(username=username).exists():
-            while cls.objects.filter(username=username).exists():
-                username = genrate_random_string(10)
+    def generate_username(cls, first_name, last_name):
+        username = ('%s-%s' % (first_name, last_name)).lower()
+        accounts = cls.objects.filter(
+            first_name=first_name, last_name=last_name)
+        if accounts.exists() and accounts.filter(username=username).exists():
+            username += '-' + str(accounts.count() - 1)
         return username
 
     @property
@@ -124,7 +126,7 @@ class Account(AbstractUser):
 
     def __str__(self):
         return 'Account: %s - %s' % (
-            self.phone_no, self.get_full_name())
+            self.username, self.phone_no)
 
     class Meta:
         verbose_name = _('Account')

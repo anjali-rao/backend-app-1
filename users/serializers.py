@@ -149,7 +149,9 @@ class CreateUserSerializer(serializers.ModelSerializer):
     def get_account(self, validated_data):
         validated_data['address_id'] = Address.objects.create(
             pincode_id=validated_data['pincode']).id
-        acc = Account.get_account(validated_data['phone_no'])
+        acc = Account.get_account(
+            validated_data['phone_no'], validated_data['first_name'],
+            validated_data['last_name'])
         for field_name in Constants.ACCOUNT_CREATION_FIELDS:
             setattr(acc, field_name, validated_data.get(field_name))
         acc.save()
