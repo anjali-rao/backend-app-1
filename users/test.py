@@ -8,39 +8,66 @@ from django.core.cache import cache
 from rest_framework import status
 from rest_framework.test import URLPatternsTestCase, APITestCase
 
+from users.models import State, Pincode, PromoCode, User, Enterprise
+from content.models import Playlist
+
 class UserAPISTestCases(APITestCase, URLPatternsTestCase):
     """
     This Test related to testing Generate OTP apis
+    and user registration
     """
 
+    transaction_id = ''
     PHONE_NO = 6362843965
     urlpatterns = [
         path('', include('goplannr.apis_urls')),
     ]
 
-    def test_generate_otp(self):
-        data = dict(phone_no=self.PHONE_NO)
+    def add_data(self):
+        state = State.objects.create(name="Karnataka")
+        Pincode.objects.create(pincode=560034, city='Bangalore', state=state)
+        PromoCode.objects.create(code='OCOVR-2-4')
+        PromoCode.objects.create(code='OCOVR-1-3')
+
+        enterprise_code = PromoCode.objects.create(code='HDFC-1-3')
+        Enterprise.objects.create(
+            name="hdfc",
+            enterprise_type="enterprise",
+            promocode=enterprise_code
+        )
+
+        Playlist.objects.create(
+            name='Health Insurance Training',
+            url='https://www.youtube.com/playlist?list=PLO72qwRGaNMxOxhIvu5cc5C89jMrE6QFN',
+            playlist_type='training')
+        Playlist.objects.create(
+            name='Marketing',
+            url='https://www.youtube.com/playlist?list=PLO72qwRGaNMxWeOuJPJPl0fQuFoUINbVn',
+            playlist_type='marketing')
+
+    def generate_otp(self, phone_no, status_code):
+        data = dict(phone_no=phone_no)
         response = self.client.post('/v2/user/otp/generate', data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status_code)
+
+    def test_generate_otp(self):
+        self.generate_otp(self.PHONE_NO, status.HTTP_200_OK)
 
     def test_invalid_phone_no(self):
-        data = dict(phone_no=636284396)
-        response = self.client.post('/v2/user/otp/generate', data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.generate_otp(636284396, status.HTTP_400_BAD_REQUEST)
 
     def test_invalid_data(self):
-        data = dict(phone_no='qwerty123')
-        response = self.client.post('/v2/user/otp/generate', data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.generate_otp('qwerty123', status.HTTP_400_BAD_REQUEST)
 
     def otp_verification(self, otp, phone_no, status_code):
         data = dict(otp=otp, phone_no=phone_no)
         response = self.client.post('/v2/user/otp/verify', data)
         self.assertEqual(response.status_code, status_code)
+        return response
 
     def test_valid_otp_verification(self):
         otp = cache.get('OTP:' + str(self.PHONE_NO) + '')
-        self.otp_verification(
+        response = self.otp_verification(
             otp=otp,
             phone_no=self.PHONE_NO,
             status_code=status.HTTP_200_OK
@@ -60,6 +87,66 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
             phone_no=1234567890,
             status_code=status.HTTP_400_BAD_REQUEST
         )
+
+    def test_register_invalid_user(self):
+        data = dict(
+            first_name="test",
+            last_name="user",
+            phone_no="6362843965",
+            password="password",
+            email="test@test.com",
+            pan_no="APOPG3676B",
+            pincode=560034,
+            promo_code="OCOVR-2-4"
+        )
+
+        response = self.client.post('/v2/user/register', data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def register_user(self, phone_no, promo_code, status_code=status.HTTP_201_CREATED):
+        self.generate_otp(phone_no, status.HTTP_200_OK)
+        otp = cache.get('OTP:' + str(phone_no) + '')
+        response = self.otp_verification(
+            otp=otp,
+            phone_no=phone_no,
+            status_code=status.HTTP_200_OK
+        )
+        transaction_id = response.json()['transaction_id']
+
+        data = dict(
+            first_name="enterprise",
+            last_name="user",
+            phone_no=phone_no,
+            password="password",
+            email="enterprise@test.com",
+            pan_no="APOPG3676B",
+            pincode=560034,
+            promo_code=promo_code,
+            transaction_id=transaction_id
+        )
+
+        response = self.client.post('/v2/user/register', data)
+        self.assertEqual(response.status_code, status_code)
+
+        return response.json().get('user_id', '')
+
+    def check_user_type(self, user_id, user_type):
+        self.assertEqual(User.objects.get(id=user_id).user_type, user_type)
+
+    def test_registration(self):
+        self.add_data()
+
+        user_id = self.register_user(self.PHONE_NO, "OCOVR-2-4")
+        self.check_user_type(user_id, "subscriber")
+
+        self.register_user(self.PHONE_NO, "OCOVR-2-4", status.HTTP_400_BAD_REQUEST)
+
+        user_id = self.register_user(6362843967, "OCOVR-1-3")
+        self.check_user_type(user_id, "pos")
+
+        user_id = self.register_user(6362843968, "HDFC-1-3")
+        self.check_user_type(user_id, "enterprise")
+
 
 class PostmanAPITestCase(TestCase):
 
