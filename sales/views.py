@@ -26,6 +26,22 @@ class CreateApplication(generics.CreateAPIView):
     authentication_classes = (UserAuthentication,)
     serializer_class = CreateApplicationSerializer
 
+    def create(self, request, version, *args, **kwargs):
+        with transaction.atomic():
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            data = serializer.data
+            if version == 'v3':
+                instance = serializer.instance
+                data.update(ApplicationSummarySerializer(instance).data)
+                data['%s_fields' % (
+                    instance.application_type
+                )] = getattr(
+                    instance, instance.application_type
+                ).get_insurance_fields()
+            return Response(data)
+
 
 class RetrieveUpdateProposerDetails(
         mixins.MethodSerializerView, generics.RetrieveUpdateAPIView):
@@ -194,22 +210,7 @@ class GetInsuranceFields(generics.RetrieveAPIView):
         if not hasattr(instance, instance.application_type):
             raise mixins.APIException(constants.APPLICATION_UNMAPPED)
         insurance = getattr(instance, instance.application_type)
-        data = list()
-        members = MemberSerializer(instance.active_members, many=True).data
-        for field in insurance._meta.fields:
-            if field.name in constants.INSURANCE_EXCLUDE_FIELDS:
-                continue
-            serializer = self.get_serializer(data=dict(
-                text=field.help_text,
-                field_name=field.name,
-                field_requirements=[{
-                    'relation': "None"
-                }] if field.__class__.__name__ in [
-                    'BooleanField', 'IntegerField'] else members
-            ))
-            serializer.is_valid(raise_exception=True)
-            data.append(serializer.data)
-        return Response(data)
+        return Response(insurance.get_insurance_fields())
 
 
 class ApplicationSummary(generics.RetrieveUpdateAPIView):
@@ -229,10 +230,10 @@ class ApplicationSummary(generics.RetrieveUpdateAPIView):
 
         serializer = self.get_serializer(instance)
         data = serializer.data
+        insurance = getattr(instance, instance.application_type)
 
         data['%s_fields' % (
-            instance.application_type)] = getattr(
-                instance, instance.application_type).get_summary()
+            instance.application_type)] = insurance.get_summary()
         return Response(data)
 
 
