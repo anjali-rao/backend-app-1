@@ -11,6 +11,7 @@ from rest_framework.test import URLPatternsTestCase, APITestCase
 from users.models import State, Pincode, PromoCode, User, Enterprise
 from content.models import Playlist
 
+
 class UserAPISTestCases(APITestCase, URLPatternsTestCase):
     """
     This Test related to testing Generate OTP apis
@@ -19,6 +20,7 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
 
     transaction_id = ''
     PHONE_NO = 6362843965
+    PASSCODE = 4321
     urlpatterns = [
         path('', include('goplannr.apis_urls')),
     ]
@@ -110,7 +112,13 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
         '''
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def register_user(self, phone_no, promo_code, status_code=status.HTTP_201_CREATED):
+    def register_user(
+            self,
+            phone_no,
+            promo_code,
+            passcode=PASSCODE,
+            status_code=status.HTTP_201_CREATED):
+
         self.generate_otp(phone_no, status.HTTP_200_OK)
         otp = cache.get('OTP:' + str(phone_no) + '')
         response = self.otp_verification(
@@ -125,7 +133,7 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
             first_name='enterprise',
             last_name='user',
             phone_no=phone_no,
-            password='password',
+            password=str(phone_no) + str(passcode),
             email='enterprise@test.com',
             pan_no='APOPG3676B',
             pincode=560034,
@@ -149,7 +157,11 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
     def test_register_existing_user(self):
         self.add_data()
         user_id = self.register_user(self.PHONE_NO, 'OCOVR-2-4')
-        self.register_user(self.PHONE_NO, 'OCOVR-2-4', status.HTTP_400_BAD_REQUEST)
+        self.register_user(
+            phone_no=self.PHONE_NO,
+            promo_code='OCOVR-2-4',
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     def test_register_transaction_user(self):
         self.add_data()
@@ -161,13 +173,18 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
         user_id = self.register_user(6362843968, 'HDFC-1-3')
         self.check_user_type(user_id, 'enterprise')
 
-    def change_password(self, phone_no, passcode, status_code=status.HTTP_200_OK):
+    def change_password(
+            self,
+            phone_no,
+            passcode,
+            status_code=status.HTTP_200_OK):
+
         self.generate_otp(self.PHONE_NO, status.HTTP_200_OK)
         otp = cache.get('OTP:' + str(self.PHONE_NO) + '')
         response = self.otp_verification(
-           otp=otp,
-           phone_no=self.PHONE_NO,
-           status_code=status.HTTP_200_OK
+            otp=otp,
+            phone_no=self.PHONE_NO,
+            status_code=status.HTTP_200_OK
         )
 
         transaction_id = response.json().get('transaction_id', '')
@@ -180,13 +197,14 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
         response = self.client.post('/v2/user/update/password', data)
         self.assertEqual(response.status_code, status_code)
 
-    def login_user(self, phone_no, passcode):
+    def login_user(self, phone_no, passcode, status_code=status.HTTP_200_OK):
         data = dict(
             phone_no=self.PHONE_NO,
             password=str(self.PHONE_NO) + str(passcode)
         )
         response = self.client.post('/v2/user/authorization/generate', data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status_code)
+        return response.json()
 
     def test_change_password(self):
         passcode = 1234
@@ -200,6 +218,96 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
             phone_no=1234567890,
             passcode=1234,
             status_code=status.HTTP_400_BAD_REQUEST
+        )
+
+    def test_login_registered_user(self):
+        passcode = 1234
+        self.add_data()
+        self.register_user(
+            phone_no=self.PHONE_NO,
+            passcode=passcode,
+            promo_code='OCOVR-2-4'
+        )
+        self.login_user(self.PHONE_NO, passcode)
+
+    def test_login_unregistered_user(self):
+        self.login_user(
+            phone_no=1234567890,
+            passcode=1111,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+
+    def update_user(
+            self,
+            pincode,
+            first_name,
+            auth_token,
+            status_code=status.HTTP_200_OK):
+
+        header = dict(
+            HTTP_AUTHORIZATION=auth_token
+        )
+        data = dict(
+            pincode=pincode,
+            phone_no=self.PHONE_NO,
+            first_name=first_name,
+        )
+        response = self.client.patch('/v1/user/update', data, **header)
+        self.assertEqual(response.status_code, status_code)
+
+    def test_update_user(self):
+        pincode = 560011
+        first_name = 'updateuser'
+        passcode = 1234
+
+        self.add_data()
+        state = State.objects.all().first()
+        Pincode.objects.create(pincode=pincode, city='Bangalore', state=state)
+        self.register_user(
+            phone_no=self.PHONE_NO,
+            passcode=passcode,
+            promo_code='OCOVR-2-4'
+        )
+
+        response = self.login_user(self.PHONE_NO, passcode)
+        auth_token = response.get('authorization')
+        self.assertEqual(not auth_token, False)
+
+        self.update_user(
+            pincode=pincode,
+            first_name=first_name,
+            auth_token=auth_token
+        )
+
+    def test_update_user_invalid_data(self):
+        pincode = 560011
+        first_name = 'updateuser'
+        passcode = 1234
+
+        self.add_data()
+        self.register_user(
+            phone_no=self.PHONE_NO,
+            passcode=passcode,
+            promo_code='OCOVR-2-4'
+        )
+
+        response = self.login_user(self.PHONE_NO, passcode)
+        auth_token = response.get('authorization')
+        self.assertEqual(not auth_token, False)
+
+        self.update_user(
+            pincode=pincode,
+            first_name=first_name,
+            auth_token=auth_token,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+
+    def test_update_invalid_authtoken(self):
+        self.update_user(
+            pincode='560111',
+            first_name='updateduser',
+            auth_token='auth_token',
+            status_code=status.HTTP_403_FORBIDDEN
         )
 
 
