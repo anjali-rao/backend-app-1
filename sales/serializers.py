@@ -134,14 +134,15 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(Constants.INVALID_PINCODE)
         return value
 
-    def get_contact(self, validated_data, **kwargs):
+    def get_contact(self, validated_data):
+        first_name = validated_data['first_name'].lower()
+        last_name = validated_data['last_name'].lower()
         instance, created = Contact.objects.get_or_create(
-            phone_no=validated_data['contact_no'],
-            first_name=validated_data['first_name'].lower(),
-            last_name=validated_data['last_name'].lower(),
-            middle_name=validated_data['middle_name'].lower())
+            phone_no=validated_data['phone_no'],
+            first_name=first_name, last_name=last_name,
+            middle_name='')
         if created:
-            instance.user_id = kwargs['user_id']
+            instance.user_id = validated_data['user_id']
             instance.save()
         return instance
 
@@ -156,22 +157,11 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                     pincode_id=Pincode.get_pincode(
                         validated_data['pincode']).id,
                     flat_no=validated_data['flat_no'],
-                    street=validated_data['street']
-                ).id
-            )
+                    street=validated_data['street']).id)
             members = Member.objects.filter(
                 application_id=app.id, relation='self')
-            if self.instance.phone_no != validated_data['phone_no']:
-                instances = self.Meta.model.objects.filter(
-                    phone_no=validated_data['phone_no'],
-                    first_name=validated_data['first_name'].lower(),
-                    last_name=validated_data['last_name'].lower())
-                if instances.exists():
-                    self.instance = instances.latest('modified')
-                else:
-                    self.instance = None
-                    update_fields['user_id'] = validated_data['user_id']
-            elif members.exists():
+            self.instance = self.get_contact(validated_data)
+            if members.exists():
                 member = members.get()
                 member.update_fields(**dict(
                     first_name=validated_data['first_name'].lower(),
