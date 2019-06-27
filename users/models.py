@@ -106,7 +106,8 @@ class Account(AbstractUser):
     def generate_username(cls, first_name, last_name):
         username = ('%s-%s' % (first_name, last_name)).lower()
         accounts = cls.objects.filter(
-            first_name=first_name, last_name=last_name)
+            first_name__icontains=first_name,
+            last_name__icontains=last_name)
         if accounts.exists() and accounts.filter(username=username).exists():
             username += '-' + str(accounts.count() - 1)
         return username
