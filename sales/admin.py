@@ -37,9 +37,12 @@ class ApplicationRequestLogInline(admin.StackedInline):
 
 @admin.register(Quote)
 class QuoteAdmin(admin.ModelAdmin):
-    list_display = ('opportunity', 'status', 'premium')
+    list_display = ('opportunity', 'status', 'premium', 'ignore')
+    search_fields = (
+        'opportunity__lead__user__account__phone_no', 'premium_id',
+        'opportunity__lead__contact__phone_no')
     raw_id_fields = ('opportunity', )
-    list_filter = ('status',)
+    list_filter = ('status', 'ignore')
     readonly_fields = ('premium_id', 'content_type', 'ignore')
     can_delete = False
 
@@ -53,8 +56,9 @@ class ApplicationAdmin(admin.ModelAdmin):
     list_filter = ('application_type', 'terms_and_conditions', 'status')
     raw_id_fields = ('client', 'quote')
     search_fields = (
-        'reference_no', 'quote__id', 'quote__lead__id', 'id',
+        'reference_no', 'quote__id', 'quote__opportunity__lead__id', 'id',
         'client__phone_no', 'client__address__pincode__pincode',
+        'client__first_name', 'client__last_name',
         'client__address__pincode__city',
     )
     actions = ['send_to_Aggregator', 'generate_Aggregator_Payment_Link']

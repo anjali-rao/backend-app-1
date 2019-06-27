@@ -134,6 +134,17 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(Constants.INVALID_PINCODE)
         return value
 
+    def get_contact(self, validated_data, **kwargs):
+        instance, created = Contact.objects.get_or_create(
+            phone_no=validated_data['contact_no'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
+            middle_name=validated_data['middle_name'])
+        if created:
+            instance.user_id = kwargs['user_id']
+            instance.save()
+        return instance
+
     def save(self, **kwargs):
         validated_data = dict(
             list(self.validated_data.items()) +
