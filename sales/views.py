@@ -258,8 +258,9 @@ class SubmitApplication(generics.UpdateAPIView):
         instance = serializer.instance
         instance.refresh_from_db()
         if version == 'v3':
+            instance.send_propser_otp()
             from sales.tasks import aggregator_operation
-            aggregator_operation(instance)
+            aggregator_operation.delay(instance)
             return response
         response = serializer.data
         instance.stage = 'payment_due'
