@@ -11,7 +11,6 @@ from rest_framework.test import URLPatternsTestCase, APITestCase
 from users.models import State, Pincode, PromoCode, User, Enterprise
 from content.models import Playlist
 
-
 class UserAPISTestCases(APITestCase, URLPatternsTestCase):
     """
     This Test related to testing Generate OTP apis
