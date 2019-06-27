@@ -50,7 +50,7 @@ class OpportunityInline(admin.ModelAdmin):
 
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ('user',)
+    list_display = ('user', 'contact')
     search_fields = ('user__account__phone_no', 'id',)
     raw_id_fields = ('user', 'contact',)
     inlines = (NotesInline,)
@@ -58,9 +58,13 @@ class LeadAdmin(admin.ModelAdmin):
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
-    list_display = ('user', 'phone_no', 'email', 'modified', 'created')
+    list_display = (
+        'user', 'contact', 'phone_no', 'email', 'modified', 'created')
     search_fields = ('phone_no', 'user__account__phone_no', 'id', 'first_name')
     raw_id_fields = ('user', 'address',)
+
+    def contact(self, obj):
+        return obj.get_full_name()
 
 
 @admin.register(KYCDocument)
