@@ -122,12 +122,12 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
         self.assertEqual(not transaction_id, False)
 
         data = dict(
-            first_name="enterprise",
-            last_name="user",
+            first_name='enterprise',
+            last_name='user',
             phone_no=phone_no,
-            password="password",
-            email="enterprise@test.com",
-            pan_no="APOPG3676B",
+            password='password',
+            email='enterprise@test.com',
+            pan_no='APOPG3676B',
             pincode=560034,
             promo_code=promo_code,
             transaction_id=transaction_id
@@ -143,13 +143,13 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
 
     def test_register_subscriber(self):
         self.add_data()
-        user_id = self.register_user(self.PHONE_NO, "OCOVR-2-4")
-        self.check_user_type(user_id, "subscriber")
+        user_id = self.register_user(self.PHONE_NO, 'OCOVR-2-4')
+        self.check_user_type(user_id, 'subscriber')
 
     def test_register_existing_user(self):
         self.add_data()
-        user_id = self.register_user(self.PHONE_NO, "OCOVR-2-4")
-        self.register_user(self.PHONE_NO, "OCOVR-2-4", status.HTTP_400_BAD_REQUEST)
+        user_id = self.register_user(self.PHONE_NO, 'OCOVR-2-4')
+        self.register_user(self.PHONE_NO, 'OCOVR-2-4', status.HTTP_400_BAD_REQUEST)
 
     def test_register_transaction_user(self):
         self.add_data()
@@ -158,8 +158,49 @@ class UserAPISTestCases(APITestCase, URLPatternsTestCase):
 
     def test_register_enterprise_user(self):
         self.add_data()
-        user_id = self.register_user(6362843968, "HDFC-1-3")
-        self.check_user_type(user_id, "enterprise")
+        user_id = self.register_user(6362843968, 'HDFC-1-3')
+        self.check_user_type(user_id, 'enterprise')
+
+    def change_password(self, phone_no, passcode, status_code=status.HTTP_200_OK):
+        self.generate_otp(self.PHONE_NO, status.HTTP_200_OK)
+        otp = cache.get('OTP:' + str(self.PHONE_NO) + '')
+        response = self.otp_verification(
+           otp=otp,
+           phone_no=self.PHONE_NO,
+           status_code=status.HTTP_200_OK
+        )
+
+        transaction_id = response.json().get('transaction_id', '')
+        self.assertEqual(not transaction_id, False)
+        data = dict(
+            phone_no=self.PHONE_NO,
+            new_password=str(self.PHONE_NO) + str(passcode),
+            transaction_id=transaction_id
+        )
+        response = self.client.post('/v2/user/update/password', data)
+        self.assertEqual(response.status_code, status_code)
+
+    def login_user(self, phone_no, passcode):
+        data = dict(
+            phone_no=self.PHONE_NO,
+            password=str(self.PHONE_NO) + str(passcode)
+        )
+        response = self.client.post('/v2/user/authorization/generate', data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_change_password(self):
+        passcode = 1234
+        self.add_data()
+        self.register_user(self.PHONE_NO, 'OCOVR-2-4')
+        self.change_password(self.PHONE_NO, passcode, status.HTTP_200_OK)
+        self.login_user(self.PHONE_NO, passcode)
+
+    def test_change_password_unregistered_phone_no(self):
+        self.change_password(
+            phone_no=1234567890,
+            passcode=1234,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 
 class PostmanAPITestCase(TestCase):
