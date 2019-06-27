@@ -109,7 +109,7 @@ class Account(AbstractUser):
             first_name__icontains=first_name,
             last_name__icontains=last_name)
         if accounts.exists() and accounts.filter(username=username).exists():
-            username += '-' + str(accounts.count() - 1)
+            username += '-' + str(accounts.count())
         return username
 
     @property
