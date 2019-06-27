@@ -2,45 +2,25 @@ from rest_framework import serializers
 
 from content.models import NetworkHospital
 from content.serializers import NotesSerializer
-from crm.models import Lead, Contact
+from crm.models import Lead, Contact, Opportunity
 from sales.models import Quote
 from utils import constants as Constants, mixins
 
 from django.db import transaction
 
 
-class CreateUpdateLeadSerializer(serializers.ModelSerializer):
-    category_id = serializers.IntegerField(required=True)
+class LeadCRUDSerializer(serializers.ModelSerializer):
+    category_id = serializers.IntegerField(required=False)
     pincode = serializers.CharField(required=False, max_length=6)
     gender = serializers.CharField(required=False)
     family = serializers.JSONField(required=False)
-    stage = serializers.CharField(required=False)
     contact_name = serializers.CharField(required=False)
     contact_phone_no = serializers.CharField(required=False)
-
-    def validate_category_id(self, value):
-        from product.models import Category
-        categories = Category.objects.filter(id=value)
-        if not categories.exists() or not categories.get().is_active:
-            raise serializers.ValidationError(Constants.INVALID_CATEGORY_ID)
-        return value
 
     def validate_pincode(self, value):
         from users.models import Pincode
         if not Pincode.get_pincode(value):
             raise serializers.ValidationError(Constants.INVALID_PINCODE)
-        return value
-
-    def validate_contact_name(self, value):
-        if 'contact_phone_no' not in self.initial_data:
-            raise serializers.ValidationError(
-                Constants.CONTACT_DETAILS_REQUIRED)
-        return value
-
-    def validate_contact_phone_no(self, value):
-        if 'contact_name' not in self.initial_data:
-            raise serializers.ValidationError(
-                Constants.CONTACT_DETAILS_REQUIRED)
         return value
 
     def validate_gender(self, value):
@@ -59,9 +39,31 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
                     Constants.INVALID_FAMILY_DETAILS)
         return value
 
-    def validate_stage(self, value):
-        if value not in [s for s, S in Constants.LEAD_STAGE_CHOICES]:
-            raise serializers.ValidationError(Constants.INVALID_LEAD_STAGE)
+    def get_contact(self, validated_data, **kwargs):
+        name = validated_data['contact_name'].split(' ')
+        first_name = name[0]
+        middle_name = name[1] if len(name) == 3 else ''
+        last_name = name[2] if len(name) > 2 else (
+            name[1] if len(name) == 2 else '')
+        instance, created = Contact.objects.get_or_create(
+            phone_no=validated_data['contact_phone_no'],
+            first_name=first_name, middle_name=middle_name,
+            last_name=last_name)
+        if created:
+            instance.user_id = validated_data['user_id']
+            instance.save()
+        return instance
+
+    def validate_contact_name(self, value):
+        if 'contact_phone_no' not in self.initial_data:
+            raise serializers.ValidationError(
+                Constants.CONTACT_DETAILS_REQUIRED)
+        return value
+
+    def validate_contact_phone_no(self, value):
+        if 'contact_name' not in self.initial_data:
+            raise serializers.ValidationError(
+                Constants.CONTACT_DETAILS_REQUIRED)
         return value
 
     def save(self, **kwargs):
@@ -72,8 +74,25 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
                     'contact_phone_no' in validated_data):
                 kwargs['contact_id'] = self.get_contact(
                     validated_data, **kwargs).id
-            self.instance = super(
-                CreateUpdateLeadSerializer, self).save(**kwargs)
+            self.instance = super(LeadCRUDSerializer, self).save(**kwargs)
+
+    class Meta:
+        model = Lead
+        fields = (
+            'category_id', 'pincode', 'gender', 'family', 'contact_name',
+            'contact_phone_no')
+        abstract = True
+
+
+class CreateLeadSerializer(LeadCRUDSerializer):
+    opportunity_id = None
+
+    def validate_category_id(self, value):
+        from product.models import Category
+        categories = Category.objects.filter(id=value)
+        if not categories.exists() or not categories.get().is_active:
+            raise serializers.ValidationError(Constants.INVALID_CATEGORY_ID)
+        return value
 
     def create(self, validated_data):
         fields = dict.fromkeys(Constants.GENERIC_LEAD_FIELDS, None)
@@ -85,8 +104,40 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
                 contact_id=fields['contact_id']).exists():
             raise mixins.APIException(Constants.DUPLICATE_LEAD)
         self.instance = super(self.__class__, self).create(fields)
-        self.update_category_lead(validated_data)
+        if 'category_id' in validated_data:
+            self.opportunity_id = self.instance.create_opportunity(
+                validated_data).id
         return self.instance
+
+    @property
+    def data(self):
+        self._data = dict(
+            message='Lead created successfully.',
+            lead_id=self.instance.id,
+            opportunity_id=self.opportunity_id)
+        return self._data
+
+    class Meta:
+        model = Lead
+        fields = (
+            'category_id', 'pincode', 'gender', 'family', 'contact_name',
+            'contact_phone_no')
+
+
+class UpdateLeadSerializer(LeadCRUDSerializer):
+    opportunity_id = serializers.IntegerField(required=False)
+    opportunity = None
+
+    def validate_opportunity_id(self, value):
+        opportunitys = Opportunity.objects.filter(id=value)
+        if not opportunitys.exists():
+            raise serializers.ValidationError(
+                Constants.OPPORTUNITY_DOES_NOT_EXIST)
+        self.opportunity = opportunitys.get()
+        if self.opportunity.lead_id != self.instance.id:
+            raise serializers.ValidationError(
+                Constants.OPPORTUNITY_DOES_NOT_EXIST)
+        return value
 
     def update(self, instance, validated_data):
         if instance.contact_id and 'contact_id' in validated_data:
@@ -96,48 +147,25 @@ class CreateUpdateLeadSerializer(serializers.ModelSerializer):
             fields[field] = validated_data.get(
                 field, getattr(self.instance, field))
         self.instance = super(self.__class__, self).update(instance, fields)
-        self.update_category_lead(validated_data)
+        if 'opportunity_id' in validated_data:
+            self.opportunity.update_category_opportunity(validated_data)
+        elif 'category_id' in validated_data:
+            self.opportunity = self.instance.create_opportunity(validated_data)
         return self.instance
 
-    def get_contact(self, validated_data, **kwargs):
-        instance, created = Contact.objects.get_or_create(
-            user_id=kwargs['user_id'],
-            phone_no=validated_data['contact_phone_no'])
-        name = validated_data['contact_name'].split(' ')
-        instance.update_fields(**dict(
-            first_name=name[0], middle_name=name[1] if len(name) == 3 else '',
-            last_name=name[2] if len(name) > 2 else (
-                name[1] if len(name) == 2 else '')))
-        return instance
-
-    def update_category_lead(self, validated_data):
-        self.instance.refresh_from_db()
-        category_lead = getattr(self.instance, self.instance.category_name)
-        fields = dict.fromkeys(Constants.CATEGORY_LEAD_FIELDS_MAPPER[
-            self.instance.category_name], None)
-        for field in fields.keys():
-            fields[field] = validated_data.get(field, getattr(
-                category_lead, field))
-            if isinstance(fields[field], str):
-                fields[field] = fields[field].lower()
-        category_lead.update_fields(**fields)
-        return category_lead
+    @property
+    def data(self):
+        self._data = dict(
+            message='Lead updated successfully.',
+            lead_id=self.instance.id,
+            opportunity_id=self.opportunity.id)
+        return self._data
 
     class Meta:
         model = Lead
         fields = (
-            'id', 'category_id', 'pincode', 'family', 'gender',
-            'contact_phone_no', 'stage', 'contact_name', 'ignore')
-
-    @property
-    def data(self):
-        # TO DOS: Remove this when app is build
-        super(CreateUpdateLeadSerializer, self).data
-        self._data = dict(
-            message='Lead operation successfully processed.',
-            lead_id=self.instance.id
-        )
-        return self._data
+            'pincode', 'gender', 'family', 'contact_name',
+            'contact_phone_no', 'opportunity_id', 'category_id')
 
 
 class LeadSerializer(serializers.ModelSerializer):
@@ -153,6 +181,9 @@ class LeadSerializer(serializers.ModelSerializer):
 
 class QuoteSerializer(serializers.ModelSerializer):
     quote_id = serializers.ReadOnlyField(source='id')
+    category = serializers.ReadOnlyField(source='opportunity.category.name')
+    category_logo = serializers.ImageField(source='opportunity.category.logo')
+    lead_id = serializers.ReadOnlyField(source='opportunity.lead_id')
     status = serializers.ReadOnlyField(source='get_status_display')
     sum_insured = serializers.ReadOnlyField(source='premium.sum_insured')
     premium = serializers.ReadOnlyField(source='premium.amount')
@@ -174,9 +205,9 @@ class QuoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quote
         fields = (
-            'quote_id', 'lead_id', 'sum_insured', 'premium',
+            'quote_id', 'opportunity_id', 'sum_insured', 'premium',
             'product', 'recommendation_score', 'status', 'sale_stage',
-            'application_id')
+            'application_id', 'lead_id', 'category', 'category_logo')
 
 
 class QuoteDetailsSerializer(serializers.ModelSerializer):
@@ -257,7 +288,7 @@ class QuotesCompareSerializer(serializers.ModelSerializer):
             name='hospitals',
             value=NetworkHospital.objects.select_related(
                 'pincode', 'company').filter(
-                    pincode__pincode=obj.lead.pincode,
+                    pincode__pincode=obj.opportunity.lead.pincode,
                     company__name=company).count()
         )]
 
@@ -271,37 +302,46 @@ class QuotesCompareSerializer(serializers.ModelSerializer):
 
 class QuoteRecommendationSerializer(serializers.ModelSerializer):
     quote_id = serializers.ReadOnlyField(source='id')
+    lead_id = serializers.ReadOnlyField(source='opportunity.lead_id')
     sum_insured = serializers.ReadOnlyField(source='premium.sum_insured')
     premium = serializers.ReadOnlyField(source='premium.amount')
     tax_saving = serializers.ReadOnlyField(
-        source='lead.category_lead.tax_saving')
+        source='opportunity.category_opportunity.tax_saving')
     wellness_rewards = serializers.ReadOnlyField(
-        source='lead.category_lead.wellness_reward')
+        source='opportunity.category_opportunity.wellness_reward')
     health_checkups = serializers.ReadOnlyField(
-        source='lead.category_lead.adults')
+        source='opportunity.category_opportunity.adults')
     product = serializers.ReadOnlyField(
         source='premium.product_variant.get_product_details')
     features = serializers.SerializerMethodField()
 
     def get_features(self, obj):
         features = list()
-        feature_set = sorted(
-            obj.premium.product_variant.feature_set.exclude(
-                short_description__in=[
-                    'Data unavailable', '', 'Not covered', 'Not Covered']
-            ), key=lambda feature: Constants.RECOMMENDATION_FEATURE_ORDER.get(
-                feature.feature_master.name, 999))
+        feature_set = list()
+        if obj.premium.product_variant.parent:
+            feature_set = list(self.get_sorted_features(
+                obj.premium.product_variant.parent))
+        feature_set.extend(self.get_sorted_features(
+            obj.premium.product_variant))
         for f in feature_set[:5]:
             features.append('%s: %s' % (
                 f.feature_master.name, f.short_description))
         return features
 
+    def get_sorted_features(self, variant):
+        return sorted(
+            variant.feature_set.exclude(
+                short_description__in=[
+                    'Data unavailable', '', 'Not covered', 'Not Covered']
+            ), key=lambda feature: Constants.RECOMMENDATION_FEATURE_ORDER.get(
+                feature.feature_master.name, 999))
+
     class Meta:
         model = Quote
         fields = (
-            'quote_id', 'lead_id', 'sum_insured', 'premium',
+            'quote_id', 'opportunity_id', 'sum_insured', 'premium',
             'tax_saving', 'wellness_rewards', 'health_checkups',
-            'product', 'features')
+            'product', 'features', 'lead_id')
 
 
 class LeadDetailSerializer(serializers.ModelSerializer):
@@ -317,7 +357,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
 
     def get_quotes(self, obj):
         return QuoteSerializer(
-            obj.quote_set.filter(
+            obj.get_quotes().filter(
                 ignore=False, status='accepted'), many=True).data
 
     def get_notes(self, obj):

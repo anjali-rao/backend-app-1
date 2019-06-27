@@ -28,13 +28,14 @@ class AnswerSerializer(serializers.ModelSerializer):
 
 
 class ResponseSerializer(serializers.Serializer):
-    lead_id = serializers.IntegerField(required=True)
+    opportunity_id = serializers.IntegerField(required=True)
     answers = serializers.JSONField(required=True)
 
-    def validate_lead_id(self, value):
-        from crm.models import Lead
-        if not Lead.objects.filter(id=value).exists():
-            raise serializers.ValidationError(Constants.INVALID_LEAD_ID)
+    def validate_opportunity_id(self, value):
+        from crm.models import Opportunity
+        if not Opportunity.objects.filter(id=value).exists():
+            raise serializers.ValidationError(
+                Constants.OPPORTUNITY_DOES_NOT_EXIST)
         return value
 
     def validate_customer_segment_id(self, value):

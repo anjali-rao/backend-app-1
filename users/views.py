@@ -5,24 +5,24 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 
-from crm.serializers import LeadSerializer
-from sales.serializers import ClientSerializer
 from users.serializers import (
     CreateUserSerializer, OTPGenrationSerializer, OTPVerificationSerializer,
     AuthorizationSerializer, ChangePasswordSerializer,
     AccountSearchSerializers, User, PincodeSerializer, Pincode,
     UpdateUserSerializer, UserEarningSerializer, UserDetailSerializerV2,
-    UserDetailSerializerV3
+    UserDetailSerializerV3, LeadSerializer, ContactSerializers,
+    ClientSerializer, AdvisorSerializer
 )
 from sales.serializers import SalesApplicationSerializer
 from users.decorators import UserAuthentication
-from utils import constants
+from utils import constants as Constants
 from utils.mixins import APIException
 from content.serializers import (
     EnterprisePlaylistSerializer, AppoinmentSerializer, Appointment)
 
 from django.db.models import Q
 from django.db import transaction, IntegrityError
+from django.core.cache import cache
 
 
 @api_view(['POST'])
@@ -49,22 +49,26 @@ class RegisterUser(generics.CreateAPIView):
         try:
             with transaction.atomic():
                 if 'manager_id' not in request.data and 'password' not in request.data:  # noqa
-                    raise APIException(constants.PASSWORD_REQUIRED)
+                    raise APIException(Constants.PASSWORD_REQUIRED)
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
-        except IntegrityError as e:
-            raise APIException(constants.USER_ALREADY_EXISTS)
-
+        except IntegrityError:
+            raise APIException(Constants.USER_ALREADY_EXISTS)
         return Response(serializer.response, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
 def generate_authorization(request, version):
     serializer = AuthorizationSerializer(data=request.data)
+    if 'phone_no' in request.data:
+        from users.models import Account
+        acc = Account.objects.filter(phone_no=request.data['phone_no'])
+        if not acc.exists():
+            raise APIException(Constants.INVALID_PHONE_NO)
     serializer.is_valid(raise_exception=True)
     return Response(
-        serializer.response, status=status.HTTP_200_OK)
+        serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -178,14 +182,32 @@ class GetEarnings(generics.RetrieveAPIView):
     def get_object(self):
         return self.request.user
 
+    def retrieve(self, request, *args, **kwargs):
+        cached_response = cache.get('USER_EARNINGS:%s' % self.request.user.id)
+        if cached_response is not None:
+            return Response(cached_response)
+        self.object = self.get_object()
+        serializer = self.get_serializer(self.object)
+        response = serializer.data
+        cache.set(
+            'USER_EARNINGS:%s' % self.request.user.id, response,
+            Constants.API_TTL)
+        return Response(serializer.data)
+
 
 class GetCart(generics.ListAPIView):
     authentication_classes = (UserAuthentication,)
     serializer_class = SalesApplicationSerializer
 
     def get_queryset(self):
-        return self.request.user.get_applications(
-            status=['pending', 'fresh', 'submitted'])
+        cached_queryset = cache.get('USER_CART:%s' % self.request.user.id)
+        if cached_queryset is not None:
+            return cached_queryset
+        queryset = self.request.user.get_applications(status=[
+            'pending', 'fresh', 'submitted', 'approved', 'payment_due'])
+        cache.set(
+            'USER_CART:%s' % self.request.user.id, queryset, Constants.API_TTL)
+        return queryset
 
 
 class GetLeads(generics.ListAPIView):
@@ -207,6 +229,23 @@ class GetClients(generics.ListAPIView):
             'submitted', 'approved', 'completed'])
 
 
+class GetContact(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = ContactSerializers
+
+    def retrieve(self, request, *args, **kwargs):
+        self.object = self.request.user
+        cache_response = cache.get('USER_CONTACTS:%s' % self.object.id)
+        if cache_response:
+            return Response(cache_response)
+        serializer = self.get_serializer(self.object)
+        response = serializer.data
+        cache.set(
+            'USER_CONTACTS:%s' % self.object.id, response,
+            Constants.API_TTL)
+        return Response(serializer.data)
+
+
 class GetPlaylist(generics.ListAPIView):
     authentication_classes = (UserAuthentication,)
     serializer_class = EnterprisePlaylistSerializer
@@ -218,12 +257,12 @@ class GetPlaylist(generics.ListAPIView):
             'playlist')
         if playlists.exists():
             if 'playlist_type' in data:
-                if data['playlist_type'] in constants.PLAYLIST_CHOICES:
+                if data['playlist_type'] in Constants.PLAYLIST_CHOICES:
                     return playlists.filter(
                         playlist__playlist_type=data['playlist_type'])
-                raise APIException(constants.INVALID_PLAYLIST_TYPE)
+                raise APIException(Constants.INVALID_PLAYLIST_TYPE)
             return playlists
-        raise APIException(constants.PLAYLIST_UNAVAILABLE)
+        raise APIException(Constants.PLAYLIST_UNAVAILABLE)
 
 
 class UpdateUser(generics.UpdateAPIView):
@@ -243,6 +282,18 @@ class GetUserDetails(generics.RetrieveAPIView):
     def get_serializer_class(self):
         return self.version_serializer.get(
             self.kwargs['version'], UserDetailSerializerV2)
+
+    def retrieve(self, request, *args, **kwargs):
+        cache_response = cache.get('USER_DETAIL:%s' % kwargs.get('pk', ''))
+        if cache_response:
+            return Response(cache_response)
+        self.object = self.get_object()
+        serializer = self.get_serializer(self.object)
+        response = serializer.data
+        cache.set(
+            'USER_DETAIL:%s' % kwargs.get('pk', ''), response,
+            Constants.API_TTL)
+        return Response(serializer.data)
 
 
 class CreateAppointment(generics.CreateAPIView):
@@ -264,3 +315,10 @@ class CreateAppointment(generics.CreateAPIView):
             headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class AdvisorProfile(generics.RetrieveAPIView):
+    permissions = [permissions.AllowAny]
+    serializer_class = AdvisorSerializer
+    queryset = User.objects.all()
+    lookup_field = 'account__username'

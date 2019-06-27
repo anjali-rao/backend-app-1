@@ -8,8 +8,11 @@ from users.models import (
     User, Account, Enterprise, AccountDetail, Pincode,
     Address, BankAccount)
 from content.models import BankBranch
+from content.serializers import CollateralSerializer
 
 from earnings.serializers import EarningSerializer
+from crm.serializers import LeadSerializer, Lead
+from sales.serializers import ClientSerializer
 
 from django.db import transaction
 
@@ -23,7 +26,7 @@ class OTPGenrationSerializer(serializers.Serializer):
         if not value.isdigit() or len(value) != 10:
             raise serializers.ValidationError(
                 Constants.INVALID_PHONE_NO)
-        Account.send_otp(value)
+        Account.send_otp('OTP:%s' % value, value)
         return value
 
     @property
@@ -80,10 +83,14 @@ class CreateUserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
     email = serializers.CharField(required=True)
-    cancelled_cheque = serializers.FileField(required=False)
-    photo = serializers.FileField(required=False)
     manager_id = serializers.CharField(required=False)
     user_type = serializers.CharField(default=Constants.DEFAULT_USER_TYPE)
+    photo = serializers.FileField(required=False)
+    pancard = serializers.FileField(required=False)
+    cancelled_cheque = serializers.FileField(required=False)
+    aadhaar_card = serializers.FileField(required=False)
+    educational_document = serializers.FileField(required=False)
+    driving_license = serializers.FileField(required=False)
 
     def validate_password(self, value):
         return make_password(value)
@@ -133,16 +140,18 @@ class CreateUserSerializer(serializers.ModelSerializer):
             manager_id=validated_data.get('manager_id'))
         self.instance = User.objects.create(**data)
         self.instance.generate_referral(validated_data.get('referral_code'))
-        if any(x in validated_data.keys() for x in Constants.USER_FILE_UPLOAD):
+        if any(x in validated_data.keys() for x in Constants.KYC_DOC_TYPES):
             account.upload_docs(
                 validated_data, set(validated_data).intersection(
-                    set(Constants.USER_FILE_UPLOAD)))
+                    set(Constants.KYC_DOC_TYPES)))
         return self.instance
 
     def get_account(self, validated_data):
         validated_data['address_id'] = Address.objects.create(
             pincode_id=validated_data['pincode']).id
-        acc = Account.get_account(validated_data['phone_no'])
+        acc = Account.get_account(
+            validated_data['phone_no'], validated_data['first_name'],
+            validated_data['last_name'])
         for field_name in Constants.ACCOUNT_CREATION_FIELDS:
             setattr(acc, field_name, validated_data.get(field_name))
         acc.save()
@@ -163,8 +172,9 @@ class CreateUserSerializer(serializers.ModelSerializer):
             'first_name', 'last_name', 'email', 'password',
             'referral_code', 'user_type', 'pincode', 'pan_no',
             'phone_no', 'transaction_id', 'cancelled_cheque',
-            'photo', 'manager_id', 'user_type', 'fcm_id', 'promo_code'
-        )
+            'photo', 'manager_id', 'user_type', 'fcm_id', 'promo_code',
+            'pancard', 'cancelled_cheque', 'aadhaar_card',
+            'educational_document', 'driving_license')
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -209,32 +219,32 @@ class AvailableUserSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    account = serializers.SerializerMethodField()
-    enterprise = serializers.SerializerMethodField()
-    available_users = serializers.SerializerMethodField()
+    user_id = serializers.ReadOnlyField(source='id')
+    first_name = serializers.ReadOnlyField(source='account.first_name')
+    last_name = serializers.ReadOnlyField(source='account.last_name')
+    email = serializers.ReadOnlyField(source='account.email')
+    phone_no = serializers.ReadOnlyField(source='account.phone_no')
+    gender = serializers.ReadOnlyField(source='account.gender', default='')
+    flat_no = serializers.ReadOnlyField(
+        source='account.address.flat_no', default='')
+    street = serializers.ReadOnlyField(
+        source='account.address.street', default='')
+    city = serializers.ReadOnlyField(
+        source='account.address.pincode.city', default='')
+    state = serializers.ReadOnlyField(
+        source='account.address.pincode.state.name', default='')
+    pincode = serializers.ReadOnlyField(
+        source='account.address.pincode.pincode', default='')
+    profile_pic = serializers.FileField(
+        source='account.profile_pic', default='')
     referral_code = serializers.ReadOnlyField(source='referral.code')
-    bank_details = serializers.SerializerMethodField()
-
-    def get_account(self, obj):
-        return AccountSerializer(obj.account).data
-
-    def get_enterprise(self, obj):
-        return EnterpriseSerializer(obj.enterprise).data
-
-    def get_available_users(self, obj):
-        return AvailableUserSerializer(
-            User.objects.filter(account_id=obj.account_id), many=True).data
-
-    def get_bank_details(self, obj):
-        return BankAccountSerializer(
-            obj.bankaccount_set.all(), many=True).data
 
     class Meta:
         model = User
         fields = (
-            'id', 'user_type', 'account', 'enterprise', 'available_users',
-            'rating', 'referral_code', 'bank_details'
-        )
+            'user_id', 'first_name', 'last_name', 'email', 'phone_no',
+            'gender', 'flat_no', 'street', 'city', 'state', 'pincode',
+            'profile_pic', 'rating', 'referral_code')
 
 
 class AuthorizationSerializer(serializers.Serializer):
@@ -273,12 +283,18 @@ class AuthorizationSerializer(serializers.Serializer):
         return account.get_default_user()
 
     @property
-    def response(self):
-        return {
-            'authorization': self.get_user().get_authorization_key(),
-            'message': Constants.AUTHORIZATION_GENERATED,
-            'details': UserSerializer(self.get_user()).data,
-        }
+    def data(self):
+        user = self.get_user()
+        self._data = dict(
+            authorization=self.get_user().get_authorization_key(),
+            message=Constants.AUTHORIZATION_GENERATED,
+            details=UserSerializer(user).data,
+            enterprise=EnterpriseSerializer(user.enterprise).data,
+            rules=user.get_rules(),
+            categories=user.get_categories(),
+            collaterals=CollateralSerializer(
+                user.get_collaterals(), many=True).data)
+        return self._data
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -382,12 +398,16 @@ class UpdateUserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
     email = serializers.CharField(required=False)
-    cancelled_cheque = serializers.FileField(required=False)
-    photo = serializers.FileField(required=False)
     manager_id = serializers.CharField(required=False)
     street = serializers.CharField(required=False)
     flat_no = serializers.CharField(required=False)
     landmark = serializers.CharField(required=False)
+    photo = serializers.FileField(required=False)
+    pancard = serializers.FileField(required=False)
+    cancelled_cheque = serializers.FileField(required=False)
+    aadhaar_card = serializers.FileField(required=False)
+    educational_document = serializers.FileField(required=False)
+    driving_license = serializers.FileField(required=False)
 
     def validate_password(self, value):
         return make_password(value)
@@ -423,11 +443,11 @@ class UpdateUserSerializer(serializers.ModelSerializer):
                 field_name, getattr(acc, field_name)))
         acc.save()
         if any(
-            x in validated_data.keys() for x in Constants.USER_FILE_UPLOAD
+            x in validated_data.keys() for x in Constants.KYC_DOC_TYPES
         ):
             self.initial_data = acc.upload_docs(
                 validated_data, set(validated_data).intersection(
-                    set(Constants.USER_FILE_UPLOAD)))
+                    set(Constants.KYC_DOC_TYPES)))
 
     def get_address_id(self, acc, validated_data):
         if validated_data['pincode'] != acc.address.pincode_id:
@@ -454,8 +474,8 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         fields = (
             'first_name', 'last_name', 'email', 'password', 'manager_id',
             'pincode', 'pan_no', 'cancelled_cheque', 'photo', 'street',
-            'flat_no', 'landmark'
-        )
+            'flat_no', 'landmark', 'pancard', 'aadhaar_card',
+            'educational_document', 'driving_license')
 
 
 class UserEarningSerializer(serializers.ModelSerializer):
@@ -545,24 +565,72 @@ class UserDetailSerializerV2(serializers.ModelSerializer):
 
 
 class UserDetailSerializerV3(serializers.ModelSerializer):
-    phone_no = serializers.ReadOnlyField(source='account.phone_no')
-    name = serializers.ReadOnlyField(source='account.get_full_name')
-    pan_no = serializers.ReadOnlyField(source='account.pan_no')
-    profile_pic = serializers.FileField(
-        source='account.profile_pic', default='')
-    pincode = serializers.ReadOnlyField(
-        source='account.address.pincode.pincode', default='')
-    flat_no = serializers.ReadOnlyField(
-        source='account.address.flat_no', default='')
-    street = serializers.ReadOnlyField(
-        source='account.address.street', default='')
-    city = serializers.ReadOnlyField(
-        source='account.address.pincode.city', default='')
-    email = serializers.ReadOnlyField(source='account.email', default='')
+    details = serializers.SerializerMethodField()
+    enterprise = EnterpriseSerializer(read_only=True)
     rules = serializers.ReadOnlyField(source='get_rules')
+    categories = serializers.ReadOnlyField(source='get_categories')
+    collaterals = serializers.SerializerMethodField()
+
+    def get_details(self, obj):
+        return UserSerializer(obj).data
+
+    def get_collaterals(self, obj):
+        return CollateralSerializer(
+            obj.get_collaterals(), many=True).data
 
     class Meta:
         model = User
         fields = (
-            'phone_no', 'name', 'profile_pic', 'user_type', 'pan_no', 'rating',
-            'email', 'flat_no', 'street', 'city', 'pincode', 'rules')
+            'details', 'enterprise', 'rules', 'categories', 'collaterals')
+
+
+class ContactSerializers(serializers.ModelSerializer):
+    leads = serializers.SerializerMethodField()
+    clients = serializers.SerializerMethodField()
+
+    def get_leads(self, obj):
+        return LeadSerializer(
+            Lead.objects.filter(
+                user_id=obj.id,
+                ignore=False).exclude(contact=None), many=True).data
+
+    def get_clients(self, obj):
+        return ClientSerializer(
+            obj.get_applications(status=['completed']), many=True).data
+
+    class Meta:
+        model = User
+        fields = ('leads', 'clients')
+
+
+class AdvisorSerializer(serializers.ModelSerializer):
+    name = serializers.ReadOnlyField(source='account.get_full_name')
+    phone_no = serializers.ReadOnlyField(source='account.phone_no')
+    email_id = serializers.ReadOnlyField(source='account.email')
+    profile_pic = serializers.FileField(
+        source='account.profile_pic', default='')
+    pincode = serializers.ReadOnlyField(
+        source='account.address.pincode.pincode', default='')
+    city = serializers.ReadOnlyField(
+        source='account.address.pincode.city', default='')
+    state = serializers.ReadOnlyField(
+        source='account.address.pincode.state.name', default='')
+    products = serializers.SerializerMethodField()
+
+    def get_products(self, obj):
+        data = list()
+        companies = obj.enterprise.companies.all()
+        from product.serializers import BrandSerializers
+        for category in obj.enterprise.categories.filter(is_active=True):
+            data.append(dict(
+                category=category.name,
+                brands=BrandSerializers(
+                    companies.filter(
+                        categories__in=[category.id]), many=True).data))
+        return data
+
+    class Meta:
+        model = User
+        fields = (
+            'name', 'phone_no', 'email_id', 'profile_pic', 'pincode', 'city',
+            'state', 'products')

@@ -7,14 +7,14 @@ GENDER = ('male', 'female', 'transgender')
 USER_TYPE = ('enterprise', 'subscriber', 'pos')
 OCCUPATION_CHOICES = (
     'self_employed_or_business', 'salaried', 'retired', 'unemployed', 'others')
-LEAD_STATUS_CHOICES = (
-    ('fresh', 'Fresh'), ('inprogress', 'In Progress'),
-    ('closed', 'Closed'), ('dropped', 'Dropped'))
-LEAD_STAGE_CHOICES = (
-    ('new', 'New'), ('appointment_scheduled', 'Appointment Scheduled'),
-    ('needs', 'Needs'), ('quote', 'Quote'), ('cart', 'Cart'),
-    ('proposal', 'Proposal'), ('payment', 'Payment'),
-    ('submitted', 'Submitted'), ('issued', 'Issued'))
+# LEAD_STATUS_CHOICES = (
+#     ('fresh', 'Fresh'), ('inprogress', 'In Progress'),
+#     ('closed', 'Closed'), ('dropped', 'Dropped'))
+# LEAD_STAGE_CHOICES = (
+#     ('new', 'New'), ('appointment_scheduled', 'Appointment Scheduled'),
+#     ('needs', 'Needs'), ('quote', 'Quote'), ('cart', 'Cart'),
+#     ('proposal', 'Proposal'), ('payment', 'Payment'),
+#     ('submitted', 'Submitted'), ('issued', 'Issued'))
 STATUS_CHOICES = (
     ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'),
     ('completed', 'Completed'))
@@ -28,16 +28,21 @@ APPLICATION_STAGES = (
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
     'ration_card', 'passport', 'birth_certificate', 'cancelled_cheque',
-    'photo')
+    'photo', 'educational_document')
+
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('all', 'sales_brochure', 'claim_form')
 CONTACT_CHANNELS = ('phone', 'email', 'whatsapp')
 RELATION_CHOICES = (
     'self', 'spouse', 'mother', 'father', 'son', 'daughter', 'brother',
     'sister', 'cousin')
-DOC_TYPES = ('pan', 'license', 'photo')
 DOCS_UPLOAD_TYPES = dict(
-    pan='advisor/pan', license='advisor/license', photo='advisor/selfie')
+    pancard='advisor/pancard', driving_license='advisor/license',
+    photo='advisor/selfie', aadhaar_card='advisor/aadhaar_card',
+    bank_passbook='advisor/bank_passbook', ration_card='advisor/ration_card',
+    passport='advisor/passport', birth_certificate='advisor/birth_certificate',
+    cancelled_cheque='advisor/cancelled_cheque',
+    educational_document='advisor/educational_document')
 FEATURE_TYPES = (
     'Must Have', 'Others', 'Good to Have', 'Addons & Discounts', 'Value-add',
     'Exclusion')
@@ -47,10 +52,11 @@ TIER_2_CITIES = ('Lucknow', 'Allahabad')
 EARNING_TYPES = ('commission', 'incentive', 'referral')
 MARITAL_STATUS = ('married', 'single', 'divorced')
 PLAYLIST_CHOICES = ('marketing', 'training')
-USER_FILE_UPLOAD = ['cancelled_cheque', 'photo']
 REQUEST_CHOICES = ['GET', 'POST', 'PUT', 'PATCH']
 AGGREGATOR_CHOICES = ['offline', 'wallnut']
 EARNING_STATUS = ('paid', 'pending', 'processing')
+COLLATERALS_TYPE = ('marketing', 'training')
+COLLATERALS_CHOICES = ('videos', 'gifs')
 ACTIVE_AGGREGATOR_COMPANIES = [
     'Aditya Birla Health Insurance', 'HDFC ERGO General Insurance',
     'Bajaj Allianz GIC']
@@ -106,7 +112,6 @@ DEFAULT_BASE_PREMIUM = 0.0
 DEFAULT_GST = 0.18
 DEFAULT_COMMISSION = 0.20
 ADULT_AGE_LIMIT = 18
-API_CACHE_TIME = 3600
 
 # Success messages  ==================================
 OTP_MESSAGE = '<#> Your One Time Password for OneCover is %s %s'
@@ -127,54 +132,60 @@ SEND_TO_AGGREGATOR = 'Application (%s) successfully send to aggregator.'
 
 OTP_TTL = 900
 TRANSACTION_TTL = 900
+API_CACHE_TIME = 3600
+API_TTL = 172800
 
 
 # Exception messages  ==================================
 
-REFERRAL_CODE_EXCEPTION = 'Invalid referral code provided.'
-OTP_VALIDATION_FAILED = 'Invalid otp provided.'
-INVALID_TRANSACTION_ID = 'Invalid transaction id provided.'
-INVALID_PHONE_NO = 'Invalid phone no entered.'
-INVALID_USERNAME = 'Invalid username provided.'
-INVALID_PASSWORD = 'Invalid password provided.'
-INVALID_PROMO_CODE = 'Invalid prmo code provided.'
-INVALID_USERNAME_PHONE_COMBINATION = 'Invalid username and phone no combination.' # noqa
+REFERRAL_CODE_EXCEPTION = 'Invalid referral code provided'
+OTP_VALIDATION_FAILED = 'Invalid otp provided'
+INVALID_TRANSACTION_ID = 'Invalid transaction id provided'
+INVALID_PHONE_NO = 'Invalid phone no entered'
+INVALID_USERNAME = 'Invalid username provided'
+INVALID_PASSWORD = 'Invalid password provided'
+INVALID_PROMO_CODE = 'Invalid prmo code provided'
+INVALID_USERNAME_PHONE_COMBINATION = 'Invalid username and phone no combination' # noqa
 PASSWORD_MISMATCH = 'Password and confirm password mismatch'
 ACCOUNT_DISABLED = 'Account is unactive. Please contact OneCover for reactivation' # noqa
-INVALID_CATEGORY_ID = 'Category id passed is invalid or category doesnot exists.' # noqa
+INVALID_CATEGORY_ID = 'Category id passed is invalid or category doesnot exists' # noqa
 INVALID_CUSTOMER_SEGMENT = 'Invalid Customer Segment id'
-INVALID_ANSWER_ID = 'Answer id: %s is invalid.'
-INVALID_QUESTION_ID = 'Question id: %s is invalid.'
-INVALID_GENDER_PROVIDED = 'Invalid gender input provided.'
-INVALID_PINCODE = 'Invalid pincode provided.'
-USER_ALREADY_EXISTS = 'User already exists with provided input.'
-FAILED_APPLICATION_CREATION = 'Failed to add contact. Please contact OneCover.'
-APPLICATION_ALREAY_EXISTS = 'Application already exists with quote id.'
-ANSWER_CANNOT_BE_LEFT_BLANK = 'Answers are required.'
-INVALID_FAMILY_DETAILS = 'Please provide valid family details.'
-LEAD_ERROR = 'Lead not provided or invalid lead id provided.'
-NO_QUOTES_FOUND = 'No Quotes found for given suminsured.'
-INVALID_INPUT = 'Invalid input provided.'
+INVALID_ANSWER_ID = 'Answer id: %s is invalid'
+INVALID_QUESTION_ID = 'Question id: %s is invalid'
+INVALID_GENDER_PROVIDED = 'Invalid gender input provided'
+INVALID_PINCODE = 'Invalid pincode provided'
+USER_ALREADY_EXISTS = 'User already exists with provided input'
+FAILED_APPLICATION_CREATION = 'Failed to add contact. Please contact OneCover'
+APPLICATION_ALREAY_EXISTS = 'Application already exists with quote id'
+ANSWER_CANNOT_BE_LEFT_BLANK = 'Answers are required'
+INVALID_FAMILY_DETAILS = 'Please provide valid family details'
+LEAD_ERROR = 'Lead not provided or invalid lead id provided'
+NO_QUOTES_FOUND = 'No Quotes found for given inputs'
+INVALID_INPUT = 'Invalid input provided'
 COMPARISION_ERROR = 'Atleast two quotes are required for comparision'
 INCOMPLETE_APPLICATION = 'Application not completed, please fill %s'
 LOOKUP_ERROR = 'Expected view %s to be called with a URL keyword argument '
 'named "%s". Fix your URL conf, or set the `.lookup_field` '
 'attribute on the view correctly.'
 APPLICATION_UNMAPPED = 'Application not mapped to any insurance or inproper application type' # noqa
-INVALID_QUOTE_ID = 'Invalid Quote id provided.'
+INVALID_QUOTE_ID = 'Invalid Quote id provided'
 INVALID_QUESTION_ANSWER_COMBINATION = 'Invalid question and answer combination provided'  # noqa
-INVALID_LEAD_ID = 'Invalid / missing Lead id.'
-INVALID_PHONE_NO_FORMAT = 'Phone number is not valid'
-INVALID_PLAYLIST_TYPE = 'Playlist type provided is invalid.'
-PLAYLIST_UNAVAILABLE = 'No playlist available. Please Contact Admin.'
-INVALID_CONTACT_ID = 'Invalid contact id provided.'
-INVALID_LEAD_STAGE = 'Invalid lead stage'
-PASSWORD_NOT_SET = 'Password is not set.'
+INVALID_LEAD_ID = 'Invalid / missing Lead id'
+INVALID_PHONE_NO_FORMAT = 'Phone number is not vali'
+INVALID_PLAYLIST_TYPE = 'Playlist type provided is invalid'
+PLAYLIST_UNAVAILABLE = 'No playlist available. Please Contact Admin'
+INVALID_CONTACT_ID = 'Invalid contact id provided'
+INVALID_LEAD_STAGE = 'Invalid lead stag'
+PASSWORD_NOT_SET = 'Password is not set'
 PAYMENT_LINK_GENERATION_FAILED = 'Failed to generate payment link for application (%s), due to exception:%s' # noqa
 FAILED_TO_SEND_TO_AGGREGATOR = 'Failed to send application (%s) to aggregator due to exception: %s' # noqa
 CONTACT_DETAILS_REQUIRED = 'Contact name and Contact phone_no is required'
 DUPLICATE_LEAD = 'Lead already exists with similar contact_name and contact_phone_no' # noqa
 CONTACT_FORBIDDEN = 'Update conatct to lead is forbidden.'
+DUPLICATE_ACCOUNT = 'Account already exists with the provided details.'
+OPPORTUNITY_DOES_NOT_EXIST = 'Opportunity id provided does not exists or invalid' # noqa
+OPPORTUNITY_ID_REQUIRED = 'Invalid or missing opportunity id'
+OPPORTUNITY_OR_OPPERATION_ID_REQUIRED = 'Category id or opportunity id is required to perform opperation' # noqa
 
 
 # Creation Fields  ==================================
@@ -190,7 +201,7 @@ CONTACT_CREATION_FIELDS = (
     'first_name', 'last_name', 'phone_no', 'dob', 'annual_income',
     'occupation', 'marital_status', 'email')
 GENERIC_LEAD_FIELDS = (
-    'category_id', 'pincode', 'bookmark', 'user_id', 'ignore', 'contact_id')
+    'bookmark', 'user_id', 'ignore', 'contact_id', 'pincode')
 
 
 # Upload paths  ==================================
@@ -222,9 +233,9 @@ REFERRAL_TEXT = 'Referring to %s'
 INCENTIVE_TEXT = 'Incentive for %s'
 
 
-# Category Lead - Mapper  ==================================
+# Category Opportunity - Mapper  ==================================
 
-CATEGORY_LEAD_FIELDS_MAPPER = dict(
+CATEGORY_OPPORTUNITY_FIELDS_MAPPER = dict(
     healthinsurance=['gender', 'family', 'effective_age']
 )
 
@@ -232,7 +243,7 @@ CATEGORY_LEAD_FIELDS_MAPPER = dict(
 
 PROMO_RULES_KEYS = [
     'contact', 'earnings', 'native_application_journey',
-    'client_application_journey']
+    'client_application_journey', 'kyc_allowed']
 
 PROMO_RULES = {
     1: dict(

@@ -57,9 +57,19 @@ def custom_exception_handler(exc, context):
 
     if response is not None:
         data = response.data
-        response.data = {}
+        response.data = dict()
+        errors = []
         for field, value in data.items():
-            response.data[field] = value
-        if 'detail' in data:
-            response.data['detail'] = [str(exc)]
+            error_value = []
+            if isinstance(value, list):
+                for error in value:
+                    if error.code == 'required':
+                        error_value.append(
+                            '%s is required' % field.title().replace('_', ' '))
+            if error_value:
+                value = error_value
+            errors.extend(value)
+        if 'detail' not in data:
+            exc = ' & '.join(errors)
+        response.data['detail'] = str(exc)
     return response

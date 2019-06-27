@@ -19,7 +19,8 @@ from utils.mixins import RecommendationException
 
 
 class Quote(BaseModel):
-    lead = models.ForeignKey('crm.Lead', on_delete=models.CASCADE)
+    opportunity = models.ForeignKey(
+        'crm.Opportunity', on_delete=models.CASCADE, null=True, blank=True)
     status = models.CharField(
         max_length=16, choices=Constants.STATUS_CHOICES,
         default='pending')
@@ -33,7 +34,8 @@ class Quote(BaseModel):
 
     def save(self, *args, **kwargs):
         self.__class__.objects.filter(
-            lead_id=self.lead_id, premium_id=self.premium_id
+            opportunity_id=self.opportunity_id, premium_id=self.premium_id,
+            ignore=False
         ).exclude(status='accepted').update(ignore=True)
         super(Quote, self).save(*args, **kwargs)
 
@@ -46,10 +48,15 @@ class Quote(BaseModel):
         ordering = ['-recommendation_score', ]
 
     def get_feature_details(self):
-        return self.premium.product_variant.feature_set.order_by(
-            'feature_master__order').values(
-                'feature_master__name', 'short_description',
-                'feature_master__long_description')
+        variant = self.premium.product_variant
+        features = variant.feature_set.all()
+        if variant.parent:
+            features = features | variant.parent.feature_set.exclude(
+                feature_master__name__in=features.values_list(
+                    'feature_master__name', flat=True))
+        return features.order_by('feature_master__order').values(
+            'feature_master__name', 'short_description',
+            'feature_master__long_description')
 
     def get_faq(self):
         company_category = self.premium.product_variant.company_category
@@ -77,6 +84,7 @@ class Application(BaseModel):
         choices=get_choices(Constants.APPLICATION_STAGES))
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
+    client_verified = models.BooleanField(default=False)
     payment_mode = models.CharField(max_length=64, choices=get_choices(
         Constants.AGGREGATOR_CHOICES), default='offline')
     terms_and_conditions = models.BooleanField(null=True)
@@ -93,8 +101,17 @@ class Application(BaseModel):
         super(Application, self).save(*args, **kwargs)
 
     def aggregator_operation(self):
-        if self.quote.premium.product_variant.company_category.company.name not in Constants.ACTIVE_AGGREGATOR_COMPANIES: # noqa
-            return
+        if not self.quote.premium.product_variant.aggregator_available:
+            return False
+        self.status = 'payment_due'
+        from aggregator.wallnut.models import Application as Aggregator
+        if not hasattr(self, 'application'):
+            Aggregator.objects.create(
+                reference_app_id=self.id,
+                insurance_type=self.application_type)
+            self.payment_mode = 'wallnut'
+        self.save()
+        return self.quote.premium.product_variant.aggregator_available
         from aggregator.wallnut.models import Application as Aggregator
         if not hasattr(self, 'application'):
             Aggregator.objects.create(
@@ -118,7 +135,7 @@ class Application(BaseModel):
                 self.reference_no = genrate_random_string(10)
 
     def add_default_members(self):
-        lead = self.quote.lead.category_lead
+        category_opportunity = self.quote.opportunity.category_opportunity
         today = now()
         members = list()
 
@@ -129,17 +146,17 @@ class Application(BaseModel):
             if relation == 'self':
                 responses = Response.objects.filter(
                     question__category_id=self.company_category.category.id,
-                    lead_id=lead.id)
+                    opportunity_id=category_opportunity.opportunity_id)
                 occupation_res = responses.filter(question__title='Occupation')
                 if occupation_res.exists():
                     instance.occupation = responses.latest('created').answer.answer.replace(' ', '_').lower() # noqa
             return instance
 
-        for member, age in lead.family.items():
+        for member, age in category_opportunity.family.items():
             member = member.split('_')[0]
-            gender = lead.gender if member == 'self' else 'male'
+            gender = category_opportunity.gender if member == 'self' else 'male' # noqa
             if member == 'spouse':
-                gender = 'male' if lead.gender == 'female' else 'female'
+                gender = 'male' if category_opportunity.gender == 'female' else 'female' # noqa
             elif member == 'mother':
                 gender = 'female'
             elif member in ['son', 'daughter']:
@@ -153,8 +170,24 @@ class Application(BaseModel):
             members.append(instance)
         Member.objects.bulk_create(members)
 
+    def verify_proposer(self, otp):
+        from django.core.cache import cache
+        response = otp == cache.get('APP-%s:' % self.reference_no)
+        cache.delete('APP-%s:' % self.reference_no)
+        return response
+
+    def send_propser_otp(self):
+        from users.models import Account
+        Account.send_otp('APP-%s:' % self.reference_no, self.client.phone_no)
+
     def create_policy(self):
         return Policy.objects.create(application_id=self.id)
+
+    def invalidate_cache(self):
+        from django.core.cache import cache
+        cache.delete('USER_CART:%s' % self.quote.opportunity.lead.user_id)
+        cache.delete('USER_CONTACTS:%s' % self.quote.opportunity.lead.user_id)
+        cache.delete('USER_EARNINGS:%s' % self.quote.opportunity.lead.user_id)
 
     @property
     def adults(self):
@@ -329,7 +362,7 @@ class HealthInsurance(Insurance):
         self.save()
 
     def switch_premium(self, adults, childrens):
-        lead = self.application.quote.lead
+        opportunity = self.application.quote.opportunity
         data = dict(
             effective_age=(
                 now().year - self.application.active_members.aggregate(
@@ -340,10 +373,9 @@ class HealthInsurance(Insurance):
             members = self.application.active_members.filter(relation=member)
             if members.exists() and member not in ['son', 'daughter']:
                 data['%s_age' % (member)] = members.get().age
-        data['customer_segment_id'] = lead.category_lead.get_customer_segment(
-            **data).id
-        lead.refresh_quote_data(**data)
-        quote = lead.get_quotes().first()
+        data['customer_segment_id'] = opportunity.category_opportunity.get_customer_segment(**data).id # noqa
+        opportunity.refresh_quote_data(**data)
+        quote = opportunity.get_quotes().first()
         if not quote:
             raise RecommendationException('No quote found for this creteria')
         self.application.quote_id = quote.id
@@ -360,8 +392,6 @@ class HealthInsurance(Insurance):
             if isinstance(field_value, list):
                 values = list()
                 for row in field_value:
-                    if not row['value']:
-                        continue
                     values.append(Member.objects.get(id=row['id']).relation)
                 field_value = None
                 if values:
@@ -370,6 +400,28 @@ class HealthInsurance(Insurance):
                 continue
             response[field.name] = field_value
         return response
+
+    def get_insurance_fields(self):
+        data = list()
+        from sales.serializers import (
+            MemberSerializer, GetInsuranceFieldsSerializer)
+        members = self.application.active_members or Member.objects.filter(
+            application_id=self.application_id)
+        members = MemberSerializer(members, many=True).data
+        for field in self._meta.fields:
+            if field.name in Constants.INSURANCE_EXCLUDE_FIELDS:
+                continue
+            serializer = GetInsuranceFieldsSerializer(data=dict(
+                text=field.help_text,
+                field_name=field.name,
+                field_requirements=[{
+                    'relation': "None"
+                }] if field.__class__.__name__ in [
+                    'BooleanField', 'IntegerField'] else members
+            ))
+            serializer.is_valid(raise_exception=True)
+            data.append(serializer.data)
+        return data
 
 
 class TravelInsurance(Insurance):
@@ -389,13 +441,18 @@ class Policy(BaseModel):
 @receiver(post_save, sender=Application, dispatch_uid="action%s" % str(now()))
 def application_post_save(sender, instance, created, **kwargs):
     if created:
-        Quote.objects.filter(lead_id=instance.quote.lead.id).exclude(
-            id=instance.quote_id, status__in=['accepted', 'rejected']
+        Quote.objects.filter(
+            opportunity_id=instance.quote.opportunity_id).exclude(
+                id=instance.quote_id, status__in=['accepted', 'rejected']
         ).update(status='rejected')
         quote = instance.quote
         quote.status = 'accepted'
         quote.save()
+        # do this thing async
         instance.add_default_members()
         ContentType.objects.get(
             model=instance.application_type, app_label='sales'
         ).model_class().objects.create(application_id=instance.id)
+        from sales.tasks import update_insurance_fields
+        update_insurance_fields(instance.id)
+    instance.invalidate_cache()

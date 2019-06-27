@@ -1,4 +1,5 @@
 import csv
+from django.db import transaction
 
 
 def readcsv(filename):
@@ -9,6 +10,22 @@ def readcsv(filename):
             data.append(line)
         tsvfile.close()
     return data
+
+
+def create_csv(data, file_name=None):
+    """
+    Use create_csv method instead of this.
+    Accepts list of dictionaries and save them as csvfile
+    Created for upload type dashboards
+    """
+    import csv
+    filepath = file_name
+    keys = sorted(data[0].keys())
+    with open(filepath, 'w') as csvfile:
+        dict_writer = csv.DictWriter(csvfile, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(data)
+    return filepath
 
 
 def update_pincode(filename):
@@ -39,27 +56,36 @@ def upload_suminsurred(filename):
 
 
 def upload_company(filename):
-    from product.models import Company, Category
-    data = readcsv(filename)
-    for row in data:
-        category = Category.objects.get(name=row['category'].title())
-        instance, created = Company.objects.get_or_create(
-            name=row['company_name'])
-        instance.categories.add(category.id)
-        instance.short_name = row['company_shortname']
-        instance.website = row['website']
-        instance.spoc = row['spoc']
-        instance.website = row['website']
-        instance.save()
+    with transaction.atomic():
+        from product.models import Company, Category
+        data = readcsv(filename)
+        for row in data:
+            category = Category.objects.get(name=row['category'].replace('{','').replace('}','').title()) # noqa
+            instance, created = Company.objects.get_or_create(pk=row['id'])
+            instance.name = row['company_name']
+            instance.categories.add(category.id)
+            instance.short_name = row['company_shortname']
+            instance.website = row['website']
+            instance.spoc = row['spoc']
+            instance.website = row['website']
+            instance.toll_free_number = row['tollfree'].split(',')
+            instance.long_description = row['long description']
+            instance.small_description = row['short description']
+            instance.commission = float(row['commission'] or 0.0)
+            instance.save()
 
 
 def upload_companycategory(filename):
     from product.models import Company, CompanyCategory
-    for row in readcsv(filename):
-        company = Company.objects.get(short_name=row['company'])
-        instance, created = CompanyCategory.objects.get_or_create(
-            company_id=company.id, category_id=row['category_id']
-        )
+    with transaction.atomic():
+        for row in readcsv(filename):
+            company = Company.objects.get(short_name=row['company name'])
+            instance, created = CompanyCategory.objects.get_or_create(
+                company_id=company.id, category_id=row['category_id'])
+            instance.company_id = company.id
+            instance.category_id = row['category_id']
+            instance.claim_settlement = row['claim_settlement']
+            instance.save()
 
 
 def upload_customersegment():
@@ -84,13 +110,20 @@ def upload_feature_master(filename):
 
 
 def upload_product_variant(filename):
-    from product.models import ProductVariant
-    for row in readcsv(filename):
-        instance, created = ProductVariant.objects.get_or_create(pk=row['id'])
-        instance.company_category_id = row['companycategory_id']
-        instance.name = row['product_short_name']
-        instance.parent_product = row['parent_product']
-        instance.save()
+    with transaction.atomic():
+        from product.models import ProductVariant
+        for row in readcsv(filename):
+            instance, created = ProductVariant.objects.get_or_create(
+                pk=row['id'])
+            instance.company_category_id = row['companycategory id']
+            instance.name = row['product name']
+            instance.feature_variant = row['variant feature']
+            instance.short_description = row['short description']
+            instance.long_description = row['long description']
+            if instance.id != int(row['parent product']):
+                instance.parent_id = row['parent product']
+            instance.chronic = False
+            instance.save()
 
 
 def upload_feature(filename):
@@ -106,26 +139,28 @@ def upload_feature(filename):
 
 
 def upload_premiums(filename):
-    from product.models import HealthPremium as Premium
-    from psycopg2.extras import NumericRange
-    import re
-    for row in readcsv(filename):
-        suminsured = int(float(re.sub('[ ,]', '', row['sum_insured'])))
-        min_suminsured = int(float(re.sub('[ ,]', '', row['min_sum_insured'])))
-        instance, created = Premium.objects.get_or_create(pk=row['id'])
-        instance.base_premium = row['base_premium'].replace(',', '').replace(',', '') # noqa
-        instance.age_rage = NumericRange(
-            lower=int(row['min_age']), upper=int(row['max_age']) + 1)
-        instance.suminsured_range = NumericRange(
-            lower=min_suminsured, upper=suminsured + 1)
-        instance.adults = int(row['adults'])
-        instance.childrens = int(row['children'])
-        instance.citytier = row['variant_city_tier']
-        instance.product_variant_id = row['productvariant_id']
-        instance.gst = float(int(row['gst'].replace('%', ''))) / 100
-        instance.commission = float(
-            int(row['commission'].replace('%', ''))) / 100
-        instance.save()
+    with transaction.atomic():
+        from product.models import HealthPremium as Premium
+        from psycopg2.extras import NumericRange
+        import re
+        for row in readcsv(filename):
+            suminsured = int(float(re.sub('[ ,]', '', row['sum_insured'])))
+            min_suminsured = int(float(re.sub('[ ,]', '', row['min_sum_insured'])))
+            instance, created = Premium.objects.get_or_create(pk=row['id'])
+            instance.sum_insured = suminsured
+            instance.base_premium = re.sub('[ ,]', '', row['base_premium'])
+            instance.age_range = NumericRange(
+                lower=int(row['min_age']), upper=int(row['max_age']) + 1)
+            instance.suminsured_range = NumericRange(
+                lower=min_suminsured, upper=suminsured + 1)
+            instance.adults = int(row['adults'])
+            instance.childrens = int(row['children'])
+            instance.citytier = row['variant_city_tier']
+            instance.product_variant_id = row['productvariant_id']
+            instance.gst = float(int(row['gst'].replace('%', ''))) / 100
+            instance.commission = float(
+                int(row['commission'].replace('%', ''))) / 100
+            instance.save()
 
 
 def upload_customersegmentfeaturescore(filename):

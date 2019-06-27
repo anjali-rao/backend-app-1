@@ -28,3 +28,11 @@ class CategoryFaqSerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ('category', 'faqs')
+
+
+class BrandSerializers(serializers.ModelSerializer):
+    img = serializers.FileField(source='logo')
+
+    class Meta:
+        model = Company
+        fields = ('name', 'img')
