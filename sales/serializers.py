@@ -4,7 +4,7 @@ from sales.models import (
     Application, Member, Nominee, Quote, HealthInsurance,
     TravelInsurance, ExistingPolicies
 )
-from crm.models import Contact, KYCDocument
+from crm.models import Contact, KYCDocument, Lead
 from users.models import Pincode, Address
 from utils import constants as Constants, mixins
 
@@ -32,8 +32,8 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
                     suminsured=quote.premium.sum_insured)
                 contact = self.get_contact(validated_data, **dict(
                     user_id=quote.opportunity.lead.user_id))
-                quote.opportunity.lead.contact_id = contact.id
-                quote.opportunity.lead.save()
+                self.update_opportunity(
+                    contact.id, quote.opportunity)
             return instance
         except IntegrityError:
             raise mixins.NotAcceptable(
@@ -55,6 +55,18 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
             instance.user_id = kwargs['user_id']
             instance.save()
         return instance
+
+    def update_opportunity(self, contact_id, opportunity):
+        leads = Lead.objects.filter(
+            contact_id=contact_id, user_id=opportunity.lead.user_id)
+        if not leads.exists():
+            lead = opportunity.lead
+            lead.contact_id = contact_id
+            lead.save()
+            return
+        lead = leads.first()
+        opportunity.lead_id = lead.id
+        opportunity.save()
 
     class Meta:
         model = Application
@@ -476,7 +488,7 @@ class ClientSerializer(serializers.ModelSerializer):
     status = serializers.ReadOnlyField(source='get_status_display')
 
     def get_full_name(self, obj):
-        instance = obj.client or obj.quote.lead.contact
+        instance = obj.client or obj.quote.opportunity.lead.contact
         return instance.get_full_name()
 
     class Meta:

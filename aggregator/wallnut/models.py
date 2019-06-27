@@ -69,7 +69,7 @@ class Application(BaseModel):
             self.reference_app.application_type)
         self.suminsured = int(self.reference_app.suminsured)
         self.premium = self.reference_app.premium
-        self.pincode = self.reference_app.quote.lead.pincode
+        self.pincode = self.reference_app.quote.opportunity.lead.pincode
         self.dealstage = 'productshortlisted'
         self.get_state_city()
         self.generate_quote_id()
@@ -77,7 +77,7 @@ class Application(BaseModel):
 
     def get_state_city(self):
         url = 'https://wallnut.in/health/proposal_aditya_birla/get_state_city?Pincode=%s' % ( # noqa
-            self.reference_app.quote.lead.pincode)
+            self.reference_app.quote.opportunity.lead.pincode)
         request_log = ApplicationRequestLog.objects.create(
             application_id=self.reference_app.id, url=url, request_type='GET')
         response = requests.get(url).json()

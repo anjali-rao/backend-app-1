@@ -102,7 +102,7 @@ class AdityaBirlaPaymentCapture(views.View):
     def create_commission(self):
         from earnings.models import Commission
         cc = self.app.reference_app.quote.premium.product_variant.company_category # noqa
-        commission = self.app.reference_app.quote.premium.commission + cc.company.commission + cc.category.commission + self.app.reference_app.quote.lead.user.enterprise.commission # noqa
+        commission = self.app.reference_app.quote.premium.commission + cc.company.commission + cc.category.commission + self.app.reference_app.quote.opportunity.lead.user.enterprise.commission # noqa
         Commission.objects.create(
             application_id=self.app.reference_app.id,
             amount=self.app.premium * commission)
