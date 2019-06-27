@@ -28,14 +28,11 @@ jobs:
             - '/usr/local/lib/python3.6/site-packages'
       - run:
           command: |
-            pipenv run "python manage.py makemigrations users payment content crm product sales questionnaire wallnut earnings"
-            pipenv run "python manage.py migrate"
-      - run:
-          command: |
-            pipenv run "python manage.py migrate"
-      - run:
-          command: |
-            pipenv run "python manage.py test"
+            pipenv run '
+                python manage.py test -v 2
+                > .circleci/migration_report.log
+                2> .circleci/test_report.log'
+            pipenv run 'python .circleci/send_test_report.py'
       - store_test_results:
           path: test-results
       - store_artifacts:
