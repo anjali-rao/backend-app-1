@@ -71,11 +71,14 @@ class RetrieveUpdateProposerDetails(
             self._obj = Http404
 
         if 'search' in self.request.query_params and self.request.method == 'GET': # noqa
-            self._obj = Contact.objects.filter(
+            contacts = Contact.objects.filter(
                 phone_no=self.request.query_params.get('search')
-            ).exclude(last_name='').order_by('modified', 'created').first()
-            if self._obj is None:
+            ).exclude(last_name='').order_by('modified', 'created')
+            if not contacts.exists():
                 raise mixins.NotFound('Application field not found.')
+            if self._obj and contacts:
+                if self._obj.id not in contacts:
+                    self._obj = contacts.first()
         # May raise a permission denied
         self.check_object_permissions(self.request, self._obj)
         return self._obj
