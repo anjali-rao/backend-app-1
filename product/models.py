@@ -38,6 +38,7 @@ class Company(BaseModel):
     spoc = models.TextField(null=True, blank=True)
     toll_free_number = ArrayField(
         models.CharField(max_length=32), default=list, blank=True, null=True)
+    is_active = models.BooleanField(default=False)
     long_description = models.TextField(null=True, blank=True)
     small_description = models.TextField(null=True, blank=True)
     commission = models.FloatField(default=0.0)
