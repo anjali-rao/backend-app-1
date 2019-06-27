@@ -21,7 +21,8 @@ STATUS_CHOICES = (
 APPLICATION_STATUS = (
     ('fresh', 'Fresh'), ('pending', 'Pending'), ('submitted', 'Submitted'),
     ('approved', 'Approved'), ('cancelled', 'Cancelled'),
-    ('completed', 'Completed'), ('ignore', 'Ingore'))
+    ('completed', 'Completed'), ('ignore', 'Ingore'),
+    ('payment_due', 'Payment due'))
 APPLICATION_STAGES = (
     'proposer_details', 'insured_members', 'nominee_details',
     'health_details', 'summary', 'payment_due', 'completed')

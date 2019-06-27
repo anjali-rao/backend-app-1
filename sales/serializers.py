@@ -488,7 +488,7 @@ class ClientSerializer(serializers.ModelSerializer):
     status = serializers.ReadOnlyField(source='get_status_display')
 
     def get_full_name(self, obj):
-        instance = obj.client or obj.quote.lead.contact
+        instance = obj.client or obj.quote.opportunity.lead.contact
         return instance.get_full_name()
 
     class Meta:
