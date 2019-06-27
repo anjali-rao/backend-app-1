@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from utils.models import BaseModel, models
 from utils import constants as Constants, get_choices
 from django.core.cache import cache
+from django.utils.timezone import now
 
 
 class Earning(BaseModel):
@@ -62,10 +63,10 @@ class Commission(BaseModel):
                 '10884022', '17/05/2019',
                 self.application.client.get_full_name())
             self.earning = Earning.objects.create(
-                user_id=self.application.quote.lead.user_id,
+                user_id=self.application.quote.opportunity.lead.user_id,
                 amount=self.amount, earning_type='commission',
                 status='pending', text=earning_text,
-                payable_date='2019-06-02')
+                payable_date=now())
         super(self.__class__, self).save(*args, **kwargs)
 
 
@@ -88,5 +89,5 @@ class Incentive(BaseModel):
                 user_id=self.user_id, amount=self.amount,
                 earning_type='incentive', status='pending',
                 text=earning_text, comment=self.comment,
-                payable_date='2019-06-02')
+                payable_date=now())
         super(self.__class__, self).save(*args, **kwargs)
