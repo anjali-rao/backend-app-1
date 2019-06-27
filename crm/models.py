@@ -140,6 +140,11 @@ class Contact(BaseModel):
             Constants.MARITAL_STATUS), max_length=32, null=True, blank=True)
     annual_income = models.CharField(max_length=48, null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        self.first_name = self.first_name.lower()
+        self.last_name = self.last_name.lower()
+        super(self.__class__, self).save(*args, **kwargs)
+
     def __str__(self):
         full_name = self.get_full_name()
         return '%s - %s' % ((
@@ -160,7 +165,7 @@ class Contact(BaseModel):
     def get_full_name(self):
         full_name = '%s %s %s' % (
             self.first_name, self.middle_name, self.last_name)
-        return full_name.strip()
+        return full_name.strip().title()
 
 
 class KYCDocument(BaseModel):
