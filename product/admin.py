@@ -56,8 +56,9 @@ class FeatureMasterAdmin(admin.ModelAdmin):
 @admin.register(Feature)
 class Feature(admin.ModelAdmin):
     list_display = ('feature_master', 'product_variant',)
-    search_fields = ('feature_master__name',)
+    search_fields = ('feature_master__name', 'product_variant__name')
     raw_id_fields = ('feature_master', 'product_variant')
+    list_filter = ('product_variant__name', 'feature_master__name',)
 
 
 @admin.register(SumInsuredMaster)
