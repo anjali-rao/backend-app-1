@@ -4,7 +4,8 @@ from users.views import (
     RegisterUser, verify_otp, generate_otp, generate_authorization,
     update_password, SearchAccount, PincodeSearch, GetEarnings,
     GetLeads, GetClients, GetCart, GetPlaylist, UpdateUser,
-    GetUserDetails, CreateAppointment, GetContact, AdvisorProfile
+    GetUserDetails, CreateAppointment, GetContact, AdvisorProfile,
+    send_sms
 )
 
 urlpatterns = [
@@ -24,5 +25,6 @@ urlpatterns = [
     path('user/profile/<slug:account__username>', AdvisorProfile.as_view()),
     path('user/appointment/create', CreateAppointment.as_view()),
     path('users/account/search', SearchAccount.as_view()),
+    path('users/send-sms', send_sms),
     path('pincode/search', PincodeSearch.as_view()),
 ]

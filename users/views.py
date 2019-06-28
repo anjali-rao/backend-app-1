@@ -11,7 +11,7 @@ from users.serializers import (
     AccountSearchSerializers, User, PincodeSerializer, Pincode,
     UpdateUserSerializer, UserEarningSerializer, UserDetailSerializerV2,
     UserDetailSerializerV3, LeadSerializer, ContactSerializers,
-    ClientSerializer, AdvisorSerializer
+    ClientSerializer, AdvisorSerializer, SendSMSSerializer
 )
 from sales.serializers import SalesApplicationSerializer
 from users.decorators import UserAuthentication
@@ -322,3 +322,11 @@ class AdvisorProfile(generics.RetrieveAPIView):
     serializer_class = AdvisorSerializer
     queryset = User.objects.all()
     lookup_field = 'account__username'
+
+
+@api_view(['POST'])
+def send_sms(request, version):
+    serializer = SendSMSSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.send_sms()
+    return Response(serializer.data, status=status.HTTP_200_OK)
