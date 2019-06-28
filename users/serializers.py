@@ -634,3 +634,24 @@ class AdvisorSerializer(serializers.ModelSerializer):
         fields = (
             'name', 'phone_no', 'email_id', 'profile_pic', 'pincode', 'city',
             'state', 'products')
+
+
+class SendSMSSerializer(serializers.Serializer):
+    phone_no = serializers.CharField(required=True)
+    message = serializers.CharField(required=True)
+
+    def validate_phone_no(self, value):
+        if not value.isdigit() or len(value) != 10:
+            raise serializers.ValidationError(
+                Constants.INVALID_PHONE_NO)
+        return value
+
+    def send_sms(self):
+        from users.tasks import send_sms
+        send_sms(
+            self.validated_data['phone_no'],
+            self.validated_data['message'])
+
+    @property
+    def data(self):
+        return dict(message='Message send successfully.')
