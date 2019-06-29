@@ -5,7 +5,7 @@ import requests
 import json
 
 
-class AdityaBirlaHealthInsurance(object):
+class ApolloMunichHealthInsurance(object):
     payment_url = 'https://pg-abhi.adityabirlahealth.com/ABHIPGIntegration/ABHISourceLanding.aspx' # noqa
 
     def __init__(self, wallnut):
@@ -188,3 +188,4 @@ class AdityaBirlaHealthInsurance(object):
             'Smoking_%s' % count: '',
             'Pouches_%s' % count: '',
         }
+
