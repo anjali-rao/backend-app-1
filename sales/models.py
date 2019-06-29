@@ -67,6 +67,23 @@ class Quote(BaseModel):
                 company_category.company.name,
                 company_category.company.website or '-'))]
 
+    @cached_property
+    def health_checkup(self):
+        return 1500 * self.opportunity.category_opportunity.adults
+
+    @cached_property
+    def wellness_reward(self):
+        return round(self.opportunity.category_opportunity.wellness_reward * self.premium.amount, 2) # noqa
+
+    @cached_property
+    def tax_saving(self):
+        return round(self.opportunity.category_opportunity.tax_saving * self.premium.amount, 2) # noqa
+
+    @cached_property
+    def effective_premium(self):
+        return round(self.premium.amount - (
+            self.health_checkup + self.wellness_reward + self.tax_saving))
+
 
 class Application(BaseModel):
     reference_no = models.CharField(max_length=10, unique=True, db_index=True)

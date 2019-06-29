@@ -238,13 +238,17 @@ class UserSerializer(serializers.ModelSerializer):
     profile_pic = serializers.FileField(
         source='account.profile_pic', default='')
     referral_code = serializers.ReadOnlyField(source='referral.code')
+    profile_url = serializers.SerializerMethodField()
+
+    def get_profile_url(self, obj):
+        return 'https://advisor.onecover.in/%s' % obj.account.username
 
     class Meta:
         model = User
         fields = (
             'user_id', 'first_name', 'last_name', 'email', 'phone_no',
             'gender', 'flat_no', 'street', 'city', 'state', 'pincode',
-            'profile_pic', 'rating', 'referral_code')
+            'profile_pic', 'rating', 'referral_code', 'profile_url')
 
 
 class AuthorizationSerializer(serializers.Serializer):
