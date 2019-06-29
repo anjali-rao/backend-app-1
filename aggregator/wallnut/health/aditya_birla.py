@@ -144,9 +144,9 @@ class AdityaBirlaHealthInsurance(object):
             nominee_Country='IN',
             nominee_StateCode=self.wallnut.state,
             nominee_TownCode=self.wallnut.city,
-            Namefor80D='R001', super_ncb='N',
-            reload_sum_insured='N', room_upgrade='N', disease1='N',
+            Namefor80D='R001', disease1='N',
             Doctorname='', ContactDetails='', lifestyle_ques='')
+        data.update(self.get_riders())
         nominee = self.application.nominee_set.filter(ignore=False).last()
         data.update(dict(
             NomineeName=nominee.get_full_name(),
@@ -168,6 +168,19 @@ class AdityaBirlaHealthInsurance(object):
             count += 1
 
         return data
+
+    def get_riders(self):
+        riders = dict(
+            super_ncb='N', reload_sum_insured='N', room_upgrade='N')
+        product = self.application.quote.premium.product_variant
+        if product.feature_variant == 'with Super NCB':
+            riders['super_ncb'] = 'Y'
+        elif product.feature_variant == 'with Super NCB & Unlimited Reload':
+            riders['super_ncb'] = 'Y'
+            riders['reload_sum_insured'] = 'Y'
+        elif product.feature_variant == 'with Unlimited Reload':
+            riders['reload_sum_insured'] = 'Y'
+        return riders
 
     def get_memeber_info(self, member, count):
         return {

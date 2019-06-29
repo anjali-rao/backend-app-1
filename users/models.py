@@ -343,7 +343,7 @@ class Enterprise(BaseModel):
         user = users.get()
         if self.promocode.code == 'OCOVR-1-3':
             self.enterprise_type = user.user_type = 'pos'
-        if self.promocode.code == 'OCOVR-2-4':
+        elif self.promocode.code == 'OCOVR-2-4':
             self.enterprise_type = user.user_type = 'subscriber'
         else:
             self.enterprise_type = user.user_type = 'enterprise'
