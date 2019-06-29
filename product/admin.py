@@ -81,7 +81,8 @@ class HealthPremiumAdmin(admin.ModelAdmin):
     ordering = ('sum_insured',)
     list_filter = (
         'product_variant__company_category__company__name',
-        'sum_insured', 'adults', 'childrens', 'citytier', 'ignore')
+        'sum_insured', 'adults', 'childrens', 'citytier', 'ignore',
+        'product_variant')
 
 
 @admin.register(FeatureCustomerSegmentScore)

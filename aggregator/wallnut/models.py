@@ -163,7 +163,6 @@ class Application(BaseModel):
         log.response = response
         log.save()
         self.raw_quote = self.get_live_quote(response['quote_data'])
-        self.premium = self.raw_quote['total_premium']
         self.company_name = re.sub('[ .]', '', self.raw_quote['company_name'])
         reference_app = self.reference_app
         reference_app.premium = self.raw_quote['total_premium']
@@ -176,9 +175,13 @@ class Application(BaseModel):
             ), quote_data)
         quote = next(data)
         premium = int(self.reference_app.premium)
+        product = self.reference_app.quote.premium.product_variant
+        if product.parent and product.company_category.company.short_name == 'Aditya Birla': # noqa
+            return quote
         while int(quote['total_premium']) not in range(
                 premium - 100, premium + 100):
             quote = next(data)
+        self.premium = quote['total_premium']
         return quote
 
     def get_user_id(self):
