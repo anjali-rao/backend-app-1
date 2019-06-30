@@ -20,6 +20,7 @@ jobs:
           command: |
             sudo pip install pipenv
             pipenv install
+            pipenv run "pip install -r requirements.txt"
       - save_cache:
           key: deps10-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
@@ -28,9 +29,16 @@ jobs:
             - '/usr/local/lib/python3.6/site-packages'
       - run:
           command: |
-            pipenv run "python manage.py test"
+            pipenv run "python manage.py makemigrations users payment content crm product sales questionnaire wallnut earnings"
+            pipenv run "python manage.py migrate"
+      - run:
+          command: |
+            pipenv run "python manage.py test -v 2 2> .circleci/test_report.log"
       - store_test_results:
           path: test-results
       - store_artifacts:
           path: test-results
           destination: tr1
+      - run:
+          command: |
+            pipenv run "python manage.py send_report"
