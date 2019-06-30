@@ -33,9 +33,9 @@ jobs:
             pipenv run "python manage.py migrate"
       - run:
           command: |
-            pipenv run "python manage.py test users.test -v 2 &> .circleci/test_report.log"
+            pipenv run "python manage.py test users.test -v 2"
       - store_test_results:
-          path: test-results
+          path: .circleci/test_report.log
       - store_artifacts:
           path: test-results
           destination: tr1
