@@ -395,6 +395,12 @@ class HealthInsurance(Insurance):
         quote = opportunity.get_quotes().first()
         if not quote:
             raise RecommendationException('No quote found for this creteria')
+        previous_quote = self.application.quote
+        if quote.id != previous_quote.id:
+            previous_quote.status = 'rejected'
+            previous_quote.save()
+        quote.status = 'accepted'
+        quote.save()
         self.application.quote_id = quote.id
         self.application.premium = quote.premium.amount
         self.application.suminsured = quote.premium.sum_insured
