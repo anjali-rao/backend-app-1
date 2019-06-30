@@ -40,7 +40,7 @@ class LeadCRUDSerializer(serializers.ModelSerializer):
         return value
 
     def get_contact(self, validated_data, **kwargs):
-        name = validated_data['contact_name'].split(' ')
+        name = validated_data['contact_name'].lower().split(' ')
         first_name = name[0]
         middle_name = name[1] if len(name) == 3 else ''
         last_name = name[2] if len(name) > 2 else (
@@ -368,3 +368,31 @@ class LeadDetailSerializer(serializers.ModelSerializer):
         fields = (
             'lead_id', 'phone_no', 'logo', 'address', 'stage', 'quotes',
             'created', 'notes', 'full_name')
+
+
+class SharedQuoteDetailsSerializer(serializers.ModelSerializer):
+    suminsured = serializers.ReadOnlyField(source='premium.sum_insured')
+    premium = serializers.ReadOnlyField(source='premium.amount')
+    benefits = serializers.SerializerMethodField()
+    company_details = serializers.SerializerMethodField()
+
+    def get_benefits(self, obj):
+        benefits = []
+        for f in obj.get_feature_details().exclude(
+                short_description__in=['Not Covered', 'Not covered', '']):
+            benefits.append({
+                'name': f['feature_master__name'].title(),
+                'description': f['short_description']})
+        return benefits
+
+    def get_company_details(self, obj):
+        details = obj.premium.product_variant.get_product_details()
+        details.update(obj.premium.product_variant.get_basic_details())
+        return details
+
+    class Meta:
+        model = Quote
+        fields = (
+            'suminsured', 'premium', 'benefits', 'company_details',
+            'tax_saving', 'wellness_reward', 'health_checkup',
+            'effective_premium')

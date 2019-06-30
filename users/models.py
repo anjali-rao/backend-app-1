@@ -106,9 +106,10 @@ class Account(AbstractUser):
     def generate_username(cls, first_name, last_name):
         username = ('%s-%s' % (first_name, last_name)).lower()
         accounts = cls.objects.filter(
-            first_name=first_name, last_name=last_name)
+            first_name__icontains=first_name,
+            last_name__icontains=last_name)
         if accounts.exists() and accounts.filter(username=username).exists():
-            username += '-' + str(accounts.count() - 1)
+            username += '-' + str(accounts.count())
         return username
 
     @property
@@ -325,13 +326,8 @@ class Enterprise(BaseModel):
     def save(self, *args, **kwargs):
         try:
             current = self.__class__.objects.get(pk=self.id)
-            if current.enterprise_type != self.enterprise_type and (
-                    self.enterprise_type != 'enterprise'):
-                users = User.objects.filter(enterprise_id=self.id)
-                if users.exists():
-                    user = users.get()
-                    user.user_type = self.enterprise_type
-                    user.save()
+            if current.promocode != self.promocode:
+                self.update_enterprise_type()
         except self.__class__.DoesNotExist:
             if self.promocode.code == 'OCOVR-1-3':
                 self.enterprise_type = 'pos'
@@ -339,6 +335,19 @@ class Enterprise(BaseModel):
 
     def __str__(self):
         return self.name
+
+    def update_enterprise_type(self):
+        users = User.objects.filter(enterprise_id=self.id)
+        if not users.exists():
+            return
+        user = users.get()
+        if self.promocode.code == 'OCOVR-1-3':
+            self.enterprise_type = user.user_type = 'pos'
+        elif self.promocode.code == 'OCOVR-2-4':
+            self.enterprise_type = user.user_type = 'subscriber'
+        else:
+            self.enterprise_type = user.user_type = 'enterprise'
+        user.save()
 
 
 class SubcriberEnterprise(BaseModel):

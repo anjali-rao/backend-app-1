@@ -75,6 +75,7 @@ class AdityaBirlaHealthInsurance(object):
         aadhar_no = self.application.client.kycdocument_set.filter(
             document_type='aadhaar_card').last()
         proposer_aadhar_no = aadhar_no.document_number if aadhar_no else ''
+        address = self.application.client.address.full_address
         data = dict(
             city_id=self.wallnut.city_code, me=self.wallnut.health_me,
             insu_id=self.wallnut.insurer_code,
@@ -106,8 +107,8 @@ class AdityaBirlaHealthInsurance(object):
                 self.application.client.annual_income) or 500000,
             proposer_PanNumber=proposer_pannumber,
             proposer_AadhaarNo=proposer_aadhar_no,
-            proposer_AddressLine1=self.application.client.address.full_address,
-            proposer_AddressLine2='', proposer_AddressLine3='',
+            proposer_AddressLine1=address[:50],
+            proposer_AddressLine2=address[51:], proposer_AddressLine3='',
             proposer_PinCode=self.application.client.address.pincode.pincode,
             proposer_Country='Indian', proposer_StateCode=self.wallnut.state,
             proposer_TownCode=self.wallnut.city,
@@ -143,9 +144,9 @@ class AdityaBirlaHealthInsurance(object):
             nominee_Country='IN',
             nominee_StateCode=self.wallnut.state,
             nominee_TownCode=self.wallnut.city,
-            Namefor80D='R001', super_ncb='N',
-            reload_sum_insured='N', room_upgrade='N', disease1='N',
+            Namefor80D='R001', disease1='N',
             Doctorname='', ContactDetails='', lifestyle_ques='')
+        data.update(self.get_riders())
         nominee = self.application.nominee_set.filter(ignore=False).last()
         data.update(dict(
             NomineeName=nominee.get_full_name(),
@@ -167,6 +168,19 @@ class AdityaBirlaHealthInsurance(object):
             count += 1
 
         return data
+
+    def get_riders(self):
+        riders = dict(
+            super_ncb='N', reload_sum_insured='N', room_upgrade='N')
+        product = self.application.quote.premium.product_variant
+        if product.feature_variant == 'with Super NCB':
+            riders['super_ncb'] = 'Y'
+        elif product.feature_variant == 'with Super NCB & Unlimited Reload':
+            riders['super_ncb'] = 'Y'
+            riders['reload_sum_insured'] = 'Y'
+        elif product.feature_variant == 'with Unlimited Reload':
+            riders['reload_sum_insured'] = 'Y'
+        return riders
 
     def get_memeber_info(self, member, count):
         return {

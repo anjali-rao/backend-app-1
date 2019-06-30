@@ -200,8 +200,8 @@ class HealthPremium(BaseModel):
         'product.DeductibleMaster', null=True, blank=True,
         on_delete=models.CASCADE)
     sum_insured = models.IntegerField(default=0.0)
-    suminsured_range = IntegerRangeField(default=(0, 300000), db_index=True)
-    age_range = IntegerRangeField(default=(0, 100), db_index=True)
+    suminsured_range = IntegerRangeField(default=(1, 300000), db_index=True)
+    age_range = IntegerRangeField(default=(1, 100), db_index=True)
     adults = models.IntegerField(null=True, blank=True, db_index=True)
     childrens = models.IntegerField(null=True, blank=True, db_index=True)
     citytier = models.CharField(
@@ -233,4 +233,5 @@ class HealthPremium(BaseModel):
         return round((self.gst * self.base_premium) + self.base_premium, 2)
 
     def __str__(self):
-        return '%s | %s' % (self.sum_insured, self.age_range)
+        return '%s | %s | %s' % (
+            self.sum_insured, self.product_variant.name, self.age_range)
