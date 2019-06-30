@@ -35,7 +35,7 @@ jobs:
           command: |
             pipenv run "python manage.py test users.test -v 2"
       - store_test_results:
-          path: .circleci/test_report.log
+          path: test-results
       - store_artifacts:
           path: test-results
           destination: tr1
