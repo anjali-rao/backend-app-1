@@ -3,8 +3,7 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import (
-    constants as Constants, get_choices, get_upload_path,
-    genrate_random_string)
+    constants as Constants, get_choices, get_upload_path)
 
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.contrib.auth.models import AbstractUser
@@ -210,6 +209,9 @@ class User(BaseModel):
             categories, key=lambda category: Constants.CATEGORY_ORDER.get(
                 category['name'], 1))
         return categories
+
+    def get_companies(self):
+        return self.enterprise.companies.filter(is_active=True)
 
     def get_applications(self, status=None):
         from sales.models import Application

@@ -17,7 +17,7 @@ class CompanyAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description')
+    list_display = ('name', 'description', 'is_active')
     search_fields = ('name',)
 
 
