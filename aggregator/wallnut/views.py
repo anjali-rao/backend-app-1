@@ -23,8 +23,8 @@ class AdityaBirlaPaymentGateway(views.View):
                 raise PermissionDenied()
             if request.is_ajax():
                 context = dict(
-                    email=app.reference_app.client.email,
-                    phone_no=app.reference_app.client.phone_no,
+                    email=app.reference_app.proposer.email,
+                    phone_no=app.reference_app.proposer.phone_no,
                     source_code='WMGR0026', premium=app.premium,
                     secSignature=self._secSignature,
                     return_url=self.return_url % (
@@ -125,8 +125,8 @@ class HDFCPaymentGateway(views.View):
                 app.save()
                 context = self.get_paramaters(app)
                 context.update(dict(
-                    customer_email=app.reference_app.client.email,
-                    customer_name=app.reference_app.client.get_full_name(),
+                    customer_email=app.reference_app.proposer.email,
+                    customer_name=app.reference_app.proposer.get_full_name(),
                     premium=int(app.premium)))
                 ApplicationRequestLog.objects.create(
                     url='https://netinsure.hdfcergo.com/onlineproducts/healthonline/tim.aspx', # noqa

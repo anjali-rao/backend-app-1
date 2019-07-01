@@ -177,7 +177,7 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
             kycdocument.save()
             self.instance.update_fields(**update_fields)
             app.update_fields(**dict(
-                status='pending', client_id=self.instance.id,
+                status='pending', proposer_id=self.instance.id,
                 stage='insured_members'))
 
     def create(self, valid_data):
@@ -423,7 +423,7 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
     existing_policies = serializers.SerializerMethodField()
 
     def get_proposer_details(self, obj):
-        proposer = self.instance.client or self.instance.quote.opportunity.lead.contact # noqa
+        proposer = self.instance.proposer or self.instance.quote.opportunity.lead.contact # noqa
         return GetProposalDetailsSerializer(proposer).data
 
     def get_insured_members(self, obj):
@@ -469,7 +469,7 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         return self.context.get('section', '-')
 
     def get_proposer_name(self, obj):
-        instance = obj.client or obj.quote.opportunity.lead.contact
+        instance = obj.proposer or obj.quote.opportunity.lead.contact
         return instance.get_full_name()
 
     class Meta:
@@ -485,12 +485,12 @@ class ClientSerializer(serializers.ModelSerializer):
         source='quote.premium.product_variant.logo')
     product_name = serializers.ReadOnlyField(
         source='quote.premium.product_variant.product_short_name')
-    full_name = serializers.SerializerMethodField()
-    status = serializers.ReadOnlyField(source='get_status_display')
+    full_name = serializers.ReadOnlyField(
+        source='quote.opportunity.lead.contact.get_full_name')
+    status = serializers.SerializerMethodField()
 
-    def get_full_name(self, obj):
-        instance = obj.client or obj.quote.opportunity.lead.contact
-        return instance.get_full_name()
+    def get_status(self, obj):
+        return ''
 
     class Meta:
         model = Application
@@ -525,7 +525,7 @@ class VerifyProposerPhonenoSerializer(serializers.ModelSerializer):
         model = Application
         fields = (
             'otp', 'application_id', 'application_reference_no',
-            'client_verified')
+            'proposer_verified')
 
 
 class UploadContactDocumentSerializer(serializers.ModelSerializer):

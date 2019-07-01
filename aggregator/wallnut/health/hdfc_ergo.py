@@ -53,7 +53,8 @@ class HDFCERGOHealthInsurance(object):
         return response
 
     def get_data(self):
-        aadhar_no = self.application.client.proposerdocument_set.filter(
+        proposer = self.application.proposer
+        aadhar_no = proposer.proposerdocument_set.filter(
             document_type='aadhaar_card', ignore=False).last()
         aadhar_no = aadhar_no.document_number if aadhar_no else '000000000000'
         data = dict(
@@ -74,10 +75,10 @@ class HDFCERGOHealthInsurance(object):
             ApplLastName=self.wallnut.proposer.last_name,
             ApplGender=Constant.GENDER.get(self.wallnut.proposer.gender),
             ApplDOB=self.wallnut.proposer.dob.strftime('%d-%m-%Y'),
-            UIDNo=aadhar_no, EmailId=self.application.client.email,
-            MobileNo=self.application.client.phone_no,
+            UIDNo=aadhar_no, EmailId=proposer.email,
+            MobileNo=proposer.phone_no,
             PhoneNo='', Address1='ST bed Layout, Kormamongala',
-            Pincode=self.application.client.address.pincode.pincode,
+            Pincode=proposer.address.pincode.pincode,
             State=self.wallnut.state, City=self.city_mapper(self.wallnut.city),
             local_data_values=json.dumps(dict(
                 health_city_id=self.wallnut.city_code,
@@ -96,7 +97,7 @@ class HDFCERGOHealthInsurance(object):
                     self.wallnut.suminsured, self.wallnut.suminsured],
                 health_user_id=self.wallnut.user_id,
                 gender_age=self.wallnut.gender_ages,
-                pincode=self.application.client.address.pincode.pincode,
+                pincode=proposer.address.pincode.pincode,
             )),
             disease1='N',
             insured_pattern=self.get_insurance_pattern(),

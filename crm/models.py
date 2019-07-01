@@ -19,6 +19,7 @@ class Lead(BaseModel):
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
     pincode = models.CharField(max_length=6, null=True)
     bookmark = models.BooleanField(default=False)
+    is_client = models.BooleanField(default=False)
     ignore = models.BooleanField(default=False)
 
     class Meta:

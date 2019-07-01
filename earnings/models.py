@@ -14,7 +14,7 @@ class Earning(BaseModel):
         choices=get_choices(Constants.EARNING_TYPES), max_length=16)
     comment = models.TextField(blank=True, null=True)
     status = models.CharField(
-        choices=get_choices(Constants.EARNING_STATUS), max_length=16)
+        choices=get_choices(Constants.EARNING_STATUS), max_length=32)
     transaction_allowed = models.BooleanField(default=False)
     text = models.CharField(max_length=512)
     payable_date = models.DateTimeField()
@@ -58,15 +58,15 @@ class Commission(BaseModel):
 
     def save(self, *args, **kwargs):
         if self.updated and not self.__class__.objects.get(pk=self.id).updated:
-            # To do replace with policy
             earning_text = Constants.COMMISSION_TEXT % (
-                '10884022', '17/05/2019',
-                self.application.client.get_full_name())
+                self.application.reference_no, now().date(),
+                self.application.proposer.get_full_name())
+            from dateutil.relativedelta import relativedelta
             self.earning = Earning.objects.create(
                 user_id=self.application.quote.opportunity.lead.user_id,
                 amount=self.amount, earning_type='commission',
-                status='pending', text=earning_text,
-                payable_date=now())
+                status='collecting_application', text=earning_text,
+                payable_date=now() + relativedelta(days=30))
         super(self.__class__, self).save(*args, **kwargs)
 
 

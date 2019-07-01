@@ -54,12 +54,12 @@ class ApplicationAdmin(admin.ModelAdmin):
         'terms_and_conditions', 'aggregator_operation', 'payment_link',
         'payment_captured', 'created')
     list_filter = ('application_type', 'terms_and_conditions', 'status')
-    raw_id_fields = ('client', 'quote')
+    raw_id_fields = ('proposer', 'quote')
     search_fields = (
         'reference_no', 'quote__id', 'quote__opportunity__lead__id', 'id',
-        'client__phone_no', 'client__address__pincode__pincode',
-        'client__first_name', 'client__last_name',
-        'client__address__pincode__city',
+        'proposer__phone_no', 'proposer__address__pincode__pincode',
+        'proposer__first_name', 'proposer__last_name',
+        'proposer__address__pincode__city',
     )
     actions = ['send_to_Aggregator', 'generate_Aggregator_Payment_Link']
     _inlines_class_set = dict(
@@ -154,13 +154,14 @@ class PolicyAdmin(admin.ModelAdmin):
     list_display = ('application', 'policy_number', 'policy_file', 'created')
     search_fields = (
         'application__quote__lead__user_phone_no',
-        'application__client_phone_no', 'application__client_email')
+        'application__proposer_phone_no', 'application__proposer_email')
     list_filter = ('application__quote__opportunity__category',)
     raw_id_fields = ('application',)
 
 
 @admin.register(ProposerDocument)
 class ProposerDocumentAdmin(admin.ModelAdmin):
-    list_display = ('contact', 'document_number', 'file')
+    list_display = ('contact', 'document_type', 'file')
     search_fields = ('contact__phone_no',)
     raw_id_fields = ('contact',)
+    list_filter = ('document_type',)

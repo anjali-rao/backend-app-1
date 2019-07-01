@@ -55,7 +55,14 @@ MARITAL_STATUS = ('married', 'single', 'divorced')
 PLAYLIST_CHOICES = ('marketing', 'training')
 REQUEST_CHOICES = ['GET', 'POST', 'PUT', 'PATCH']
 AGGREGATOR_CHOICES = ['offline', 'wallnut']
-EARNING_STATUS = ('paid', 'pending', 'processing')
+EARNING_STATUS = (
+    'collecting_application', 'collection_incomplete',
+    'application_collected', 'application_submitted', 'uw_pending',
+    'medical_scheduled', 'medical_completed', 'medical_incomplete',
+    'policy_issued', 'policy_rejected', 'policy_followup',
+    'application_resubmitted', 'loading_applied', 'loading_paid',
+    'commission_due', 'commission_paid', 'commission_payment_error')
+
 COLLATERALS_TYPE = ('marketing', 'training')
 COLLATERALS_CHOICES = (
     'png', 'youtube', 'pdf', 'blog_article')
@@ -231,7 +238,7 @@ ENT_DISEASE = 'Disease of Eye, Ear, Nose, Throat, Thyroid'
 CARDIOVASCULAR_DISEASE = 'Tuberculosis (TB), any Respiratory / Lung disease'
 RESPIRATORY_DISEASES = 'Any form of Heart Disease, Peripheral Vascular Disease, procedures like Angioplasty/PTCA/By Pass Surgery, valve replacement etc' # noqa
 BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Blood disorder (whether treated or not)' # noqa
-COMMISSION_TEXT = 'Commission for policy # %s issued on %s to %s'
+COMMISSION_TEXT = 'Commission against application no # %s issued on %s to %s'
 REFERRAL_TEXT = 'Referring to %s'
 INCENTIVE_TEXT = 'Incentive for %s'
 

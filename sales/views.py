@@ -67,7 +67,7 @@ class RetrieveUpdateProposerDetails(
         filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
         try:
             application = _get_object_or_404(queryset, **filter_kwargs)
-            self._obj = application.client or application.quote.opportunity.lead.contact # noqa
+            self._obj = application.proposer or application.quote.opportunity.lead.contact # noqa
         except (TypeError, ValueError, ValidationError):
             self._obj = Http404
 
@@ -312,7 +312,7 @@ class VerifyProposerPhoneno(views.APIView):
             serializer = VerifyProposerPhonenoSerializer(
                 instance, data=request.data)
             serializer.is_valid(raise_exception=True)
-            serializer.save(client_verified=True)
+            serializer.save(proposer_verified=True)
             response = serializer.data
             response['payment_status'] = instance.payment_mode != 'offline'
             return Response(serializer.data)
@@ -325,6 +325,16 @@ class UploadProposerDocuments(generics.UpdateAPIView):
     serializer_class = UploadContactDocumentSerializer
     queryset = Application.objects.all()
 
-    def get_object(self):
-        app = super(self.__class__, self).get_object()
-        return app.client
+    def update(self, request, version, *args, **kwargs):
+        with transaction.atomic():
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+            serializer = self.get_serializer(
+                instance.proposer, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            instance.refresh_from_db()
+            if instance.proposer.proposerdocument_set.filter(
+                    ignore=False, document_type='cancelled_cheque').exists():
+                instance.create_client()
+        return Response(serializer.data)

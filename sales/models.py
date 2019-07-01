@@ -90,7 +90,7 @@ class Application(BaseModel):
     reference_no = models.CharField(max_length=10, unique=True, db_index=True)
     premium = models.FloatField(default=0.0)
     suminsured = models.FloatField(default=0.0)
-    client = models.ForeignKey(
+    proposer = models.ForeignKey(
         'crm.Contact', null=True, on_delete=models.PROTECT)
     application_type = models.CharField(
         max_length=32, choices=get_choices(Constants.APPLICATION_TYPES))
@@ -102,7 +102,7 @@ class Application(BaseModel):
         choices=get_choices(Constants.APPLICATION_STAGES))
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
-    client_verified = models.BooleanField(default=False)
+    proposer_verified = models.BooleanField(default=False)
     payment_mode = models.CharField(max_length=64, choices=get_choices(
         Constants.AGGREGATOR_CHOICES), default='offline')
     terms_and_conditions = models.BooleanField(null=True)
@@ -196,7 +196,7 @@ class Application(BaseModel):
 
     def send_propser_otp(self):
         from users.models import Account
-        Account.send_otp('APP-%s:' % self.reference_no, self.client.phone_no)
+        Account.send_otp('APP-%s:' % self.reference_no, self.proposer.phone_no)
 
     def create_policy(self):
         return Policy.objects.create(application_id=self.id)
@@ -231,6 +231,24 @@ class Application(BaseModel):
     @cached_property
     def people_listed(self):
         return self.active_members.count()
+
+    def create_client(self):
+        lead = self.quote.opportunity.lead
+        if not lead.is_client:
+            lead.is_client = True
+            lead.save()
+        self.create_policy()
+        self.status = 'completed'
+        self.save()
+
+    def create_commission(self):
+        from earnings.models import Commission
+        cc = self.quote.premium.product_variant.company_category
+        amount = self.quote.premium.commission + cc.company.commission + cc.category.commission + self.quote.opportunity.lead.user.enterprise.commission # noqa
+        commission, created = Commission.objects.get_or_create(
+            application_id=self.id, amount=self.premium * amount)
+        commission.updated = True
+        commission.save()
 
     def __str__(self):
         return '%s - %s - %s' % (
@@ -476,6 +494,11 @@ class Policy(BaseModel):
     policy_file = models.FileField(
         upload_to=Constants.POLICY_UPLOAD_PATH,
         null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.__class__.objects.filter(pk=self.id).exists():
+            self.application.create_commission()
+        super(self.__class__, self).save(*args, **kwargs)
 
 
 @receiver(post_save, sender=Application, dispatch_uid="action%s" % str(now()))

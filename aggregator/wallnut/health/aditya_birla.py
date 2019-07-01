@@ -69,13 +69,14 @@ class AdityaBirlaHealthInsurance(object):
         return response
 
     def get_data(self):
-        pan_no = self.application.client.proposerdocument_set.filter(
+        proposer = self.application.proposer
+        pan_no = proposer.proposerdocument_set.filter(
             document_type='pancard', ignore=False).last()
         proposer_pannumber = pan_no.document_number if pan_no else ''
-        aadhar_no = self.application.client.proposerdocument_set.filter(
+        aadhar_no = proposer.proposerdocument_set.filter(
             document_type='aadhaar_card', ignore=False).last()
         proposer_aadhar_no = aadhar_no.document_number if aadhar_no else ''
-        address = self.application.client.address.full_address
+        address = proposer.address.full_address
         data = dict(
             city_id=self.wallnut.city_code, me=self.wallnut.health_me,
             insu_id=self.wallnut.insurer_code,
@@ -97,19 +98,19 @@ class AdityaBirlaHealthInsurance(object):
                 self.wallnut.proposer.gender),
             proposer_MaritalStatusCode=self.wallnut.proposer.marital_status,
             proposer_BirthDate=self.wallnut.proposer.dob.strftime('%d-%m-%Y'),
-            proposer_Email=self.application.client.email,
-            proposer_Number=self.application.client.phone_no,
+            proposer_Email=proposer.email,
+            proposer_Number=proposer.phone_no,
             proposer_Height=self.wallnut.proposer.height,
             proposer_Weight=self.wallnut.proposer.weight,
             proposer_OccupationCode=Constant.OCCUPATION_CODE.get(
                 self.wallnut.proposer.occupation, 'O009'),
             proposer_AnnualIncome=Constant.INCOME.get(
-                self.application.client.annual_income) or 500000,
+                proposer.annual_income) or 500000,
             proposer_PanNumber=proposer_pannumber,
             proposer_AadhaarNo=proposer_aadhar_no,
             proposer_AddressLine1=address[:50],
             proposer_AddressLine2=address[51:], proposer_AddressLine3='',
-            proposer_PinCode=self.application.client.address.pincode.pincode,
+            proposer_PinCode=proposer.address.pincode.pincode,
             proposer_Country='Indian', proposer_StateCode=self.wallnut.state,
             proposer_TownCode=self.wallnut.city,
             self_insured=self.wallnut.self_insured,
@@ -117,7 +118,7 @@ class AdityaBirlaHealthInsurance(object):
             health_insu_id=self.wallnut.insurer_code,
             health_pay_mode=self.wallnut.pay_mode,
             insured_pattern='', customer_id='', proposal_id='',
-            pincode=self.application.client.address.pincode.pincode,
+            pincode=proposer.address.pincode.pincode,
             local_data_values=json.dumps(dict(
                 health_city_id=self.wallnut.city_code,
                 health_insu_id=self.wallnut.insurer_code,
@@ -137,7 +138,7 @@ class AdityaBirlaHealthInsurance(object):
                 gender_age=self.wallnut.gender_ages
             )),
             nominee_add_same_as_proposer_add='Y',
-            nominee_AddressLine1=self.application.client.address.full_address,
+            nominee_AddressLine1=proposer.address.full_address,
             nominee_AddressLine2='',
             nominee_AddressLine3='',
             nominee_PinCode=self.wallnut.pincode,
