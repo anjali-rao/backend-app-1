@@ -115,7 +115,7 @@ class Opportunity(BaseModel):
 
     @property
     def companies_id(self):
-        return self.lead.user.enterprise.companies.values_list('id', flat=True)
+        return self.lead.user.get_companies().values_list('id', flat=True)
 
 
 class Contact(BaseModel):
