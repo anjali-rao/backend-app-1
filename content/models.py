@@ -85,6 +85,9 @@ class PromoBook(BaseModel):
 
 class Collateral(BaseModel):
     name = models.CharField(max_length=256)
+    thumbnail = models.URLField(null=True, blank=True)
+    category = models.ForeignKey(
+        'product.Category', null=True, blank=True, on_delete=models.PROTECT)
     url = models.URLField()
     collateral_type = models.CharField(
         max_length=16, choices=get_choices(Constants.COLLATERALS_TYPE))

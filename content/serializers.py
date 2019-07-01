@@ -124,9 +124,10 @@ class AppoinmentSerializer(serializers.ModelSerializer):
 
 
 class CollateralSerializer(serializers.ModelSerializer):
+    category = serializers.ReadOnlyField(source='category.name', default='')
 
     class Meta:
         model = Collateral
         fields = (
-            'name', 'url', 'collateral_type', 'collateral', 'short_descripton',
-            'long_descripton')
+            'name', 'url', 'thumbnail', 'collateral_type', 'collateral',
+            'short_descripton', 'long_descripton', 'category')

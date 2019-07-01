@@ -623,7 +623,7 @@ class AdvisorSerializer(serializers.ModelSerializer):
 
     def get_products(self, obj):
         data = list()
-        companies = obj.enterprise.companies.all()
+        companies = obj.get_companies()
         from product.serializers import BrandSerializers
         for category in obj.enterprise.categories.filter(is_active=True):
             data.append(dict(
