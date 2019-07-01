@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, absolute_import
+from __future__ import unicode_literals
 
 from django.core.cache import cache
 
@@ -16,30 +16,30 @@ class UserAPISTestCases(BaseTestCase):
     """
 
     def test_generate_otp(self):
-        self.generate_otp(self.PHONE_NO, status.HTTP_200_OK)
+        response = self.generate_otp(self.PHONE_NO)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_invalid_phone_no(self):
-        self.generate_otp(636284396, status.HTTP_400_BAD_REQUEST)
+        response = self.generate_otp(636284396)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_invalid_data(self):
-        self.generate_otp('qwerty123', status.HTTP_400_BAD_REQUEST)
+        response = self.generate_otp('qwerty123')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_valid_otp_verification(self):
         otp = cache.get('OTP:' + str(self.PHONE_NO) + '')
-        self.otp_verification(
-            otp=otp, phone_no=self.PHONE_NO,
-            status_code=status.HTTP_200_OK)
+        response = self.otp_verification(otp=otp, phone_no=self.PHONE_NO)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_invalid_otp_verification(self):
-        self.otp_verification(
-            otp=12345, phone_no=self.PHONE_NO,
-            status_code=status.HTTP_400_BAD_REQUEST)
+        response = self.otp_verification(otp=12345, phone_no=self.PHONE_NO)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_otp_verification_invalid_phone_no(self):
         otp = cache.get('OTP:' + str(self.PHONE_NO) + '')
-        self.otp_verification(
-            otp=otp, phone_no=1234567890,
-            status_code=status.HTTP_400_BAD_REQUEST)
+        response = self.otp_verification(otp=otp, phone_no=1234567890)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_register_invalid_user(self):
         data = dict(
@@ -60,35 +60,39 @@ class UserAPISTestCases(BaseTestCase):
         self.assertEqual(User.objects.get(id=user_id).user_type, user_type)
 
     def test_register_subscriber(self):
-        user_id = self.register_user(self.PHONE_NO, 'OCOVR-2-4', self.PASSCODE)
+        response = self.register_user(self.PHONE_NO, 'OCOVR-2-4', self.PASSCODE)
+        user_id = response.json().get('user_id')
         self.check_user_type(user_id, 'subscriber')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_register_existing_user(self):
         self.register_user(
             self.PHONE_NO, 'OCOVR-2-4', self.PASSCODE)
-        self.register_user(
+        response = self.register_user(
             phone_no=self.PHONE_NO,
-            promo_code='OCOVR-2-4', passcode=self.PASSCODE,
-            status_code=status.HTTP_400_BAD_REQUEST)
+            promo_code='OCOVR-2-4',
+            passcode=self.PASSCODE
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_register_transaction_user(self):
         user_id = self.register_user(
-            6362843967, "OCOVR-1-3", self.PASSCODE)
+            6362843967, "OCOVR-1-3", self.PASSCODE
+        ).json().get('user_id')
         self.check_user_type(user_id, "pos")
 
     def test_register_enterprise_user(self):
         user_id = self.register_user(
-            6362843968, 'HDFC-1-3', self.PASSCODE)
+            6362843968, 'HDFC-1-3', self.PASSCODE
+        ).json().get('user_id')
         self.check_user_type(user_id, 'enterprise')
 
     def change_password(
             self, phone_no, passcode,
             status_code=status.HTTP_200_OK):
-        self.generate_otp(self.PHONE_NO, status.HTTP_200_OK)
+        self.generate_otp(self.PHONE_NO)
         otp = cache.get('OTP:' + str(self.PHONE_NO) + '')
-        response = self.otp_verification(
-            otp=otp, phone_no=self.PHONE_NO,
-            status_code=status.HTTP_200_OK)
+        response = self.otp_verification(otp=otp, phone_no=self.PHONE_NO)
 
         transaction_id = response.json().get('transaction_id', '')
         self.assertEqual(not transaction_id, False)
@@ -103,7 +107,8 @@ class UserAPISTestCases(BaseTestCase):
         passcode = 1234
         self.register_user(self.PHONE_NO, 'OCOVR-2-4', self.PASSCODE)
         self.change_password(self.PHONE_NO, passcode, status.HTTP_200_OK)
-        self.login_user(self.PHONE_NO, passcode)
+        response = self.login_user(self.PHONE_NO, passcode)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_change_password_unregistered_phone_no(self):
         self.change_password(
@@ -119,12 +124,13 @@ class UserAPISTestCases(BaseTestCase):
             passcode=passcode,
             promo_code='OCOVR-2-4'
         )
-        self.login_user(self.PHONE_NO, passcode)
+        response = self.login_user(self.PHONE_NO, passcode)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_login_unregistered_user(self):
-        self.login_user(
-            phone_no=1234567890, passcode=1111,
-            status_code=status.HTTP_400_BAD_REQUEST)
+        response = self.login_user(
+            phone_no=1234567890, passcode=1111)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def update_user(
         self, pincode, first_name, auth_token,
@@ -144,7 +150,7 @@ class UserAPISTestCases(BaseTestCase):
             promo_code='OCOVR-2-4')
 
         response = self.login_user(self.PHONE_NO, passcode)
-        auth_token = response.get('authorization')
+        auth_token = response.json().get('authorization')
         self.assertEqual(not auth_token, False)
 
         self.update_user(
@@ -161,7 +167,7 @@ class UserAPISTestCases(BaseTestCase):
             passcode=passcode, promo_code='OCOVR-2-4')
 
         response = self.login_user(self.PHONE_NO, passcode)
-        auth_token = response.get('authorization')
+        auth_token = response.json().get('authorization')
         self.assertEqual(not auth_token, False)
 
         self.update_user(
@@ -178,9 +184,10 @@ class UserAPISTestCases(BaseTestCase):
         user_id = self.register_user(
             phone_no=self.PHONE_NO,
             passcode=self.PASSCODE,
-            promo_code='OCOVR-2-4')
+            promo_code='OCOVR-2-4'
+        ).json().get('user_id')
         response = self.login_user(self.PHONE_NO, self.PASSCODE)
-        auth_token = response.get('authorization')
+        auth_token = response.json().get('authorization')
         self.assertEqual(not auth_token, False)
         header = dict(
             HTTP_AUTHORIZATION=auth_token
@@ -194,9 +201,9 @@ class UserAPISTestCases(BaseTestCase):
             phone_no=self.PHONE_NO,
             passcode=self.PASSCODE,
             promo_code='OCOVR-2-4'
-        )
+        ).json().get('user_id')
         response =  self.login_user(self.PHONE_NO, self.PASSCODE)
-        auth_token = response.get('authorization')
+        auth_token = response.json().get('authorization')
         self.assertEqual(not auth_token, False)
         header = dict(
             HTTP_AUTHORIZATION=auth_token
