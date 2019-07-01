@@ -36,7 +36,7 @@ jobs:
             pipenv run python manage.py test users.test -v 2 2> .circleci/test_output.log
       - run:
           command: |
-            sed -e '1,13d' < .circleci/test_output.log  > .circleci/test_report.log
+            sed -e '1,10d' < .circleci/test_output.log  > .circleci/test_report.log
       - store_test_results:
           path: test-results
       - store_artifacts:
