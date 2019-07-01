@@ -13,7 +13,8 @@ from sales.serializers import (
     CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
     TravalInsuranceSerializer, TermsSerializer, ExistingPolicySerializer,
     GetInsuranceFieldsSerializer, ApplicationSummarySerializer,
-    UpdateApplicationSerializers, VerifyProposerPhonenoSerializer
+    UpdateApplicationSerializers, VerifyProposerPhonenoSerializer,
+    UploadContactDocumentSerializer
 )
 
 from django.core.exceptions import ValidationError
@@ -317,3 +318,13 @@ class VerifyProposerPhoneno(views.APIView):
             return Response(serializer.data)
         except Application.DoesNotExist:
             raise mixins.APIException(constants.INVALID_APPLICATION_ID)
+
+
+class UploadProposerDocuments(generics.UpdateAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = UploadContactDocumentSerializer
+    queryset = Application.objects.all()
+
+    def get_object(self):
+        app = super(self.__class__, self).get_object()
+        return app.client

@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import (
-    constants as Constants, get_choices, get_upload_path)
+    constants as Constants, get_choices, get_kyc_upload_path)
 
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.contrib.auth.models import AbstractUser
@@ -62,8 +62,8 @@ class Account(AbstractUser):
             name = validated_data[field].name.split('.')
             file_name = '%s_%s_%s.%s' % (
                 self.id, name[0], now().date().isoformat(), name[1])
-            doc = Document.objects.create(
-                doc_type=field, account_id=self.id)
+            doc = KYCDocument.objects.create(
+                document_type=field, account_id=self.id)
             doc.file.save(file_name, validated_data[field])
             validated_data[field] = doc.file.url
         return validated_data
@@ -118,11 +118,12 @@ class Account(AbstractUser):
 
     @property
     def profile_pic(self):
-        docs = Document.objects.filter(doc_type='photo', account_id=self.id)
+        docs = KYCDocument.objects.filter(
+            document_type='photo', account_id=self.id)
         if docs.exists():
             return docs.last().file
-        return Document.objects.filter(
-            doc_type='photo', account_id=1).first().file
+        return KYCDocument.objects.filter(
+            document_type='photo', account_id=1).first().file
 
     def __str__(self):
         return 'Account: %s - %s' % (
@@ -401,14 +402,23 @@ class Referral(BaseModel):
         'users.User', null=True, blank=True, on_delete=models.CASCADE)
 
 
-class Document(BaseModel):
+class KYCDocument(BaseModel):
     account = models.ForeignKey('users.Account', on_delete=models.CASCADE)
-    doc_type = models.CharField(
+    document_type = models.CharField(
         choices=get_choices(Constants.KYC_DOC_TYPES), max_length=16)
-    file = models.FileField(upload_to=get_upload_path)
+    document_number = models.CharField(max_length=64)
+    file = models.FileField(upload_to=get_kyc_upload_path)
+    ignore = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        previous = self.__class__.objects.filter(
+            document_type=self.document_type, account_id=self.id)
+        if previous.exists():
+            previous.update(ignore=True)
+        super(self.__class__, self).save(*args, **kwargs)
 
     def __str__(self):
-        return self.doc_type
+        return self.document_type
 
 
 class BankAccount(BaseModel):

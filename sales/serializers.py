@@ -2,9 +2,9 @@ from rest_framework import serializers
 
 from sales.models import (
     Application, Member, Nominee, Quote, HealthInsurance,
-    TravelInsurance, ExistingPolicies
+    TravelInsurance, ExistingPolicies, ProposerDocument
 )
-from crm.models import Contact, KYCDocument, Lead
+from crm.models import Contact, Lead
 from users.models import Pincode, Address
 from utils import constants as Constants, mixins
 
@@ -170,9 +170,9 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                     dob=validated_data['dob']))
             self.instance = super(
                 UpdateContactDetailsSerializer, self).save(**kwargs)
-            kycdocument, created = KYCDocument.objects.get_or_create(
+            kycdocument, created = ProposerDocument.objects.get_or_create(
                 document_type=validated_data['document_type'],
-                contact_id=self.instance.id)
+                contact_id=self.instance.id, ignore=False)
             kycdocument.document_number = validated_data['document_number']
             kycdocument.save()
             self.instance.update_fields(**update_fields)
@@ -526,3 +526,30 @@ class VerifyProposerPhonenoSerializer(serializers.ModelSerializer):
         fields = (
             'otp', 'application_id', 'application_reference_no',
             'client_verified')
+
+
+class UploadContactDocumentSerializer(serializers.ModelSerializer):
+    cancelled_cheque = serializers.FileField(required=False)
+
+    def validate(self, data):
+        if not data or not any(
+                x in data.keys() for x in Constants.KYC_DOC_TYPES):
+            raise serializers.ValidationError(
+                Constants.NO_FIELDS_INPUT_OR_INVALID_FIELDS)
+        return super(self.__class__, self).validate(data)
+
+    def update(self, instance, validated_data):
+        for doc in validated_data:
+            if any(x in validated_data.keys() for x in Constants.KYC_DOC_TYPES): # noqa
+                self.instance.upload_docs(
+                    validated_data, set(validated_data).intersection(
+                        set(Constants.KYC_DOC_TYPES)))
+        return self.instance
+
+    @property
+    def data(self):
+        return dict(message='Document uploaded successfully.')
+
+    class Meta:
+        model = Contact
+        fields = ('cancelled_cheque',)

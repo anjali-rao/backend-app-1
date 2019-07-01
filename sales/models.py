@@ -16,6 +16,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 
 from questionnaire.models import Response
 from utils.mixins import RecommendationException
+from utils import get_proposer_upload_path
 
 
 class Quote(BaseModel):
@@ -435,8 +436,7 @@ class HealthInsurance(Insurance):
             if field.name in Constants.INSURANCE_EXCLUDE_FIELDS:
                 continue
             serializer = GetInsuranceFieldsSerializer(data=dict(
-                text=field.help_text,
-                field_name=field.name,
+                text=field.help_text, field_name=field.name,
                 field_requirements=[{
                     'relation': "None"
                 }] if field.__class__.__name__ in [
@@ -449,6 +449,23 @@ class HealthInsurance(Insurance):
 
 class TravelInsurance(Insurance):
     name = models.CharField(max_length=32)
+
+
+class ProposerDocument(BaseModel):
+    contact = models.ForeignKey('crm.Contact', on_delete=models.CASCADE)
+    document_number = models.CharField(max_length=64, null=True, blank=True)
+    document_type = models.CharField(
+        choices=get_choices(Constants.KYC_DOC_TYPES), max_length=16)
+    file = models.FileField(
+        upload_to=get_proposer_upload_path, null=True, blank=True)
+    ignore = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        previous = self.__class__.objects.filter(
+            document_type=self.document_type, contact_id=self.contact_id)
+        if previous.exists():
+            previous.update(ignore=True)
+        super(self.__class__, self).save(*args, **kwargs)
 
 
 class Policy(BaseModel):
