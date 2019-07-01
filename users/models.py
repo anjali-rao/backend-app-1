@@ -406,7 +406,7 @@ class KYCDocument(BaseModel):
     account = models.ForeignKey('users.Account', on_delete=models.CASCADE)
     document_type = models.CharField(
         choices=get_choices(Constants.KYC_DOC_TYPES), max_length=16)
-    document_number = models.CharField(max_length=64)
+    document_number = models.CharField(max_length=64, null=True, blank=True)
     file = models.FileField(upload_to=get_kyc_upload_path)
     ignore = models.BooleanField(default=False)
 

@@ -14,12 +14,13 @@ def get_upload_path(instance, filename):
 
 
 def get_kyc_upload_path(instance, filename):
-    return 'user/kyc/{0}/{1}'.format(instance.document_type, filename)
+    return 'user/{0}/kyc/{1}/{2}'.format(
+        instance.account.id, instance.document_type, filename)
 
 
 def get_proposer_upload_path(instance, filename):
-    return 'proposer/documents/{0}/{1}'.format(
-        instance.document_type, filename)
+    return 'proposer/{0}/documents/{1}/{2}'.format(
+        instance.contact.id, instance.document_type, filename)
 
 
 def genrate_random_string(length):
