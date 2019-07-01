@@ -69,11 +69,11 @@ class ApolloMunichHealthInsurance(object):
         return response
 
     def get_data(self):
-        pan_no = self.application.client.kycdocument_set.filter(
-            document_type='pancard').last()
+        pan_no = self.application.client.proposerdocument_set.filter(
+            document_type='pancard', ignore=False).last()
         proposer_pannumber = pan_no.document_number if pan_no else ''
-        aadhar_no = self.application.client.kycdocument_set.filter(
-            document_type='aadhaar_card').last()
+        aadhar_no = self.application.client.proposerdocument_set.filter(
+            document_type='aadhaar_card', ignore=False).last()
         proposer_aadhar_no = aadhar_no.document_number if aadhar_no else ''
         address = self.application.client.address.full_address
         data = dict(

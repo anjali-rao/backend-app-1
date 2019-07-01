@@ -6,7 +6,7 @@ from django.utils.html import format_html
 
 from sales.models import (
     Quote, Application, HealthInsurance, Member,
-    Nominee, Policy)
+    Nominee, Policy, ProposerDocument)
 from payment.models import ApplicationRequestLog
 from utils import constants as Constants
 
@@ -157,3 +157,10 @@ class PolicyAdmin(admin.ModelAdmin):
         'application__client_phone_no', 'application__client_email')
     list_filter = ('application__quote__opportunity__category',)
     raw_id_fields = ('application',)
+
+
+@admin.register(ProposerDocument)
+class ProposerDocumentAdmin(admin.ModelAdmin):
+    list_display = ('contact', 'document_number', 'file')
+    search_fields = ('contact__phone_no',)
+    raw_id_fields = ('contact',)

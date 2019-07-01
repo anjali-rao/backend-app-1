@@ -156,16 +156,22 @@ class Contact(BaseModel):
             setattr(self, field, kw[field])
         self.save()
 
-    def is_kyc_required(self):
-        kyc_docs = self.kycdocument_set.all()
-        if kyc_docs.exists():
-            return kyc_docs.latest('modified').file is not None
-        return False
-
     def get_full_name(self):
         full_name = '%s %s %s' % (
             self.first_name, self.middle_name, self.last_name)
         return full_name.strip().title()
+
+    def upload_docs(self, validated_data, fields):
+        from sales.models import ProposerDocument
+        for field in fields:
+            name = validated_data[field].name.split('.')
+            file_name = '%s_%s_%s.%s' % (
+                self.id, name[0], now().date().isoformat(), name[1])
+            doc, created = ProposerDocument.objects.get_or_create(
+                document_type=field, contact_id=self.id, ignore=False)
+            doc.file.save(file_name, validated_data[field])
+            validated_data[field] = doc.file.url
+        return validated_data
 
 
 class KYCDocument(BaseModel):

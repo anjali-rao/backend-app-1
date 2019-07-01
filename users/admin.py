@@ -7,7 +7,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from extended_filters.filters import DateRangeFilter
 
 from users.models import (
-    Account, User, Campaign, AccountDetail, Document, BankAccount,
+    Account, User, Campaign, AccountDetail, KYCDocument, BankAccount,
     Enterprise, State, Pincode, Address, IPAddress, Referral, PromoCode)
 
 
@@ -52,12 +52,12 @@ class AccountDetailsAdmin(admin.ModelAdmin):
     raw_id_fields = ('account',)
 
 
-@admin.register(Document)
-class DocumentsAdmin(admin.ModelAdmin):
-    list_display = ('account', 'doc_type', 'file')
+@admin.register(KYCDocument)
+class KYCDocumentsAdmin(admin.ModelAdmin):
+    list_display = ('account', 'document_type', 'file')
     search_fields = ('account__username', 'account__phone_no')
     raw_id_fields = ('account',)
-    list_filter = ('doc_type',)
+    list_filter = ('document_type',)
 
 
 @admin.register(BankAccount)
