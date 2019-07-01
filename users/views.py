@@ -233,7 +233,7 @@ class GetContact(generics.RetrieveAPIView):
     authentication_classes = (UserAuthentication,)
     serializer_class = ContactSerializers
 
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(self, request, version, *args, **kwargs):
         self.object = self.request.user
         cache_response = cache.get('USER_CONTACTS:%s' % self.object.id)
         if cache_response:

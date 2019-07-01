@@ -11,8 +11,7 @@ from content.models import BankBranch
 from content.serializers import CollateralSerializer
 
 from earnings.serializers import EarningSerializer
-from crm.serializers import LeadSerializer, Lead
-from sales.serializers import ClientSerializer
+from crm.serializers import LeadSerializer, Lead, ClientSerializer
 
 from django.db import transaction
 
@@ -595,12 +594,15 @@ class ContactSerializers(serializers.ModelSerializer):
     def get_leads(self, obj):
         return LeadSerializer(
             Lead.objects.filter(
-                user_id=obj.id,
-                ignore=False).exclude(contact=None), many=True).data
+                user_id=obj.id, is_client=False,
+                ignore=False).exclude(contact=None),
+            many=True).data
 
     def get_clients(self, obj):
         return ClientSerializer(
-            obj.get_applications(status=['completed']), many=True).data
+            Lead.objects.filter(
+                user_id=obj.id, ignore=False, is_client=True
+            ).exclude(contact=None), many=True).data
 
     class Meta:
         model = User

@@ -179,6 +179,15 @@ class LeadSerializer(serializers.ModelSerializer):
             'id', 'category', 'full_name', 'stage', 'bookmark', 'created')
 
 
+class ClientSerializer(serializers.ModelSerializer):
+    full_name = serializers.ReadOnlyField(
+        source='contact.get_full_name')
+
+    class Meta:
+        model = Lead
+        fields = ('id', 'full_name', 'created')
+
+
 class QuoteSerializer(serializers.ModelSerializer):
     quote_id = serializers.ReadOnlyField(source='id')
     category = serializers.ReadOnlyField(source='opportunity.category.name')
