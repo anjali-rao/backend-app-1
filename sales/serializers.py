@@ -499,11 +499,11 @@ class ClientSerializer(serializers.ModelSerializer):
             'status', 'company_logo')
 
 
-class UpdateApplicationSerializers(serializers.ModelSerializer):
+class UpdateApplicationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Application
-        fields = ('status', )
+        fields = ('status', 'payment_failed')
 
     @property
     def data(self):
