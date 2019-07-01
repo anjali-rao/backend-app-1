@@ -52,7 +52,8 @@ class UserAPISTestCases(BaseTestCase):
 
         '''
         returns the following response:
-        'Invalid pincode provided & Transaction Id is required & Invalid prmo code provided'
+        'Invalid pincode provided & Transaction Id
+        is required & Invalid prmo code provided'
         '''
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -60,7 +61,9 @@ class UserAPISTestCases(BaseTestCase):
         self.assertEqual(User.objects.get(id=user_id).user_type, user_type)
 
     def test_register_subscriber(self):
-        response = self.register_user(self.PHONE_NO, 'OCOVR-2-4', self.PASSCODE)
+        response = self.register_user(
+            self.PHONE_NO, 'OCOVR-2-4', self.PASSCODE
+        )
         user_id = response.json().get('user_id')
         self.check_user_type(user_id, 'subscriber')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -193,16 +196,18 @@ class UserAPISTestCases(BaseTestCase):
             HTTP_AUTHORIZATION=auth_token
         )
 
-        response = self.client.get('/v2/user/' + str(user_id) + '/details', **header)
+        response = self.client.get(
+            '/v2/user/' + str(user_id) + '/details', **header
+        )
         self.assertEqual(int(response.json().get('agent_id')), user_id)
 
     def test_invalid_user_details(self):
-        user_id = self.register_user(
+        self.register_user(
             phone_no=self.PHONE_NO,
             passcode=self.PASSCODE,
             promo_code='OCOVR-2-4'
-        ).json().get('user_id')
-        response =  self.login_user(self.PHONE_NO, self.PASSCODE)
+        )
+        response = self.login_user(self.PHONE_NO, self.PASSCODE)
         auth_token = response.json().get('authorization')
         self.assertEqual(not auth_token, False)
         header = dict(

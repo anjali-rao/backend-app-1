@@ -1,18 +1,14 @@
 
 from __future__ import unicode_literals
-import json
 
 from django.core.cache import cache
 from django.urls import include, path
-from django.core.management import call_command
 
 from rest_framework.test import URLPatternsTestCase, APITestCase
 
-from users.models import State, Pincode, PromoCode, Enterprise, User
+from users.models import State, Pincode, PromoCode, Enterprise
 from content.models import Playlist
-from product.models import Category
-from questionnaire.models import Question, Answer
-from crm.models import Opportunity, Lead
+
 
 class BaseTestCase(APITestCase, URLPatternsTestCase):
     urlpatterns = [
@@ -58,8 +54,8 @@ class BaseTestCase(APITestCase, URLPatternsTestCase):
         return response
 
     def register_user(
-        self, phone_no=1234567890,
-        promo_code='OCOVR-2-4', passcode=1234):
+            self, phone_no=1234567890,
+            promo_code='OCOVR-2-4', passcode=1234):
 
         self.generate_otp(phone_no)
         otp = cache.get('OTP:' + str(phone_no) + '')
@@ -80,7 +76,7 @@ class BaseTestCase(APITestCase, URLPatternsTestCase):
         return response
 
     def login_user(
-        self, phone_no=1234567890, passcode=1234):
+            self, phone_no=1234567890, passcode=1234):
 
         data = dict(
             phone_no=phone_no, password=str(phone_no) + str(passcode))
