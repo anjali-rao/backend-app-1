@@ -188,6 +188,7 @@ DUPLICATE_ACCOUNT = 'Account already exists with the provided details.'
 OPPORTUNITY_DOES_NOT_EXIST = 'Opportunity id provided does not exists or invalid' # noqa
 OPPORTUNITY_ID_REQUIRED = 'Invalid or missing opportunity id'
 OPPORTUNITY_OR_OPPERATION_ID_REQUIRED = 'Category id or opportunity id is required to perform opperation' # noqa
+NO_FIELDS_INPUT_OR_INVALID_FIELDS = 'No fields provided or invalid fields provided' # noqa
 
 
 # Creation Fields  ==================================

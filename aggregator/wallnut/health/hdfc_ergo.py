@@ -53,8 +53,8 @@ class HDFCERGOHealthInsurance(object):
         return response
 
     def get_data(self):
-        aadhar_no = self.application.client.kycdocument_set.filter(
-            document_type='aadhaar_card').last()
+        aadhar_no = self.application.client.proposerdocument_set.filter(
+            document_type='aadhaar_card', ignore=False).last()
         aadhar_no = aadhar_no.document_number if aadhar_no else '000000000000'
         data = dict(
             city_id=self.wallnut.city_code, me=self.wallnut.health_me,

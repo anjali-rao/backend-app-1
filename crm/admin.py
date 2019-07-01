@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django.contrib import admin
 
-from crm.models import Lead, Contact, KYCDocument, Opportunity
+from crm.models import Lead, Contact, Opportunity
 from crm.opportunity.models import HealthInsurance
 from content.models import Note
 
@@ -66,10 +66,9 @@ class ContactAdmin(admin.ModelAdmin):
     def contact(self, obj):
         return obj.get_full_name()
 
-
-@admin.register(KYCDocument)
-class KYCDocumentAdmin(admin.ModelAdmin):
-    list_display = ('contact', 'document_type', 'document_number')
-    raw_id_fields = ('contact',)
-    list_filter = ('document_type',)
-    search_fields = ('docunent_number', 'contact__phone_no')
+# @admin.register(KYCDocument)
+# class KYCDocumentAdmin(admin.ModelAdmin):
+#     list_display = ('contact', 'document_type', 'document_number')
+#     raw_id_fields = ('contact',)
+#     list_filter = ('document_type',)
+#     search_fields = ('docunent_number', 'contact__phone_no')
