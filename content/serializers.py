@@ -128,5 +128,5 @@ class CollateralSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collateral
         fields = (
-            'name', 'url', 'collateral_type', 'collateral', 'short_descripton',
-            'long_descripton')
+            'name', 'url', 'thumbnail', 'collateral_type', 'collateral',
+            'short_descripton', 'long_descripton')
