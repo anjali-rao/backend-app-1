@@ -13,8 +13,8 @@ from sales.serializers import (
     CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
     TravalInsuranceSerializer, TermsSerializer, ExistingPolicySerializer,
     GetInsuranceFieldsSerializer, ApplicationSummarySerializer,
-    UpdateApplicationSerializers, VerifyProposerPhonenoSerializer,
-    UploadContactDocumentSerializer
+    VerifyProposerPhonenoSerializer, UploadContactDocumentSerializer,
+    UpdateApplicationSerializer
 )
 
 from django.core.exceptions import ValidationError
@@ -297,9 +297,9 @@ class GetApplicationPaymentLink(views.APIView):
         return Response(data)
 
 
-class UpdateApplicationStatus(generics.UpdateAPIView):
+class UpdateApplication(generics.UpdateAPIView):
     authentication_classes = (UserAuthentication,)
-    serializer_class = UpdateApplicationSerializers
+    serializer_class = UpdateApplicationSerializer
     queryset = Application.objects.all()
 
 

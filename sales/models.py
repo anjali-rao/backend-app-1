@@ -103,6 +103,7 @@ class Application(BaseModel):
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
     proposer_verified = models.BooleanField(default=False)
+    payment_failed = models.BooleanField(default=False)
     payment_mode = models.CharField(max_length=64, choices=get_choices(
         Constants.AGGREGATOR_CHOICES), default='offline')
     terms_and_conditions = models.BooleanField(null=True)
