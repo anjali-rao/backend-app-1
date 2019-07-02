@@ -189,3 +189,74 @@ class QuestionnaireTestCases(BaseTestCase):
             **self.header
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_recommendation_quotes(self):
+        self.add_questions_answers()
+        response = self.create_lead(self.user_id, self.header).json()
+        self.submit_answers(
+            self.answers,
+            opportunity_id=response.get('opportunity_id')
+        ).json()
+        data = dict(
+            lead=response.get('lead_id'),
+            opportunity_id=response.get('opportunity_id')
+        )
+
+        response = self.client.get(
+            '/v2/quotes/recommendation?' + urlencode(data),
+            **self.header
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreater(len(response.json().keys()), 1)
+
+    def test_reset_quotes(self):
+        self.add_questions_answers()
+        response = self.create_lead(self.user_id, self.header).json()
+        self.submit_answers(
+            self.answers,
+            opportunity_id=response.get('opportunity_id')
+        ).json()
+        data = dict(
+            lead=response.get('lead_id'),
+            opportunity_id=response.get('opportunity_id'),
+            suminsured=500000
+        )
+
+        response = self.client.get(
+            '/v2/quotes/recommendation?' + urlencode(data),
+            **self.header
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()[0].get('sum_insured'), 500000)
+
+    def test_invalid_lead_recommended_quotes(self):
+        data = dict(
+            lead=1,
+            opportunity_id=1
+        )
+
+        response = self.client.get(
+            '/v2/quotes/recommendation?' + urlencode(data),
+            **self.header
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_invalid_reset_quotes(self):
+        self.add_questions_answers()
+        response = self.create_lead(self.user_id, self.header).json()
+        self.submit_answers(
+            self.answers,
+            opportunity_id=response.get('opportunity_id')
+        ).json()
+        data = dict(
+            lead=response.get('lead_id'),
+            opportunity_id=response.get('opportunity_id'),
+            suminsured=50
+        )
+
+        response = self.client.get(
+            '/v2/quotes/recommendation?' + urlencode(data),
+            **self.header
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json(), [])
