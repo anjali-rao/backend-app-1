@@ -207,7 +207,7 @@ class QuestionnaireTestCases(BaseTestCase):
             **self.header
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreater(len(response.json().keys()), 1)
+        self.assertGreater(len(response.json()), 0)
 
     def test_reset_quotes(self):
         self.add_questions_answers()
