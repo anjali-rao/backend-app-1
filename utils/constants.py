@@ -105,6 +105,9 @@ HEALTHINSURANCE_FIELDS = [
     'blood_diseases'
 ]
 INSURANCE_EXCLUDE_FIELDS = ['id', 'created', 'modified', 'application']
+SUM_INSURED = [
+    100000, 300000, 500000, 700000, 1000000, 1500000, 2000000, 2500000,
+    5000000, 7500000, 10000000, 20000000]
 
 
 # Defaults ==================================

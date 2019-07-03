@@ -11,6 +11,8 @@ from product.models import (
 from sales.models import Quote
 import math
 
+from utils import constants as Constants
+
 
 class HealthInsurance(models.Model):
     opportunity = models.OneToOneField(
@@ -117,10 +119,9 @@ class HealthInsurance(models.Model):
         query = dict()
         queryset = HealthPremium.objects.select_related(
             'product_variant').filter(
-            suminsured_range__contains=int(kw.get(
-                'score', self.predicted_suminsured)),
             adults=kw.get('adults', self.adults), ignore=False,
             citytier__in=kw.get('citytier', self.opportunity.citytier),
+            is_active=True
         )
         if 'product_variant_id' in kw:
             query['product_variant_id'] = kw['product_variant_id']
@@ -128,14 +129,20 @@ class HealthInsurance(models.Model):
             query['product_variant__company_category__category_id'] = kw['category_id'] # noqa
         if kw.get('childrens', self.childrens) <= 4:
             query['childrens'] = kw.get('childrens', self.childrens)
+        suminsured = int(kw.get('score', self.predicted_suminsured))
         query.update(dict(
             age_range__contains=kw.get('effective_age', self.effective_age),
+            suminsured_range__contains=suminsured,
             product_variant__company_category__company_id__in=self.opportunity.companies_id # noqa
         ))
         premiums = queryset.filter(**query)
         if not premiums.exists():
-            query.pop('product_variant__company_category__company_id__in')
-            premiums = queryset.filter(**query)
+            for suminsured in Constants.SUM_INSURED:
+                query.update(dict(
+                    suminsured_range__contains=suminsured))
+                premiums = queryset.filter(**query)
+                if premiums.exists():
+                    break
         return premiums or queryset[:5]
 
     def refresh_quote_data(self, **kw):
