@@ -213,6 +213,7 @@ class HealthPremium(BaseModel):
         'sales.quote', related_query_name='healthinsurance',
         object_id_field='premium_id')
     online_process = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
     ignore = models.BooleanField(default=False)
 
     def get_details(self):

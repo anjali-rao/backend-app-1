@@ -68,7 +68,7 @@ else:
     MEDIA_URL = 'https://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
     MEDIA_ROOT = 'https://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
     AWS_AUTO_CREATE_BUCKET = True
-    AWS_DEFAULT_ACL = 'bucket-owner-full-control'
+    AWS_DEFAULT_ACL = 'public-read-write'
 
 MIDDLEWARE = [
     'django_hosts.middleware.HostsRequestMiddleware',
