@@ -161,7 +161,6 @@ class HealthInsurance(models.Model):
             quote = Quote.objects.create(
                 opportunity_id=self.opportunity.id, premium_id=premium.id,
                 content_type_id=content_id)
-            changed_made = False
             for feature_master_id in feature_masters:
                 feature_score = FeatureCustomerSegmentScore.objects.only(
                     'score', 'feature_master_id').filter(
@@ -170,13 +169,9 @@ class HealthInsurance(models.Model):
                             'customer_segment_id', self.customer_segment_id)
                 ).last()
                 if feature_score is not None:
-                    if not changed_made:
-                        changed_made = False
                     quote.recommendation_score += float(Feature.objects.filter(
                         feature_master_id=feature_master_id).aggregate(
                             s=models.Sum('rating'))['s'] * feature_score.score)
-            if changed_made:
-                quote.save()
 
     def update_fields(self, **kw):
         for field in kw.keys():

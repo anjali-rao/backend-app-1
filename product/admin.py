@@ -11,14 +11,30 @@ from product.models import (
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ('name', 'short_name', 'website')
+    list_display = ('name', 'short_name', 'website', 'is_active')
     search_fields = ('name',)
+    list_filter = ('is_active',)
+    actions = ['mark_as_active', 'mark_as_inactive']
+
+    def mark_as_active(self, request, queryset):
+        queryset.update(is_active=True)
+
+    def mark_as_inactive(self, request, queryset):
+        queryset.update(is_active=False)
 
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'description', 'is_active')
     search_fields = ('name',)
+    list_filter = ('is_active',)
+    actions = ['mark_as_active', 'mark_as_inactive']
+
+    def mark_as_active(self, request, queryset):
+        queryset.update(is_active=True)
+
+    def mark_as_inactive(self, request, queryset):
+        queryset.update(is_active=False)
 
 
 @admin.register(CompanyDetails)

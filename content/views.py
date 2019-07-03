@@ -15,7 +15,8 @@ from content.serializers import (
     Faq, FaqSerializer, ContactUsSerializer, NewsLetterSerializer,
     PromoBookSerializer, NetworkHospital, NetworkCoverageSerializer,
     ProductVariantHelpFileSerializer, ProductVariant,
-    CompanyHelpLineSerializer, Company
+    CompanyHelpLineSerializer, Company, CollateralSerializer,
+    Collateral
 )
 
 from product.serializers import CategoryFaqSerializer, Category
@@ -105,3 +106,13 @@ class GetHelpLines(generics.ListAPIView):
 
     def get_queryset(self):
         return Company.objects.exclude(helpline=None)
+
+
+class GetCollateral(generics.ListAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = CollateralSerializer
+    queryset = Collateral.objects.all()
+    pagination_class = CustomPagination
+
+    def get_queryset(self):
+        return self.request.user.get_collaterals()

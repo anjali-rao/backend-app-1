@@ -316,8 +316,7 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
     premium = serializers.ReadOnlyField(source='premium.amount')
     tax_saving = serializers.ReadOnlyField(
         source='opportunity.category_opportunity.tax_saving')
-    wellness_rewards = serializers.ReadOnlyField(
-        source='opportunity.category_opportunity.wellness_reward')
+    wellness_rewards = serializers.SerializerMethodField()
     health_checkups = serializers.ReadOnlyField(
         source='opportunity.category_opportunity.adults')
     product = serializers.ReadOnlyField(
@@ -337,6 +336,12 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
                 f.feature_master.name, f.short_description))
         return features
 
+    def get_wellness_rewards(self, obj):
+        if obj.get_feature_details().filter(
+                feature_master__name='Wellness Factors'):
+            return obj.opportunity.category_opportunity.wellness_reward
+        return 0.0
+
     def get_sorted_features(self, variant):
         return sorted(
             variant.feature_set.exclude(
@@ -350,7 +355,7 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
         fields = (
             'quote_id', 'opportunity_id', 'sum_insured', 'premium',
             'tax_saving', 'wellness_rewards', 'health_checkups',
-            'product', 'features', 'lead_id')
+            'product', 'features', 'lead_id', 'recommendation_score')
 
 
 class LeadDetailSerializer(serializers.ModelSerializer):
