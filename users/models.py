@@ -72,7 +72,7 @@ class Account(AbstractUser):
     @classmethod
     def send_otp(cls, prefix, phone_no):
         from users.tasks import send_sms
-        return send_sms.delay(
+        return send_sms(
             phone_no,
             Constants.OTP_MESSAGE % (
                 cls.generate_otp(prefix, phone_no), SMS_OTP_HASH))
