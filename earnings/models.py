@@ -14,7 +14,8 @@ class Earning(BaseModel):
         choices=get_choices(Constants.EARNING_TYPES), max_length=16)
     comment = models.TextField(blank=True, null=True)
     status = models.CharField(
-        choices=get_choices(Constants.EARNING_STATUS), max_length=32)
+        choices=get_choices(Constants.EARNING_STATUS), max_length=32,
+        default='collecting_application')
     transaction_allowed = models.BooleanField(default=False)
     text = models.CharField(max_length=512)
     payable_date = models.DateTimeField()
@@ -65,8 +66,7 @@ class Commission(BaseModel):
             self.earning = Earning.objects.create(
                 user_id=self.application.quote.opportunity.lead.user_id,
                 amount=self.amount, earning_type='commission',
-                status='collecting_application', text=earning_text,
-                payable_date=now() + relativedelta(days=30))
+                text=earning_text, payable_date=now() + relativedelta(days=30))
         super(self.__class__, self).save(*args, **kwargs)
 
 
