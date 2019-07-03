@@ -8,7 +8,6 @@ from users.models import (
     User, Account, Enterprise, AccountDetail, Pincode,
     Address, BankAccount)
 from content.models import BankBranch
-from content.serializers import CollateralSerializer
 
 from earnings.serializers import EarningSerializer
 from crm.serializers import LeadSerializer, Lead, ClientSerializer
@@ -294,9 +293,7 @@ class AuthorizationSerializer(serializers.Serializer):
             details=UserSerializer(user).data,
             enterprise=EnterpriseSerializer(user.enterprise).data,
             rules=user.get_rules(),
-            categories=user.get_categories(),
-            collaterals=CollateralSerializer(
-                user.get_collaterals(), many=True).data)
+            categories=user.get_categories())
         return self._data
 
 
@@ -572,19 +569,13 @@ class UserDetailSerializerV3(serializers.ModelSerializer):
     enterprise = EnterpriseSerializer(read_only=True)
     rules = serializers.ReadOnlyField(source='get_rules')
     categories = serializers.ReadOnlyField(source='get_categories')
-    collaterals = serializers.SerializerMethodField()
 
     def get_details(self, obj):
         return UserSerializer(obj).data
 
-    def get_collaterals(self, obj):
-        return CollateralSerializer(
-            obj.get_collaterals(), many=True).data
-
     class Meta:
         model = User
-        fields = (
-            'details', 'enterprise', 'rules', 'categories', 'collaterals')
+        fields = ('details', 'enterprise', 'rules', 'categories')
 
 
 class ContactSerializers(serializers.ModelSerializer):
