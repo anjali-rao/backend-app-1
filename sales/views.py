@@ -302,6 +302,14 @@ class UpdateApplication(generics.UpdateAPIView):
     serializer_class = UpdateApplicationSerializer
     queryset = Application.objects.all()
 
+    def perform_update(self, serializer):
+        try:
+            with transaction.atomic():
+                serializer.save()
+        except IntegrityError as e:
+            print(e)
+            raise mixins.APIException('Action already perfromed.')
+
 
 class VerifyProposerPhoneno(views.APIView):
     authentication_classes = (UserAuthentication,)
@@ -337,4 +345,6 @@ class UploadProposerDocuments(generics.UpdateAPIView):
             if instance.proposer.proposerdocument_set.filter(
                     ignore=False, document_type='cancelled_cheque').exists():
                 instance.create_client()
+                instance.status = 'submitted'
+                instance.save()
         return Response(serializer.data)
