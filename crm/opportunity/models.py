@@ -121,8 +121,7 @@ class HealthInsurance(models.Model):
             'product_variant').filter(
             adults=kw.get('adults', self.adults), ignore=False,
             citytier__in=kw.get('citytier', self.opportunity.citytier),
-            is_active=True
-        )
+            is_active=True, product_variant__is_active=True)
         if 'product_variant_id' in kw:
             query['product_variant_id'] = kw['product_variant_id']
         if 'category_id' in kw:

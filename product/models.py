@@ -82,6 +82,7 @@ class ProductVariant(BaseModel):
     short_description = models.CharField(max_length=128, null=True, blank=True)
     long_description = models.TextField(null=True, blank=True)
     online_process = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     chronic = models.BooleanField(default=True)
 
     def get_product_details(self):
