@@ -96,10 +96,14 @@ class Collateral(BaseModel):
     promocode = models.ForeignKey('users.PromoCode', on_delete=models.PROTECT)
     short_descripton = models.CharField(max_length=256, null=True, blank=True)
     long_descripton = models.TextField(null=True, blank=True)
+    order = models.IntegerField(default=0)
 
     def __str__(self):
         return '%s | %s: %s' % (
             self.name, self.collateral_type, self.collateral)
+
+    class Meta:
+        ordering = ('order',)
 
 
 class Playlist(BaseModel):

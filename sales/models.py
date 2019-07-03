@@ -113,7 +113,8 @@ class Application(BaseModel):
             current = self.__class__.objects.get(pk=self.id)
             if current.terms_and_conditions != self.terms_and_conditions and self.terms_and_conditions: # noqa
                 self.status = 'submitted'
-            if self.payment_failed != current.payment_failed and self.payment_mode != 'offline' and not self.payment_failed: # noqa
+            if self.payment_failed != current.payment_failed:
+                import pdb; pdb.set_trace()
                 self.create_client()
                 earning = self.commission_set.get().earning
                 earning.status = 'application_submitted'
@@ -244,8 +245,6 @@ class Application(BaseModel):
             lead.is_client = True
             lead.save()
         self.create_policy()
-        self.status = 'completed'
-        self.save()
 
     def create_commission(self):
         from earnings.models import Commission
