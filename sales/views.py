@@ -271,10 +271,11 @@ class SubmitApplication(generics.UpdateAPIView):
         response = serializer.data
         instance.stage = 'payment_due'
         try:
-            instance.aggregator_operation()
-            response['payment_status'] = True
+            response['payment_status'] = instance.aggregator_operation()
+            response['payment_flow'] = 'online' if response['payment_status'] else 'offline' # noqa
         except Exception:
             response['payment_status'] = False
+            response['payment_flow'] = 'broker_error'
         instance.save()
         return response
 
