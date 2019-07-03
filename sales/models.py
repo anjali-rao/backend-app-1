@@ -282,8 +282,7 @@ class Member(BaseModel):
         choices=get_choices(Constants.GENDER), max_length=16, null=True)
     occupation = models.CharField(
         choices=get_choices(Constants.OCCUPATION_CHOICES), max_length=32,
-        null=True, blank=True
-    )
+        null=True, blank=True)
     height = models.FloatField(default=0.0)
     weight = models.FloatField(default=0.0)
     ignore = models.BooleanField(default=None, db_index=True, null=True)

@@ -355,7 +355,7 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
         fields = (
             'quote_id', 'opportunity_id', 'sum_insured', 'premium',
             'tax_saving', 'wellness_rewards', 'health_checkups',
-            'product', 'features', 'lead_id')
+            'product', 'features', 'lead_id', 'recommendation_score')
 
 
 class LeadDetailSerializer(serializers.ModelSerializer):
