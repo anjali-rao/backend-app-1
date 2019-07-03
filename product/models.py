@@ -81,7 +81,7 @@ class ProductVariant(BaseModel):
     feature_variant = models.CharField(max_length=256, default='base')
     short_description = models.CharField(max_length=128, null=True, blank=True)
     long_description = models.TextField(null=True, blank=True)
-    aggregator_available = models.BooleanField(default=False)
+    online_process = models.BooleanField(default=False)
     chronic = models.BooleanField(default=True)
 
     def get_product_details(self):
@@ -212,6 +212,7 @@ class HealthPremium(BaseModel):
     premium = GenericRelation(
         'sales.quote', related_query_name='healthinsurance',
         object_id_field='premium_id')
+    online_process = models.BooleanField(default=True)
     ignore = models.BooleanField(default=False)
 
     def get_details(self):

@@ -126,7 +126,8 @@ class Application(BaseModel):
         super(Application, self).save(*args, **kwargs)
 
     def aggregator_operation(self):
-        if not self.quote.premium.product_variant.aggregator_available:
+        premium = self.quote.premium
+        if not premium.product_variant.online_process or not self.premium.online_process:  # noqa
             return False
         self.status = 'payment_due'
         from aggregator.wallnut.models import Application as Aggregator
@@ -136,11 +137,7 @@ class Application(BaseModel):
                 insurance_type=self.application_type)
             self.payment_mode = 'wallnut'
         self.save()
-        return self.quote.premium.product_variant.aggregator_available
-        from aggregator.wallnut.models import Application as Aggregator
-        if not hasattr(self, 'application'):
-            Aggregator.objects.create(
-                reference_app_id=self.id, insurance_type=self.application_type)
+        return self.quote.premium.product_variant.process_online
 
     def update_fields(self, **kw):
         updated = False
