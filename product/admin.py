@@ -105,3 +105,5 @@ class HealthPremiumAdmin(admin.ModelAdmin):
 class FeatureCustomerSegmentScoreAdmin(admin.ModelAdmin):
     list_display = ('feature_master', 'customer_segment', 'score')
     raw_id_fields = ('feature_master',)
+    search_fields = ('feature_master__name',)
+    list_filter = ('feature_master__name', 'customer_segment')
