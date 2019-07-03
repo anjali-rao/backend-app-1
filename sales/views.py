@@ -306,8 +306,7 @@ class UpdateApplication(generics.UpdateAPIView):
         try:
             with transaction.atomic():
                 serializer.save()
-        except IntegrityError as e:
-            print(e)
+        except IntegrityError:
             raise mixins.APIException('Action already perfromed.')
 
 

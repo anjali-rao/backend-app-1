@@ -113,12 +113,12 @@ class Application(BaseModel):
             current = self.__class__.objects.get(pk=self.id)
             if current.terms_and_conditions != self.terms_and_conditions and self.terms_and_conditions: # noqa
                 self.status = 'submitted'
-            if self.payment_failed != current.payment_failed:
-                import pdb; pdb.set_trace()
+            if self.payment_failed != current.payment_failed and not self.payment_failed: # noqa
                 self.create_client()
                 earning = self.commission_set.get().earning
                 earning.status = 'application_submitted'
                 earning.save()
+                self.status = 'completed'
         except self.__class__.DoesNotExist:
             self.generate_reference_no()
             self.application_type = self.company_category.category.name.lower(
