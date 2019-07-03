@@ -15,4 +15,5 @@ class EarningSerializer(serializers.ModelSerializer):
     class Meta:
         model = Earning
         fields = (
-            'id', 'text', 'amount', 'status', 'earning_type', 'payable_date')
+            'id', 'text', 'amount', 'status', 'earning_type',
+            'payable_date', 'created')

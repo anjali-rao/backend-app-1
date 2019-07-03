@@ -491,11 +491,11 @@ class UserEarningSerializer(serializers.ModelSerializer):
         return obj.get_policies().count()
 
     def get_total_earning(self, obj):
-        return obj.get_earnings()
+        return round(obj.get_earnings(), 2)
 
     def get_total_premium(self, obj):
-        return sum(obj.get_policies().values_list(
-            'application__premium', flat=True))
+        return round(sum(obj.get_policies().values_list(
+            'application__premium', flat=True)), 2)
 
     def get_earning_details(self, obj):
         return EarningSerializer(
