@@ -63,7 +63,7 @@ EARNING_STATUS = (
     'application_resubmitted', 'loading_applied', 'loading_paid',
     'commission_due', 'commission_paid', 'commission_payment_error')
 
-COLLATERALS_TYPE = ('marketing', 'training')
+COLLATERALS_TYPE = ('marketing', 'training', 'engagement')
 COLLATERALS_CHOICES = (
     'png', 'youtube', 'pdf', 'blog_article')
 ACTIVE_AGGREGATOR_COMPANIES = [
