@@ -117,9 +117,10 @@ class Application(BaseModel):
             current = self.__class__.objects.get(pk=self.id)
             if current.terms_and_conditions != self.terms_and_conditions and self.terms_and_conditions: # noqa
                 self.status = 'submitted'
-            if self.payment_failed != current.payment_failed and not self.payment_failed: # noqa
+            if self.payment_failed != current.payment_failed and self.payment_failed is not None: # noqa
                 self.create_client()
-                message = Slack.OFFLINE_TRASACTION % (
+                message = Slack.TRANSACTION_FAILURE if self.payment_failed else Slack.ONLINE_TRANSACTION # noqa
+                message = message % (
                     self.client.user.get_full_name(),
                     self.reference_no,
                     '%s://admin.%s/sales/application/%s/change/' % (

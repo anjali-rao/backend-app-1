@@ -274,10 +274,13 @@ class SubmitApplication(generics.UpdateAPIView):
         instance.stage = 'payment_due'
         try:
             response['payment_status'] = instance.aggregator_operation()
-            response['payment_flow'] = 'online' if response['payment_status'] else 'offline' # noqa
-        except Exception:
-            response['payment_status'] = False
-            response['payment_flow'] = 'broker_error'
+            response.update(dict(
+                payment_flow='online' if response['payment_status'] else 'offline', # noqa
+                error=''))
+        except Exception as e:
+            response.update(dict(
+                payment_status=False, payment_flow='broker_error',
+                error=str(e)))
         instance.save()
         return response
 
