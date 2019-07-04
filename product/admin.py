@@ -8,7 +8,6 @@ from product.models import (
     DeductibleMaster, HealthPremium, FeatureCustomerSegmentScore
 )
 
-
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ('name', 'short_name', 'website', 'is_active')
@@ -52,8 +51,10 @@ class ComapanyCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
-    list_display = ('company_category', 'name',)
+    search_fields = ('name',)
+    list_display = ('name', 'company_category')
     raw_id_fields = ('company_category',)
+    list_filter = ('name', 'is_active', 'online_process')
 
 
 @admin.register(CustomerSegment)
@@ -92,13 +93,15 @@ class HealthPremiumAdmin(admin.ModelAdmin):
     list_display = (
         'product_variant', 'sum_insured', 'age_range', 'citytier',
         'base_premium')
-    search_fields = ('product_variant__id',)
+    search_fields = (
+        'product_variant__id', 'product_variant__name',
+        'base_premium', 'product_variant__name')
     raw_id_fields = ('product_variant', 'deductible')
     ordering = ('sum_insured',)
     list_filter = (
+        'product_variant__name', 'online_process', 'is_active',
         'product_variant__company_category__company__name',
-        'sum_insured', 'adults', 'childrens', 'citytier', 'ignore',
-        'product_variant')
+        'sum_insured', 'adults', 'childrens', 'citytier', 'ignore')
 
 
 @admin.register(FeatureCustomerSegmentScore)
