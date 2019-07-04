@@ -2,11 +2,15 @@
 from __future__ import unicode_literals
 
 from django.contrib import admin
+
+from extended_filters.filters import CheckBoxListFilter
+
 from product.models import (
     Company, Category, CompanyDetails, CompanyCategory, ProductVariant,
     CustomerSegment, FeatureMaster, Feature, SumInsuredMaster,
     DeductibleMaster, HealthPremium, FeatureCustomerSegmentScore
 )
+
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
@@ -98,10 +102,12 @@ class HealthPremiumAdmin(admin.ModelAdmin):
         'base_premium', 'product_variant__name')
     raw_id_fields = ('product_variant', 'deductible')
     ordering = ('sum_insured',)
-    list_filter = (
-        'product_variant__name', 'online_process', 'is_active',
-        'product_variant__company_category__company__name',
-        'sum_insured', 'adults', 'childrens', 'citytier', 'ignore')
+    list_filter = [
+        ('product_variant', CheckBoxListFilter),
+        'online_process', 'is_active',
+        ('product_variant__company_category__company__name',
+        CheckBoxListFilter), ('sum_insured', CheckBoxListFilter),
+        'adults', 'childrens', 'citytier', 'ignore']
 
 
 @admin.register(FeatureCustomerSegmentScore)
