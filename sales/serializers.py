@@ -564,32 +564,44 @@ class GetApplicationMessageSerializer(serializers.ModelSerializer):
     heading = serializers.SerializerMethodField()
     body = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
-    whatsapp = serializers.SerializerMethodField()
+    whatsapp = serializers.BooleanField(default=True)
     whatsapp_text = serializers.SerializerMethodField()
-    home = serializers.SerializerMethodField()
+    home = serializers.BooleanField(default=True)
     earning = serializers.SerializerMethodField()
     message_type = serializers.SerializerMethodField()
 
     def get_heading(self, obj):
+        if obj.opted_paymode == 'offline':
+            return 'Thank You!'
+        if obj.payment_failed:
+            return Constants.FAILED_HEADER
         return 'Thank You!'
 
     def get_body(self, obj):
-        return 'Your application add application id for add client details has been submitted to OneCover.\n\nWe will shortly reach out to you to schedule the cheque and policy collections.\nlease click here to see the status of your application and commissions'
-
-    def get_whatsapp(self, obj):
-        return False
-
-    def get_home(self, obj):
-        return True
+        if obj.opted_paymode == 'subscriber':
+            return Constants.SUBSCRIBER_THANKYOU % (
+                obj.reference_no, obj.client.contact.get_full_name())
+        if obj.payment_failed:
+            return Constants.FAILED_MESSAGE
+        return Constants.SUCESSFUL_PAYMENT % (
+            obj.reference_no, obj.client.contact.get_full_name())
 
     def get_earning(self, obj):
+        if obj.opted_paymode == 'offline':
+            return False
+        if obj.payment_failed:
+            return ''
         return True
 
     def get_message_type(self, obj):
+        if obj.payment_failed:
+            return 'warning'
         return 'success'
 
     def get_whatsapp_text(self, obj):
-        return ''
+        if obj.opted_paymode == 'offline':
+            Constants.SUBSCRIBER_WHATSAPP_TEXT
+        return 'You can reach out to us via WhatsApp'
 
     def get_product(self, obj):
         return SalesApplicationSerializer(obj).data

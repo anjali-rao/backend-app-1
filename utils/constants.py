@@ -244,7 +244,11 @@ BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Bloo
 COMMISSION_TEXT = 'Commission against application no # %s issued on %s to %s'
 REFERRAL_TEXT = 'Referring to %s'
 INCENTIVE_TEXT = 'Incentive for %s'
-
+SUBSCRIBER_THANKYOU = 'Your application #%s for %s has been created and you can access this via the cart.' # noqa
+SUBSCRIBER_WHATSAPP_TEXT = 'Please contact us, in case you are interested in selling the policy.' # noqa
+SUCESSFUL_PAYMENT = 'Your application #%s for %s has been submitted to OneCover. ' # noqa
+FAILED_HEADER = 'We have experienced a technical glitch. Our developers are working on it to solve it as soon as possible.' # noqa
+FAILED_MESSAGE = 'Nothing to worry though, our advisor success agents will reach out to you shortly.\n\nYour application #%s for %s has been created and you can access it from the cart till we resolve this issue.' # noqa
 
 # Category Opportunity - Mapper  ==================================
 
