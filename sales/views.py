@@ -367,3 +367,12 @@ class GetApplicationMessage(generics.RetrieveAPIView):
     authentication_classes = (UserAuthentication,)
     serializer_class = GetApplicationMessageSerializer
     queryset = Application.objects.all()
+
+    def get_object(self):
+        obj = super(self.__class__, self).get_object()
+        obj.opted_paymode = 'online'
+        if obj.proposer.proposerdocument_set.filter(
+                ignore=False, document_type='cheque').exists() or (
+                    obj.client.user.user_type == 'subscriber'):
+            obj.opted_paymode = 'offline'
+        return obj
