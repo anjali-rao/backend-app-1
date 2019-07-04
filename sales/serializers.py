@@ -65,6 +65,8 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
             lead.save()
             return
         lead = leads.first()
+        lead.pincode = opportunity.lead.pincode
+        lead.save()
         opportunity.lead_id = lead.id
         opportunity.save()
 
