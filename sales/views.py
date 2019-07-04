@@ -81,7 +81,7 @@ class RetrieveUpdateProposerDetails(
                 raise mixins.NotFound('Application field not found.')
             if self._obj and contacts:
                 if self._obj.id not in contacts:
-                    self._obj = contacts.first()
+                    self._obj = contacts.latest('modified')
         # May raise a permission denied
         self.check_object_permissions(self.request, self._obj)
         return self._obj

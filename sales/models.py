@@ -458,7 +458,9 @@ class HealthInsurance(Insurance):
             if isinstance(field_value, list):
                 values = list()
                 for row in field_value:
-                    values.append(Member.objects.get(id=row['id']).relation)
+                    if row['value']:
+                        values.append(
+                            Member.objects.get(id=row['id']).relation)
                 field_value = None
                 if values:
                     field_value = ", ".join(values)
@@ -473,16 +475,25 @@ class HealthInsurance(Insurance):
             MemberSerializer, GetInsuranceFieldsSerializer)
         members = self.application.active_members or Member.objects.filter(
             application_id=self.application_id)
-        members = MemberSerializer(members, many=True).data
         for field in self._meta.fields:
             if field.name in Constants.INSURANCE_EXCLUDE_FIELDS:
                 continue
+            if field.__class__.__name__ not in [
+                    'BooleanField', 'IntegerField']:
+                members_data = list()
+                for member in MemberSerializer(members, many=True).data:
+                    for row in getattr(self, field.name):
+                        member['value'] = False
+                        if row['id'] == member['id']:
+                            member['value'] = row['value']
+                        members_data.append(member)
             serializer = GetInsuranceFieldsSerializer(data=dict(
                 text=field.help_text, field_name=field.name,
                 field_requirements=[{
-                    'relation': "None"
+                    'relation': "None",
+                    'value': getattr(self, field.name)
                 }] if field.__class__.__name__ in [
-                    'BooleanField', 'IntegerField'] else members
+                    'BooleanField', 'IntegerField'] else members_data
             ))
             serializer.is_valid(raise_exception=True)
             data.append(serializer.data)
