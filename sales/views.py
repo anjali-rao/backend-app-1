@@ -15,7 +15,7 @@ from sales.serializers import (
     TravalInsuranceSerializer, TermsSerializer, ExistingPolicySerializer,
     GetInsuranceFieldsSerializer, ApplicationSummarySerializer,
     VerifyProposerPhonenoSerializer, UploadContactDocumentSerializer,
-    UpdateApplicationSerializer
+    UpdateApplicationSerializer, GetApplicationMessageSerializer
 )
 from goplannr.settings import ENV
 
@@ -361,3 +361,9 @@ class UploadProposerDocuments(generics.UpdateAPIView):
                 instance.send_slack_notification(
                     Slack.payment_service, message)
         return Response(serializer.data)
+
+
+class GetApplicationMessage(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = GetApplicationMessageSerializer
+    queryset = Application.objects.all()
