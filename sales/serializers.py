@@ -509,7 +509,10 @@ class UpdateApplicationSerializer(serializers.ModelSerializer):
 
     @property
     def data(self):
-        self._data = dict(message='Application updated successfully')
+        self._data = dict(
+            message='Application updated successfully',
+            client_name=self.instance.client.contact.get_full_name(),
+            application_id=self.instance.reference_no)
         return self._data
 
 
