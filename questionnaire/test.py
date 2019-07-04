@@ -123,7 +123,6 @@ class QuestionnaireTestCases(BaseTestCase):
         )
         response = self.get_quotes(data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()[0].get('sum_insured'), 500000)
 
     def test_quote_details(self):
         self.add_questions_answers()
@@ -227,7 +226,6 @@ class QuestionnaireTestCases(BaseTestCase):
             **self.header
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()[0].get('sum_insured'), 500000)
 
     def test_invalid_lead_recommended_quotes(self):
         data = dict(
