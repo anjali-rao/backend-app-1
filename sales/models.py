@@ -74,11 +74,13 @@ class Quote(BaseModel):
 
     @cached_property
     def wellness_reward(self):
-        return round(self.opportunity.category_opportunity.wellness_reward * self.premium.amount, 2) # noqa
+        return round(
+            self.opportunity.category_opportunity.wellness_reward * self.premium.amount, 2) # noqa
 
     @cached_property
     def tax_saving(self):
-        return round(self.opportunity.category_opportunity.tax_saving * self.premium.amount, 2) # noqa
+        return round(
+            self.opportunity.category_opportunity.tax_saving * self.premium.amount, 2) # noqa
 
     @cached_property
     def effective_premium(self):
@@ -203,13 +205,35 @@ class Application(BaseModel):
         Account.send_otp('APP-%s:' % self.reference_no, self.proposer.phone_no)
 
     def create_policy(self):
-        return Policy.objects.create(application_id=self.id)
+        return Policy.objects.get_or_create(application_id=self.id)
 
     def invalidate_cache(self):
         from django.core.cache import cache
         cache.delete('USER_CART:%s' % self.quote.opportunity.lead.user_id)
         cache.delete('USER_CONTACTS:%s' % self.quote.opportunity.lead.user_id)
         cache.delete('USER_EARNINGS:%s' % self.quote.opportunity.lead.user_id)
+
+    def create_client(self):
+        lead = self.quote.opportunity.lead
+        if not lead.is_client:
+            lead.is_client = True
+            lead.save()
+        self.create_policy()
+
+    def create_commission(self):
+        from earnings.models import Commission
+        cc = self.quote.premium.product_variant.company_category
+        amount = self.quote.premium.commission + cc.company.commission + cc.category.commission + self.quote.opportunity.lead.user.enterprise.commission # noqa
+        commission, created = Commission.objects.get_or_create(
+            application_id=self.id, amount=self.premium * amount)
+        commission.updated = True
+        commission.save()
+
+    def send_slack_notification(self, service, message):
+        import requests
+        endpoint = 'https://hooks.slack.com/services/%s' % service
+        data = dict(text=message)
+        return requests.post(endpoint, json=data)
 
     @property
     def adults(self):
@@ -236,21 +260,9 @@ class Application(BaseModel):
     def people_listed(self):
         return self.active_members.count()
 
-    def create_client(self):
-        lead = self.quote.opportunity.lead
-        if not lead.is_client:
-            lead.is_client = True
-            lead.save()
-        self.create_policy()
-
-    def create_commission(self):
-        from earnings.models import Commission
-        cc = self.quote.premium.product_variant.company_category
-        amount = self.quote.premium.commission + cc.company.commission + cc.category.commission + self.quote.opportunity.lead.user.enterprise.commission # noqa
-        commission, created = Commission.objects.get_or_create(
-            application_id=self.id, amount=self.premium * amount)
-        commission.updated = True
-        commission.save()
+    @cached_property
+    def client(self):
+        return self.quote.opportunity.lead
 
     def __str__(self):
         return '%s - %s - %s' % (
