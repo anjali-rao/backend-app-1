@@ -37,7 +37,7 @@ class EarningAdmin(admin.ModelAdmin):
 
 @admin.register(Commission)
 class CommisionAdmin(admin.ModelAdmin):
-    list_display = ('earning', 'updated')
+    list_display = ('earning', 'application', 'updated')
     raw_id_fields = ('earning', 'application')
 
 

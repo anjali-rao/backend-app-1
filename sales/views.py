@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from users.decorators import UserAuthentication
 from utils import mixins, constants
+from utils.notification_templates import Slack
 from sales.serializers import (
     CreateApplicationSerializer, GetProposalDetailsSerializer,
     Application, UpdateContactDetailsSerializer, Contact,
@@ -16,6 +17,7 @@ from sales.serializers import (
     VerifyProposerPhonenoSerializer, UploadContactDocumentSerializer,
     UpdateApplicationSerializer
 )
+from goplannr.settings import ENV
 
 from django.core.exceptions import ValidationError
 from django.http import Http404
@@ -272,10 +274,13 @@ class SubmitApplication(generics.UpdateAPIView):
         instance.stage = 'payment_due'
         try:
             response['payment_status'] = instance.aggregator_operation()
-            response['payment_flow'] = 'online' if response['payment_status'] else 'offline' # noqa
-        except Exception:
-            response['payment_status'] = False
-            response['payment_flow'] = 'broker_error'
+            response.update(dict(
+                payment_flow='online' if response['payment_status'] else 'offline', # noqa
+                error=''))
+        except Exception as e:
+            response.update(dict(
+                payment_status=False, payment_flow='broker_error',
+                error=str(e)))
         instance.save()
         return response
 
@@ -347,4 +352,12 @@ class UploadProposerDocuments(generics.UpdateAPIView):
                 instance.create_client()
                 instance.status = 'submitted'
                 instance.save()
+                message = Slack.OFFLINE_TRASACTION % (
+                    instance.client.user.get_full_name(),
+                    instance.reference_no,
+                    '%s://admin.%s/sales/application/%s/change/' % (
+                        'http' if ENV == 'localhost:8000' else 'https', ENV,
+                        instance.id))
+                instance.send_slack_notification(
+                    Slack.payment_service, message)
         return Response(serializer.data)

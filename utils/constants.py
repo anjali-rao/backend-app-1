@@ -29,7 +29,7 @@ APPLICATION_STAGES = (
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
     'ration_card', 'passport', 'birth_certificate', 'cancelled_cheque',
-    'photo', 'educational_document')
+    'photo', 'educational_document', 'cheque')
 
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('all', 'sales_brochure', 'claim_form')
