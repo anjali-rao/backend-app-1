@@ -509,7 +509,10 @@ class UpdateApplicationSerializer(serializers.ModelSerializer):
 
     @property
     def data(self):
-        self._data = dict(message='Application updated successfully')
+        self._data = dict(
+            message='Application updated successfully',
+            client_name=self.instance.client.contact.get_full_name(),
+            application_id=self.instance.reference_no)
         return self._data
 
 
@@ -555,3 +558,44 @@ class UploadContactDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = ('cancelled_cheque',)
+
+
+class GetApplicationMessageSerializer(serializers.ModelSerializer):
+    heading = serializers.SerializerMethodField()
+    body = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    whatsapp = serializers.SerializerMethodField()
+    whatsapp_text = serializers.SerializerMethodField()
+    home = serializers.SerializerMethodField()
+    earning = serializers.SerializerMethodField()
+    message_type = serializers.SerializerMethodField()
+
+    def get_heading(self, obj):
+        return 'Thank You!'
+
+    def get_body(self, obj):
+        return 'Your application add application id for add client details has been submitted to OneCover.\n\nWe will shortly reach out to you to schedule the cheque and policy collections.\nlease click here to see the status of your application and commissions'
+
+    def get_whatsapp(self, obj):
+        return False
+
+    def get_home(self, obj):
+        return True
+
+    def get_earning(self, obj):
+        return True
+
+    def get_message_type(self, obj):
+        return 'success'
+
+    def get_whatsapp_text(self, obj):
+        return ''
+
+    def get_product(self, obj):
+        return SalesApplicationSerializer(obj).data
+
+    class Meta:
+        model = Application
+        fields = (
+            'heading', 'body', 'whatsapp', 'home', 'earning', 'message_type',
+            'product', 'whatsapp_text')

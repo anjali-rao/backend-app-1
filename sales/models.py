@@ -132,6 +132,7 @@ class Application(BaseModel):
                 earning.status = 'application_submitted'
                 earning.save()
                 self.status = 'completed'
+                self.stage = 'completed'
         except self.__class__.DoesNotExist:
             self.generate_reference_no()
             self.application_type = self.company_category.category.name.lower(
