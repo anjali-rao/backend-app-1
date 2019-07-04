@@ -236,6 +236,9 @@ class UserSerializer(serializers.ModelSerializer):
     profile_pic = serializers.FileField(
         source='account.profile_pic', default='')
     referral_code = serializers.ReadOnlyField(source='referral.code')
+    is_staff = serializers.ReadOnlyField(source='account.is_staff')
+    promo_code = serializers.ReadOnlyField(
+        source='enterprise.promocode.code', default='')
     profile_url = serializers.SerializerMethodField()
 
     def get_profile_url(self, obj):
@@ -246,7 +249,8 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             'user_id', 'first_name', 'last_name', 'email', 'phone_no',
             'gender', 'flat_no', 'street', 'city', 'state', 'pincode',
-            'profile_pic', 'rating', 'referral_code', 'profile_url')
+            'profile_pic', 'rating', 'referral_code', 'profile_url',
+            'is_staff', 'promo_code')
 
 
 class AuthorizationSerializer(serializers.Serializer):

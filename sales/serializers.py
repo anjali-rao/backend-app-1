@@ -65,6 +65,8 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
             lead.save()
             return
         lead = leads.first()
+        lead.pincode = opportunity.lead.pincode
+        lead.save()
         opportunity.lead_id = lead.id
         opportunity.save()
 
@@ -84,13 +86,13 @@ class GetProposalDetailsSerializer(serializers.ModelSerializer):
     flat_no = serializers.SerializerMethodField()
 
     def get_document_type(self, obj):
-        kyc_docs = obj.kycdocument_set.all()
+        kyc_docs = obj.proposerdocument_set.all()
         if kyc_docs.exists():
             return kyc_docs.latest('modified').document_type
         return ''
 
     def get_document_number(self, obj):
-        kyc_docs = obj.kycdocument_set.all()
+        kyc_docs = obj.proposerdocument_set.all()
         if kyc_docs.exists():
             return kyc_docs.latest('modified').document_number
         return ''

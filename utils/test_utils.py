@@ -1,8 +1,10 @@
 
 from __future__ import unicode_literals
+import json
 
 from django.core.cache import cache
 from django.urls import include, path
+from django.core.management import call_command
 
 from rest_framework.test import URLPatternsTestCase, APITestCase
 
@@ -18,12 +20,18 @@ class BaseTestCase(APITestCase, URLPatternsTestCase):
     PHONE_NO = 6362843965
     PASSCODE = 4321
 
-    def setUp(self):
-        self.add_data()
+    def loaddata(self, filepath):
+        import sys
+        from os import devnull
+        stdout_backup, sys.stdout = sys.stdout, open(devnull, 'a')
+        call_command('loaddata', filepath)
+        sys.stdout = stdout_backup
 
-    def add_data(self):
+    @classmethod
+    def setUpTestData(self):
         state = State.objects.create(name="Karnataka")
         Pincode.objects.create(pincode=560034, city='Bangalore', state=state)
+        Pincode.objects.create(pincode=560078, city='Bangalore', state=state)
         Pincode.objects.create(pincode=560011, city='Bangalore', state=state)
 
         PromoCode.objects.create(code='OCOVR-2-4')
@@ -42,6 +50,27 @@ class BaseTestCase(APITestCase, URLPatternsTestCase):
             name='Marketing',
             url='https://www.youtube.com/playlist?list=PLO72qwRGaNMxWeOuJPJPl0fQuFoUINbVn', # noqa
             playlist_type='marketing', id=2)
+
+        import sys
+        from os import devnull
+        stdout_backup, sys.stdout = sys.stdout, open(devnull, 'a')
+        call_command('loaddata', 'utils/dump/product.json')
+        sys.stdout = stdout_backup
+
+    def add_questions_answers(self):
+        self.loaddata('utils/dump/questions.json')
+        self.loaddata('utils/dump/answers.json')
+
+    def create_lead(self, user_id, header, category=1):
+        data = dict(category_id=category,
+            family=dict(self=32), pincode=560034, gender='male')
+        response = self.client.post(
+            path='/v2/lead/create',
+            data=json.dumps(data),
+            content_type='application/json',
+            **header
+        )
+        return response
 
     def generate_otp(self, phone_no):
         data = dict(phone_no=phone_no)
@@ -81,4 +110,17 @@ class BaseTestCase(APITestCase, URLPatternsTestCase):
         data = dict(
             phone_no=phone_no, password=str(phone_no) + str(passcode))
         response = self.client.post('/v2/user/authorization/generate', data)
+        return response
+
+    def submit_answers(self, answers, opportunity_id):
+        data = dict(
+            opportunity_id=opportunity_id,
+            answers=answers
+        )
+        response = self.client.post(
+            path="/v2/user/questionnaire/record",
+            data=json.dumps(data),
+            content_type='application/json',
+            **self.header
+        )
         return response
