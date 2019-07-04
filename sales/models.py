@@ -17,6 +17,8 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from questionnaire.models import Response
 from utils.mixins import RecommendationException
 from utils import get_proposer_upload_path
+from utils.notification_templates import Slack
+from goplannr.settings import ENV
 
 
 class Quote(BaseModel):
@@ -117,6 +119,14 @@ class Application(BaseModel):
                 self.status = 'submitted'
             if self.payment_failed != current.payment_failed and not self.payment_failed: # noqa
                 self.create_client()
+                message = Slack.OFFLINE_TRASACTION % (
+                    self.client.user.get_full_name(),
+                    self.reference_no,
+                    '%s://admin.%s/sales/application/%s/change/' % (
+                        'http' if ENV == 'localhost:8000' else 'https', ENV,
+                        self.id))
+                self.send_slack_notification(
+                    Slack.payment_service, message)
                 earning = self.commission_set.get().earning
                 earning.status = 'application_submitted'
                 earning.save()
