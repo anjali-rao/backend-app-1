@@ -4,7 +4,7 @@ from content.models import NetworkHospital
 from content.serializers import NotesSerializer
 from crm.models import Lead, Contact, Opportunity
 from sales.models import Quote
-from utils import constants as Constants, mixins
+from utils import constants as Constants, mixins, parse_phone_no
 
 from django.db import transaction
 
@@ -41,6 +41,8 @@ class LeadCRUDSerializer(serializers.ModelSerializer):
 
     def get_contact(self, validated_data, **kwargs):
         name = validated_data['contact_name'].lower().split(' ')
+        validated_data['contact_phone_no'] = parse_phone_no(
+            validated_data['contact_phone_no'])
         first_name = name[0]
         middle_name = name[1] if len(name) == 3 else ''
         last_name = name[2] if len(name) > 2 else (
