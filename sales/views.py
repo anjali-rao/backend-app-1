@@ -363,7 +363,7 @@ class UploadProposerDocuments(generics.UpdateAPIView):
         return Response(serializer.data)
 
 
-class GetApplicationMessage(generics.RetrieveAPIView):
+class JourneyCompleted(generics.RetrieveAPIView):
     authentication_classes = (UserAuthentication,)
     serializer_class = GetApplicationMessageSerializer
     queryset = Application.objects.all()
