@@ -55,6 +55,10 @@ class LeadAdmin(admin.ModelAdmin):
     raw_id_fields = ('user', 'contact',)
     inlines = (NotesInline,)
 
+    def get_queryset(self, request):
+        queryset = super(self.__class__, self).get_queryset(request)
+        return queryset.exclude(contact=None)
+
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):

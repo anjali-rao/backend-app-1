@@ -161,7 +161,7 @@ class AddLeadNotes(generics.CreateAPIView):
             return Response(dict(
                 message='Notes added successfully', lead_id=lead.id
             ), status=status.HTTP_201_CREATED)
-        except IntegrityError as e:
+        except IntegrityError:
             pass
         raise mixins.APIException(
             'Unable to process request currently. Please try again')

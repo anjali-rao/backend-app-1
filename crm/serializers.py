@@ -43,6 +43,8 @@ class LeadCRUDSerializer(serializers.ModelSerializer):
         name = validated_data['contact_name'].lower().split(' ')
         valid, validated_data['contact_phone_no'] = parse_phone_no(
             validated_data['contact_phone_no'])
+        if not valid:
+            raise mixins.APIException(Constants.INVALID_PHONE_NO)
         first_name = name[0]
         middle_name = name[1] if len(name) == 3 else ''
         last_name = name[2] if len(name) > 2 else (
@@ -367,6 +369,8 @@ class LeadDetailSerializer(serializers.ModelSerializer):
     logo = serializers.FileField(source='category.logo', default='')
     stage = serializers.ReadOnlyField(source='get_stage_display')
     phone_no = serializers.ReadOnlyField(source='contact.phone_no')
+    calling_no = serializers.ReadOnlyField(source='contact.calling_no')
+    whatsapp_no = serializers.ReadOnlyField(source='contact.whatsapp_no')
     address = serializers.ReadOnlyField(source='contact.address.full_address')
     quotes = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
@@ -383,7 +387,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
         model = Lead
         fields = (
             'lead_id', 'phone_no', 'logo', 'address', 'stage', 'quotes',
-            'created', 'notes', 'full_name')
+            'created', 'notes', 'full_name', 'whatsapp_no', 'calling_no')
 
 
 class SharedQuoteDetailsSerializer(serializers.ModelSerializer):
