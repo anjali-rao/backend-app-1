@@ -2,6 +2,9 @@
 from __future__ import unicode_literals
 
 from django.contrib import admin
+
+from extended_filters.filters import CheckBoxListFilter
+
 from product.models import (
     Company, Category, CompanyDetails, CompanyCategory, ProductVariant,
     CustomerSegment, FeatureMaster, Feature, SumInsuredMaster,
@@ -52,8 +55,10 @@ class ComapanyCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
-    list_display = ('company_category', 'name',)
+    search_fields = ('name',)
+    list_display = ('name', 'company_category')
     raw_id_fields = ('company_category',)
+    list_filter = ('name', 'is_active', 'online_process')
 
 
 @admin.register(CustomerSegment)
@@ -92,13 +97,17 @@ class HealthPremiumAdmin(admin.ModelAdmin):
     list_display = (
         'product_variant', 'sum_insured', 'age_range', 'citytier',
         'base_premium')
-    search_fields = ('product_variant__id',)
+    search_fields = (
+        'product_variant__id', 'product_variant__name',
+        'base_premium')
     raw_id_fields = ('product_variant', 'deductible')
     ordering = ('sum_insured',)
-    list_filter = (
-        'product_variant__company_category__company__name',
-        'sum_insured', 'adults', 'childrens', 'citytier', 'ignore',
-        'product_variant')
+    list_filter = [
+        ('product_variant', CheckBoxListFilter),
+        'online_process', 'is_active',
+        ('product_variant__company_category__company',
+        CheckBoxListFilter), ('sum_insured', CheckBoxListFilter),
+        'adults', 'childrens', 'citytier', 'ignore']
 
 
 @admin.register(FeatureCustomerSegmentScore)

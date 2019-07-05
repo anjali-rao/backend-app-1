@@ -26,7 +26,8 @@ class Category(BaseModel):
 
 
 class Company(BaseModel):
-    name = models.CharField(max_length=128, db_index=True)
+    name = models.CharField(
+        max_length=128, db_index=True, verbose_name="Company Name")
     short_name = models.CharField(max_length=128)
     categories = models.ManyToManyField('product.Category')
     logo = models.ImageField(
@@ -75,7 +76,8 @@ class ProductVariant(BaseModel):
         on_delete=models.CASCADE)
     parent = models.ForeignKey(
         'self', null=True, blank=True, on_delete=models.CASCADE)
-    name = models.CharField(max_length=256, default="")
+    name = models.CharField(
+        max_length=256, default="", verbose_name="Product Name")
     parent_product = models.CharField(
         max_length=128, null=True, blank=True, default='GoPlannr')
     feature_variant = models.CharField(max_length=256, default='base')
@@ -201,8 +203,8 @@ class HealthPremium(BaseModel):
         'product.DeductibleMaster', null=True, blank=True,
         on_delete=models.CASCADE)
     sum_insured = models.IntegerField(default=0.0)
-    suminsured_range = IntegerRangeField(default=(1, 300000), db_index=True)
-    age_range = IntegerRangeField(default=(1, 100), db_index=True)
+    suminsured_range = IntegerRangeField(db_index=True)
+    age_range = IntegerRangeField(db_index=True)
     adults = models.IntegerField(null=True, blank=True, db_index=True)
     childrens = models.IntegerField(null=True, blank=True, db_index=True)
     citytier = models.CharField(

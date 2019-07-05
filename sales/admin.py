@@ -58,8 +58,12 @@ class ApplicationAdmin(admin.ModelAdmin):
     search_fields = (
         'reference_no', 'quote__id', 'quote__opportunity__lead__id', 'id',
         'proposer__phone_no', 'proposer__address__pincode__pincode',
-        'proposer__first_name', 'proposer__last_name',
-        'proposer__address__pincode__city',
+        'proposer__first_name', 'proposer__last_name', 'proposer__middle_name'
+        'proposer__phone_no', 'proposer__address__pincode__city',
+        'quote__opportunity__lead__user__account__phone_no',
+        'quote__opportunity__lead__user__account__first_name',
+        'quote__opportunity__lead__user__account__middle_name',
+        'quote__opportunity__lead__user__account__last_name',
     )
     actions = ['send_to_Aggregator', 'generate_Aggregator_Payment_Link']
     _inlines_class_set = dict(
