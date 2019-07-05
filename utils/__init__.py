@@ -30,12 +30,13 @@ def genrate_random_string(length):
 
 
 def parse_phone_no(phone_no):
-    return True, phone_no
     if len(phone_no) == 10 and phone_no[0] == '0':
         return False, phone_no
     if len(phone_no) > 10 and phone_no[0] == '0':
         phone_no = phone_no[1:]
         return len(phone_no) == 10, phone_no
+    if len(phone_no) > 10 and '+91' in phone_no:
+        return True, phone_no
     if len(phone_no) > 10 and '91' in phone_no:
         phone_no = phone_no.replace('91', '')
         return len(phone_no) == 10, phone_no

@@ -174,6 +174,26 @@ class Contact(BaseModel):
             validated_data[field] = doc.file.url
         return validated_data
 
+    @property
+    def calling_no(self):
+        if len(self.phone_no) == 10:
+            return '+91%s' % self.phone_no
+        if '+91' in self.phone_no and len(self.phone_no) == 13:
+            return self.phone_no
+        if '91' in self.phone_no[:3] and len(self.phone_no) > 10:
+            return '+%s' % self.phone_no
+        return self.phone_no
+
+    @property
+    def whatsapp_no(self):
+        if len(self.phone_no) == 10:
+            return '91%s' % self.phone_no
+        if '+91' in self.phone_no and len(self.phone_no) == 13:
+            return self.phone_no.replace('+', '')
+        if '91' in self.phone_no[:3] and len(self.phone_no) > 10:
+            return self.phone_no
+        return self.phone_no
+
 
 class KYCDocument(BaseModel):
     contact = models.ForeignKey(

@@ -46,6 +46,8 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
         valid, validated_data['contact_no'] = parse_phone_no(
             validated_data['contact_no'])
         print(validated_data)
+        if not valid:
+            raise mixins.APIException(Constants.INVALID_PHONE_NO)
         first_name = name[0]
         middle_name = name[1] if len(name) == 3 else ''
         last_name = name[2] if len(name) > 2 else (
@@ -144,6 +146,8 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
         last_name = validated_data['last_name'].lower()
         valid, validated_data['phone_no'] = parse_phone_no(
             validated_data['phone_no'])
+        if not valid:
+            raise mixins.APIException(Constants.INVALID_PHONE_NO)
         instance, created = Contact.objects.get_or_create(
             phone_no=validated_data['phone_no'],
             first_name=first_name, last_name=last_name,
