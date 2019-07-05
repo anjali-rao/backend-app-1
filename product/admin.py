@@ -99,13 +99,13 @@ class HealthPremiumAdmin(admin.ModelAdmin):
         'base_premium')
     search_fields = (
         'product_variant__id', 'product_variant__name',
-        'base_premium', 'product_variant__name')
+        'base_premium')
     raw_id_fields = ('product_variant', 'deductible')
     ordering = ('sum_insured',)
     list_filter = [
         ('product_variant', CheckBoxListFilter),
         'online_process', 'is_active',
-        ('product_variant__company_category__company__name',
+        ('product_variant__company_category__company',
         CheckBoxListFilter), ('sum_insured', CheckBoxListFilter),
         'adults', 'childrens', 'citytier', 'ignore']
 
