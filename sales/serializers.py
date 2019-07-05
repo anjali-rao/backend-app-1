@@ -6,7 +6,7 @@ from sales.models import (
 )
 from crm.models import Contact, Lead
 from users.models import Pincode, Address
-from utils import constants as Constants, mixins
+from utils import constants as Constants, mixins, parse_phone_no
 
 from django.db import transaction, IntegrityError
 
@@ -43,6 +43,8 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
 
     def get_contact(self, validated_data, **kwargs):
         name = validated_data['contact_name'].lower().split(' ')
+        validated_data['contact_no'] = parse_phone_no(
+            validated_data['contact_no'])
         first_name = name[0]
         middle_name = name[1] if len(name) == 3 else ''
         last_name = name[2] if len(name) > 2 else (
@@ -139,6 +141,7 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
     def get_contact(self, validated_data):
         first_name = validated_data['first_name'].lower()
         last_name = validated_data['last_name'].lower()
+        validated_data['phone_no'] = parse_phone_no(validated_data['phone_no'])
         instance, created = Contact.objects.get_or_create(
             phone_no=validated_data['phone_no'],
             first_name=first_name, last_name=last_name,
