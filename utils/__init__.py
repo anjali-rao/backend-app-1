@@ -30,6 +30,7 @@ def genrate_random_string(length):
 
 
 def parse_phone_no(phone_no):
+    return True, phone_no
     if len(phone_no) == 10 and phone_no[0] == '0':
         return False, phone_no
     if len(phone_no) > 10 and phone_no[0] == '0':

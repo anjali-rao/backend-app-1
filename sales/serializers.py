@@ -43,8 +43,9 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
 
     def get_contact(self, validated_data, **kwargs):
         name = validated_data['contact_name'].lower().split(' ')
-        validated_data['contact_no'] = parse_phone_no(
+        valid, validated_data['contact_no'] = parse_phone_no(
             validated_data['contact_no'])
+        print(validated_data)
         first_name = name[0]
         middle_name = name[1] if len(name) == 3 else ''
         last_name = name[2] if len(name) > 2 else (
@@ -141,7 +142,8 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
     def get_contact(self, validated_data):
         first_name = validated_data['first_name'].lower()
         last_name = validated_data['last_name'].lower()
-        validated_data['phone_no'] = parse_phone_no(validated_data['phone_no'])
+        valid, validated_data['phone_no'] = parse_phone_no(
+            validated_data['phone_no'])
         instance, created = Contact.objects.get_or_create(
             phone_no=validated_data['phone_no'],
             first_name=first_name, last_name=last_name,
@@ -422,6 +424,7 @@ class GetInsuranceFieldsSerializer(serializers.Serializer):
 
 
 class ApplicationSummarySerializer(serializers.ModelSerializer):
+    premium_amount = serializers.ReadOnlyField(source='premium')
     proposer_details = serializers.SerializerMethodField()
     insured_members = serializers.SerializerMethodField()
     nominee_details = serializers.SerializerMethodField()
@@ -452,7 +455,7 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
         model = Application
         fields = (
             'proposer_details', 'insured_members', 'nominee_details',
-            'existing_policies'
+            'existing_policies', 'premium_amount'
         )
 
 
