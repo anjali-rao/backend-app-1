@@ -37,6 +37,10 @@ class OpportunityInline(admin.ModelAdmin):
         healthinsurance=HealthInsuranceInline
     )
 
+    def get_queryset(self, request):
+        queryset = super(self.__class__, self).get_queryset(request)
+        return queryset.exclude(quote=None)
+
     def get_inline_instances(self, request, obj=None):
         inlines = list()
         if obj is not None and hasattr(obj, obj.category_name):

@@ -370,6 +370,9 @@ class JourneyCompleted(generics.RetrieveAPIView):
 
     def get_object(self):
         obj = super(self.__class__, self).get_object()
+        if obj.client.user.user_type == 'subscriber':
+            obj.opted_paymode = 'offline'
+            return obj
         obj.opted_paymode = 'online'
         if obj.proposer.proposerdocument_set.filter(
                 ignore=False, document_type='cheque').exists() or (
