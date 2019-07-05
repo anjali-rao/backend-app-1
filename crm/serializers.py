@@ -41,7 +41,7 @@ class LeadCRUDSerializer(serializers.ModelSerializer):
 
     def get_contact(self, validated_data, **kwargs):
         name = validated_data['contact_name'].lower().split(' ')
-        validated_data['contact_phone_no'] = parse_phone_no(
+        valid, validated_data['contact_phone_no'] = parse_phone_no(
             validated_data['contact_phone_no'])
         first_name = name[0]
         middle_name = name[1] if len(name) == 3 else ''

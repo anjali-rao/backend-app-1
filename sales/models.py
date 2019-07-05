@@ -482,12 +482,17 @@ class HealthInsurance(Insurance):
             if field.__class__.__name__ not in [
                     'BooleanField', 'IntegerField']:
                 members_data = list()
-                for member in MemberSerializer(members, many=True).data:
-                    for row in getattr(self, field.name):
-                        member['value'] = False
-                        if row['id'] == member['id']:
-                            member['value'] = row['value']
-                        members_data.append(member)
+                for member in getattr(self, field.name):
+                    row = MemberSerializer(
+                        members.get(id=member['id'])).data
+                    row['value'] = member['value']
+                    members_data.append(row)
+#                for member in MemberSerializer(members, many=True).data:
+#                    for row in getattr(self, field.name):
+#                        member['value'] = False
+#                        if row['id'] == member['id']:
+#                            member['value'] = row['value']
+#                        members_data.append(member)
             serializer = GetInsuranceFieldsSerializer(data=dict(
                 text=field.help_text, field_name=field.name,
                 field_requirements=[{
