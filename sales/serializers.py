@@ -582,7 +582,8 @@ class GetApplicationMessageSerializer(serializers.ModelSerializer):
             return Constants.SUBSCRIBER_THANKYOU % (
                 obj.reference_no, obj.client.contact.get_full_name())
         if obj.payment_failed:
-            return Constants.FAILED_MESSAGE
+            return Constants.FAILED_MESSAGE % (
+                obj.reference_no, obj.client.contact.get_full_name())
         return Constants.SUCESSFUL_PAYMENT % (
             obj.reference_no, obj.client.contact.get_full_name())
 
@@ -590,7 +591,7 @@ class GetApplicationMessageSerializer(serializers.ModelSerializer):
         if obj.opted_paymode == 'offline':
             return False
         if obj.payment_failed:
-            return ''
+            return False
         return True
 
     def get_message_type(self, obj):
