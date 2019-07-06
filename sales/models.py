@@ -17,7 +17,6 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from questionnaire.models import Response
 from utils.mixins import RecommendationException
 from utils import get_proposer_upload_path
-from utils.notification_templates import Slack
 from goplannr.settings import ENV
 
 
@@ -119,20 +118,18 @@ class Application(BaseModel):
                 self.status = 'submitted'
             if self.payment_failed != current.payment_failed and self.payment_failed is not None: # noqa
                 self.create_client()
-                message = Slack.TRANSACTION_FAILURE if self.payment_failed else Slack.ONLINE_TRANSACTION # noqa
-                message = message % (
-                    self.client.user.get_full_name(),
-                    self.reference_no,
-                    '%s://admin.%s/sales/application/%s/change/' % (
-                        'http' if ENV == 'localhost:8000' else 'https', ENV,
-                        self.id))
+                if self.payment_failed:
+                    self.status = 'payment_due'
+                    self.stage = 'payment_failed'
                 self.send_slack_notification(
-                    Slack.payment_service, message)
-                earning = self.commission_set.get().earning
-                earning.status = 'application_submitted'
-                earning.save()
-                self.status = 'completed'
-                self.stage = 'completed'
+                    Constants.PAYMENT_ERROR if self.payment_failed else Constants.PAYMENT_SUCCESS, # noqa
+                    'Offline + Online',
+                    'error' if self.payment_failed else 'success')
+                commissions = self.commission_set.all()
+                if commissions.exists():
+                    earning = commissions.get().earning
+                    earning.status = 'application_submitted'
+                    earning.save()
         except self.__class__.DoesNotExist:
             self.generate_reference_no()
             self.application_type = self.company_category.category.name.lower(
@@ -225,12 +222,17 @@ class Application(BaseModel):
         cache.delete('USER_CONTACTS:%s' % self.quote.opportunity.lead.user_id)
         cache.delete('USER_EARNINGS:%s' % self.quote.opportunity.lead.user_id)
 
-    def create_client(self):
+    def create_client(self, save=False):
         lead = self.quote.opportunity.lead
         if not lead.is_client:
             lead.is_client = True
             lead.save()
-        self.create_policy()
+        if self.payment_failed is not True:
+            self.create_policy()
+        self.status = 'submitted'
+        self.stage = 'completed'
+        if save:
+            self.save()
 
     def create_commission(self):
         from earnings.models import Commission
@@ -241,10 +243,38 @@ class Application(BaseModel):
         commission.updated = True
         commission.save()
 
-    def send_slack_notification(self, service, message):
+    def send_slack_notification(self, event, mode, mode_type='success'):
         import requests
-        endpoint = 'https://hooks.slack.com/services/%s' % service
-        data = dict(text=message)
+        client = self.client
+        endpoint = 'https://hooks.slack.com/services/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' # noqa
+        link = '%s://admin.%s/sales/application/%s/change/' % (
+            'http' if ENV == 'localhost:8000' else 'https', ENV, self.id)
+        data = dict(
+            attachments=[dict(
+                fallback='Required plain-text summary of the attachment.',
+                color={
+                    'success': '#36a64f',
+                    'warning': '',
+                    'error': ''
+                }[mode_type],
+                pretext='Post application flow', author_name=mode,
+                title='Open Application', title_link=link, text=event,
+                fields=[dict(
+                    type='mrkdwn',
+                    value="*Application id:*\n%s" % self.reference_no
+                ), dict(
+                    type='mrkdwn',
+                    value="*Advisor Name:*\n%s" % client.user.get_full_name()
+                ), dict(
+                    type='mrkdwn',
+                    value="*Advisor phone:*\n%s" % client.user.account.phone_no
+                )],
+                thumb_url='https://onecover.in/favicon.png',
+                footer='Post application flow',
+                footer_icon='https://onecover.in/favicon.png',
+                ts=now().timestamp()
+            )]
+        )
         return requests.post(endpoint, json=data)
 
     @property
