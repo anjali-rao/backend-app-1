@@ -90,6 +90,8 @@ class Quote(BaseModel):
 
 
 class Application(BaseModel):
+    app_client = models.ForeignKey(
+        'crm.Lead', on_delete=models.PROTECT, null=True, blank=True)
     reference_no = models.CharField(max_length=10, unique=True, db_index=True)
     premium = models.FloatField(default=0.0)
     suminsured = models.FloatField(default=0.0)
@@ -304,7 +306,7 @@ class Application(BaseModel):
 
     @cached_property
     def client(self):
-        return self.quote.opportunity.lead
+        return self.app_client
 
     def __str__(self):
         return '%s - %s - %s' % (
