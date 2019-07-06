@@ -6,7 +6,6 @@ from rest_framework.response import Response
 
 from users.decorators import UserAuthentication
 from utils import mixins, constants
-from utils.notification_templates import Slack
 from sales.serializers import (
     CreateApplicationSerializer, GetProposalDetailsSerializer,
     Application, UpdateContactDetailsSerializer, Contact,
@@ -15,9 +14,7 @@ from sales.serializers import (
     TravalInsuranceSerializer, TermsSerializer, ExistingPolicySerializer,
     GetInsuranceFieldsSerializer, ApplicationSummarySerializer,
     VerifyProposerPhonenoSerializer, UploadContactDocumentSerializer,
-    UpdateApplicationSerializer, GetApplicationMessageSerializer
-)
-from goplannr.settings import ENV
+    UpdateApplicationSerializer, GetApplicationMessageSerializer)
 
 from django.core.exceptions import ValidationError
 from django.http import Http404
@@ -349,17 +346,7 @@ class UploadProposerDocuments(generics.UpdateAPIView):
             instance.refresh_from_db()
             if instance.proposer.proposerdocument_set.filter(
                     ignore=False, document_type='cancelled_cheque').exists():
-                instance.create_client()
-                instance.status = 'submitted'
-                instance.save()
-                message = Slack.OFFLINE_TRASACTION % (
-                    instance.client.user.get_full_name(),
-                    instance.reference_no,
-                    '%s://admin.%s/sales/application/%s/change/' % (
-                        'http' if ENV == 'localhost:8000' else 'https', ENV,
-                        instance.id))
-                instance.send_slack_notification(
-                    Slack.payment_service, message)
+                instance.create_client(save=True)
         return Response(serializer.data)
 
 
@@ -370,12 +357,19 @@ class JourneyCompleted(generics.RetrieveAPIView):
 
     def get_object(self):
         obj = super(self.__class__, self).get_object()
+        if obj.payment_failed is not True:
+            obj.create_client(save=True)
         if obj.client.user.user_type == 'subscriber':
+            obj.send_slack_notification(
+                'Application created and payment process done',
+                'Subscriber')
             obj.opted_paymode = 'offline'
             return obj
         obj.opted_paymode = 'online'
         if obj.proposer.proposerdocument_set.filter(
-                ignore=False, document_type='cheque').exists() or (
-                    obj.client.user.user_type == 'subscriber'):
+                ignore=False, document_type='cheque').exists():
             obj.opted_paymode = 'offline'
+            obj.send_slack_notification(
+                'Application created and payment process done',
+                'Offline')
         return obj

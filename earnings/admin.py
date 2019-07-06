@@ -39,6 +39,7 @@ class EarningAdmin(admin.ModelAdmin):
 class CommisionAdmin(admin.ModelAdmin):
     list_display = ('earning', 'application', 'updated')
     raw_id_fields = ('earning', 'application')
+    search_fields = ('application__reference_no',)
 
 
 @admin.register(Incentive)

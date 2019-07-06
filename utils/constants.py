@@ -25,7 +25,8 @@ APPLICATION_STATUS = (
     ('payment_due', 'Payment due'))
 APPLICATION_STAGES = (
     'proposer_details', 'insured_members', 'nominee_details',
-    'health_details', 'summary', 'payment_due', 'completed')
+    'health_details', 'summary', 'payment_due', 'completed',
+    'payment_failed')
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
     'ration_card', 'passport', 'birth_certificate', 'cancelled_cheque',
@@ -138,6 +139,8 @@ PASSWORD_REQUIRED = 'Password is required.'
 PROMO_MESSAGE = 'Hi %s, Welcome to OneCover, download our app and become super advisor https://tinyurl.com/y2ux5cdj .' # noqa
 PAYMENT_LINK_GENERATION = 'Payment link generated successfully for application (%s). ' # noqa
 SEND_TO_AGGREGATOR = 'Application (%s) successfully send to aggregator.'
+PAYMENT_SUCCESS = 'Application created and payment process done'
+PAYMENT_ERROR = 'Application created and payment process failed'
 
 
 # TTL's (seconds)  ==================================
