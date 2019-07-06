@@ -52,7 +52,7 @@ class Earning(BaseModel):
 class Commission(BaseModel):
     earning = models.OneToOneField(
         'earnings.Earning', on_delete=models.PROTECT, null=True, blank=True)
-    application = models.ForeignKey(
+    application = models.OneToOneField(
         'sales.Application', on_delete=models.CASCADE)
     amount = models.FloatField(default=0.0)
     updated = models.BooleanField(default=False)

@@ -84,9 +84,10 @@ class RetrieveUpdateProposerDetails(
         return self._obj
 
     def perform_update(self, serializer):
-        serializer.save(
-            application_id=self.kwargs['pk'],
-            user_id=self.request.user.id)
+        with transaction.atomic():
+            serializer.save(
+                application_id=self.kwargs['pk'],
+                user_id=self.request.user.id)
 
 
 class RetrieveUpdateApplicationMembers(
@@ -306,11 +307,8 @@ class UpdateApplication(generics.UpdateAPIView):
     queryset = Application.objects.all()
 
     def perform_update(self, serializer):
-        try:
-            with transaction.atomic():
-                serializer.save()
-        except IntegrityError:
-            raise mixins.APIException('Action already perfromed.')
+        with transaction.atomic():
+            serializer.save()
 
 
 class VerifyProposerPhoneno(views.APIView):
@@ -337,16 +335,21 @@ class UploadProposerDocuments(generics.UpdateAPIView):
 
     def update(self, request, version, *args, **kwargs):
         with transaction.atomic():
+            data = request.data
+            if 'cancelled_cheque' in data:
+                data['cheque'] = data['cancelled_cheque']
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
             serializer = self.get_serializer(
-                instance.proposer, data=request.data, partial=partial)
+                instance.proposer, data=data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
             instance.refresh_from_db()
             if instance.proposer.proposerdocument_set.filter(
-                    ignore=False, document_type='cancelled_cheque').exists():
-                instance.create_client(save=True)
+                    ignore=False, document_type='cheque').exists():
+                instance.status = 'submitted'
+                instance.stage = 'completed'
+                instance.save()
         return Response(serializer.data)
 
 
@@ -357,19 +360,15 @@ class JourneyCompleted(generics.RetrieveAPIView):
 
     def get_object(self):
         obj = super(self.__class__, self).get_object()
-        if obj.payment_failed is not True:
-            obj.create_client(save=True)
-        if obj.client.user.user_type == 'subscriber':
-            obj.send_slack_notification(
-                'Application created and payment process done',
-                'Subscriber')
-            obj.opted_paymode = 'offline'
-            return obj
+        with transaction.atomic():
+            if obj.status == 'submitted' and obj.stage == 'completed':
+                obj.status = 'completed'
+                obj.save()
+        obj.refresh_from_db()
         obj.opted_paymode = 'online'
-        if obj.proposer.proposerdocument_set.filter(
+        if obj.quote.opportunity.lead.user.user_type == 'subscriber':
+            obj.opted_paymode = 'offline'
+        elif obj.proposer.proposerdocument_set.filter(
                 ignore=False, document_type='cheque').exists():
             obj.opted_paymode = 'offline'
-            obj.send_slack_notification(
-                'Application created and payment process done',
-                'Offline')
         return obj

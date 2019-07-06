@@ -90,6 +90,8 @@ class Quote(BaseModel):
 
 
 class Application(BaseModel):
+    app_client = models.ForeignKey(
+        'crm.Lead', on_delete=models.PROTECT, null=True, blank=True)
     reference_no = models.CharField(max_length=10, unique=True, db_index=True)
     premium = models.FloatField(default=0.0)
     suminsured = models.FloatField(default=0.0)
@@ -114,27 +116,40 @@ class Application(BaseModel):
     def save(self, *args, **kwargs):
         try:
             current = self.__class__.objects.get(pk=self.id)
-            if current.terms_and_conditions != self.terms_and_conditions and self.terms_and_conditions: # noqa
-                self.status = 'submitted'
-            if self.payment_failed != current.payment_failed and self.payment_failed is not None: # noqa
-                self.create_client()
-                if self.payment_failed:
-                    self.status = 'payment_due'
-                    self.stage = 'payment_failed'
-                self.send_slack_notification(
-                    Constants.PAYMENT_ERROR if self.payment_failed else Constants.PAYMENT_SUCCESS, # noqa
-                    'Offline + Online',
-                    'error' if self.payment_failed else 'success')
-                commissions = self.commission_set.all()
-                if commissions.exists():
-                    earning = commissions.get().earning
-                    earning.status = 'application_submitted'
-                    earning.save()
+            if self.status != current.status:
+                self.handle_status_change(current)
+            if (current.payment_failed != self.payment_failed and self.payment_failed) or self.status == 'completed': # noqa
+                self.send_slack_notification()
         except self.__class__.DoesNotExist:
             self.generate_reference_no()
             self.application_type = self.company_category.category.name.lower(
             ).replace(' ', '')
         super(Application, self).save(*args, **kwargs)
+
+    def handle_status_change(self, current):
+        if self.status == 'submitted' and self.stage == 'completed':
+            self.create_client()
+            self.create_policy()
+            self.create_commission()
+        if current.payment_failed != self.payment_failed and self.payment_failed is False: # noqa
+            if hasattr(self, 'commission'):
+                earning = self.commission.earning
+                earning.status = 'application_submitted'
+                earning.save()
+
+    def send_slack_notification(self):
+        mode = 'Offline + Online'
+        if self.quote.opportunity.lead.user.user_type == 'subscriber':
+            event = 'Application created and payment process done'
+            mode = 'Subscriber'
+        elif self.payment_mode == 'offline':
+            event = 'Application created and payment process done'
+            mode = 'Offline'
+        elif self.payment_failed:
+            event = Constants.PAYMENT_ERROR
+        else:
+            event = Constants.PAYMENT_SUCCESS
+        self.send_slack_request(event, mode)
 
     def aggregator_operation(self):
         premium = self.quote.premium
@@ -227,12 +242,7 @@ class Application(BaseModel):
         if not lead.is_client:
             lead.is_client = True
             lead.save()
-        if self.payment_failed is not True:
-            self.create_policy()
-        self.status = 'submitted'
-        self.stage = 'completed'
-        if save:
-            self.save()
+        self.app_client_id = lead.id
 
     def create_commission(self):
         from earnings.models import Commission
@@ -243,9 +253,9 @@ class Application(BaseModel):
         commission.updated = True
         commission.save()
 
-    def send_slack_notification(self, event, mode, mode_type='success'):
+    def send_slack_request(self, event, mode, mode_type='success'):
         import requests
-        client = self.client
+        client = self.quote.opportunity.lead
         endpoint = 'https://hooks.slack.com/services/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' # noqa
         link = '%s://admin.%s/sales/application/%s/change/' % (
             'http' if ENV == 'localhost:8000' else 'https', ENV, self.id)
@@ -257,7 +267,7 @@ class Application(BaseModel):
                     'warning': '',
                     'error': ''
                 }[mode_type],
-                pretext='Post application flow', author_name=mode,
+                pretext=event, author_name=mode,
                 title='Open Application', title_link=link, text=event,
                 fields=[dict(
                     type='mrkdwn',
@@ -304,7 +314,7 @@ class Application(BaseModel):
 
     @cached_property
     def client(self):
-        return self.quote.opportunity.lead
+        return self.app_client
 
     def __str__(self):
         return '%s - %s - %s' % (

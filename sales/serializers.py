@@ -513,16 +513,21 @@ class ClientSerializer(serializers.ModelSerializer):
 
 class UpdateApplicationSerializer(serializers.ModelSerializer):
 
+    def update(self, instance, validated_data):
+        if validated_data.get('payment_failed') is False:
+            instance.status = 'submitted'
+            instance.stage = 'completed'
+        elif validated_data.get('payment_failed'):
+            instance.stage = 'payment_failed'
+        return super(self.__class__, self).update(instance, validated_data)
+
     class Meta:
         model = Application
         fields = ('status', 'payment_failed')
 
     @property
     def data(self):
-        self._data = dict(
-            message='Application updated successfully',
-            client_name=self.instance.client.contact.get_full_name(),
-            application_id=self.instance.reference_no)
+        self._data = dict(message='Application updated successfully')
         return self._data
 
 
@@ -593,7 +598,8 @@ class GetApplicationMessageSerializer(serializers.ModelSerializer):
                 obj.reference_no, obj.client.contact.get_full_name())
         if obj.payment_failed:
             return Constants.FAILED_MESSAGE % (
-                obj.reference_no, obj.client.contact.get_full_name())
+                obj.reference_no,
+                obj.quote.opportunity.lead.contact.get_full_name())
         return Constants.SUCESSFUL_PAYMENT % (
             obj.reference_no, obj.client.contact.get_full_name())
 
