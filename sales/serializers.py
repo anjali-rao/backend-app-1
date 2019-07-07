@@ -586,7 +586,7 @@ class GetApplicationMessageSerializer(serializers.ModelSerializer):
     message_type = serializers.SerializerMethodField()
 
     def get_heading(self, obj):
-        if obj.opted_paymode == 'offline':
+        if obj.opted_paymode == 'subscriber':
             return 'Thank You!'
         if obj.payment_failed:
             return Constants.FAILED_HEADER
@@ -595,18 +595,19 @@ class GetApplicationMessageSerializer(serializers.ModelSerializer):
     def get_body(self, obj):
         if obj.opted_paymode == 'subscriber':
             return Constants.SUBSCRIBER_THANKYOU % (
-                obj.reference_no, obj.client.contact.get_full_name())
+                obj.reference_no,
+                obj.quote.opportunity.lead.contact.get_full_name())
         if obj.payment_failed:
             return Constants.FAILED_MESSAGE % (
                 obj.reference_no,
                 obj.quote.opportunity.lead.contact.get_full_name())
         return Constants.SUCESSFUL_PAYMENT % (
-            obj.reference_no, obj.client.contact.get_full_name())
+            obj.reference_no,
+            obj.quote.opportunity.lead.contact.get_full_name())
 
     def get_earning(self, obj):
-        if obj.opted_paymode == 'offline':
-            return False
-        if obj.payment_failed:
+        if obj.opted_paymode in [
+                'subscriber', 'offline'] or obj.payment_failed:
             return False
         return True
 

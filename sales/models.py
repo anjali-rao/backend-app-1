@@ -136,6 +136,8 @@ class Application(BaseModel):
                 earning = self.commission.earning
                 earning.status = 'application_submitted'
                 earning.save()
+        if current.status == 'fresh' and self.status == 'submitted':
+            self.send_slack_notification()
 
     def send_slack_notification(self):
         mode = 'Offline + Online'
