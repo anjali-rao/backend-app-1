@@ -364,10 +364,14 @@ class JourneyCompleted(generics.RetrieveAPIView):
             if obj.status == 'submitted' and obj.stage == 'completed':
                 obj.status = 'completed'
                 obj.save()
+            elif obj.status == 'fresh':
+                obj.status = 'submitted'
+                obj.stage = 'subscriber'
+                obj.save()
         obj.refresh_from_db()
         obj.opted_paymode = 'online'
         if obj.quote.opportunity.lead.user.user_type == 'subscriber':
-            obj.opted_paymode = 'offline'
+            obj.opted_paymode = 'subscriber'
         elif obj.proposer.proposerdocument_set.filter(
                 ignore=False, document_type='cheque').exists():
             obj.opted_paymode = 'offline'
