@@ -6,6 +6,7 @@ from django.contrib import admin
 from crm.models import Lead, Contact, Opportunity
 from crm.opportunity.models import HealthInsurance
 from content.models import Note
+from utils.script import export_as_csv
 
 
 class HealthInsuranceInline(admin.StackedInline):
@@ -36,6 +37,14 @@ class OpportunityInline(admin.ModelAdmin):
     _inlines_class_set = dict(
         healthinsurance=HealthInsuranceInline
     )
+    fk_fields = [
+    'lead', 'lead__user',
+    'lead__user__account', 'lead__user__enterprise',
+    'lead__user__campaign', 'lead__contact',
+    'lead__contact__address', 'lead__contact__address__pincode',
+    'lead__contact__address__pincode__state', 'lead__category'
+    ]
+    actions = [export_as_csv]
 
     def get_inline_instances(self, request, obj=None):
         inlines = list()

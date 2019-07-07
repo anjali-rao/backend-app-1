@@ -8,6 +8,7 @@ from content.models import (
     Faq, HelpFile, ContactUs, NetworkHospital, NewsletterSubscriber,
     PromoBook, HelpLine, Playlist, EnterprisePlaylist, Article,
     Coverages, Note, Appointment, Bank, BankBranch, Collateral)
+from utils.script import export_as_csv
 
 
 @admin.register(Faq)
@@ -56,6 +57,7 @@ class NewsletterSubscriberAdmin(admin.ModelAdmin):
 class PromoBookAdmin(admin.ModelAdmin):
     list_display = ('phone_no',)
     search_fields = ('phone_no',)
+    actions = [export_as_csv]
 
 
 @admin.register(HelpLine)

@@ -1,5 +1,52 @@
 import csv
+
 from django.db import transaction
+from django.http import HttpResponse
+
+
+def export_as_csv(self, request, queryset):
+    meta = self.model._meta
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment;filename={}.csv'.format(meta)
+    writer = csv.writer(response)
+
+    fk_fields = []
+    if hasattr(self, 'fk_fields'):
+        fk_fields = [f.split('__') for f in self.fk_fields]
+
+    primary_field_names = [
+        field.name for field in meta.fields if field.name not in fk_fields
+    ]
+    header = False
+
+    for obj in queryset:
+        nested_fields = []
+        row = [
+            getattr(obj, field) for field in primary_field_names
+            if [field] not in fk_fields
+        ]
+        for field_list in fk_fields:
+            fk_obj = obj
+            for field in field_list:
+                fk_obj = getattr(fk_obj, field)
+                fk_dict = fk_obj.__dict__
+                nested_fields.extend(
+                        ["__".join(field_list) + "_"
+                            + key for key in fk_dict.keys()
+                            if key != '_state']
+                )
+                row.extend(
+                    [val for key, val in fk_dict.items() if key != '_state']
+                )
+        if not header:
+            writer.writerow(primary_field_names + nested_fields)
+            header = True
+
+        writer.writerow(row)
+    return response
+
+
+export_as_csv.short_description = "Export Selected as CSV"
 
 
 def readcsv(filename):
