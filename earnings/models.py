@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import constants as Constants, get_choices
+from earnings import REASONS
 
 from django.core.cache import cache
 from django.utils.timezone import now
@@ -17,6 +18,9 @@ class Earning(BaseModel):
     status = models.CharField(
         choices=get_choices(Constants.EARNING_STATUS), max_length=32,
         default='collecting_application')
+    reason = models.CharField(
+        choices=tuple([(x, x) for x in REASONS]), max_length=512,
+        null=True, blank=True)
     transaction_allowed = models.BooleanField(default=False)
     text = models.CharField(max_length=512)
     payable_date = models.DateTimeField()
@@ -29,24 +33,27 @@ class Earning(BaseModel):
         try:
             current = self.__class__.objects.get(pk=self.id)
             if current.status != self.status:
-                if self.status == 'policy_rejected' and hasattr(
-                        self, 'commission'):
-                    app = self.commission.application
-                    client = app.app_client
-                    if client and app.__class__.objects.filter(
-                            app_client_id=client.id).count() == 1:
-                        client.is_client = False
-                        client.save()
-                        app.app_client = None
-                    app.status = 'pending'
-                    app.stage = 'payment_failed'
-                    app.save()
+                self.handle_status_change(current)
         except self.__class__.DoesNotExist:
-            self.text = (getattr(
-                Constants, ('%s_TEXT' % self.earning_type).upper()
-            ) % self.get_text_paramaters())
+            pass
         cache.delete('USER_EARNINGS:%s' % self.user_id)
         super(self.__class__, self).save(*args, **kwargs)
+
+    def handle_status_change(self, current):
+        app = self.commission.application
+        if self.status == 'policy_rejected':
+            client = app.client
+            if app.__class__.objects.filter(
+                    app_client_id=client.id).count() == 1:
+                client.is_client = False
+                client.save()
+                app.client = None
+            app.status = 'pending'
+            app.stage = 'payment_failed'
+            app.save()
+        message = self.get_earning_message(app)
+        if message:
+            self.user.account.send_sms(message)
 
     def get_text_paramaters(self):
         if self.earning_type == 'referral':
@@ -62,6 +69,15 @@ class Earning(BaseModel):
             query['earning_type'] = earning_type
         return cls.objects.filter(**query).aggregate(
             s=models.Sum('amount'))['s'] or 0
+
+    def get_earning_message(self, app=None):
+        return dict(
+            application_submitted='Application # %s has been submitted to insurer.' % (app.reference_no),
+            policy_rejected='Policy Rejected for application # %s,\nReason %s' % (
+                app.reference_no, self.reason),
+            policy_followup='Insurer has asked for more information for application # %s,\n Reason %s' % (
+                app.reference_no, self.reason),
+        ).get(self.status)
 
 
 class Commission(BaseModel):
