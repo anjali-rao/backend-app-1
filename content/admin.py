@@ -8,6 +8,7 @@ from content.models import (
     Faq, HelpFile, ContactUs, NetworkHospital, NewsletterSubscriber,
     PromoBook, HelpLine, Playlist, EnterprisePlaylist, Article,
     Coverages, Note, Appointment, Bank, BankBranch, Collateral)
+from utils.script import export_as_csv
 
 
 @admin.register(Faq)
@@ -43,6 +44,8 @@ class NetworkHospitalAdmin(admin.ModelAdmin):
         'pincode__city', 'pincode__state__name')
     list_filter = ('pincode__state__name', )
     raw_id_fields = ('pincode', 'company')
+    fk_fields = ['company', 'pincode', 'pincode__state']
+    actions = [export_as_csv]
 
 
 @admin.register(NewsletterSubscriber)
@@ -56,6 +59,7 @@ class NewsletterSubscriberAdmin(admin.ModelAdmin):
 class PromoBookAdmin(admin.ModelAdmin):
     list_display = ('phone_no',)
     search_fields = ('phone_no',)
+    actions = [export_as_csv]
 
 
 @admin.register(HelpLine)

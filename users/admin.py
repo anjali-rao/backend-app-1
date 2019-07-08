@@ -9,6 +9,7 @@ from extended_filters.filters import DateRangeFilter
 from users.models import (
     Account, User, Campaign, AccountDetail, KYCDocument, BankAccount,
     Enterprise, State, Pincode, Address, IPAddress, Referral, PromoCode)
+from utils.script import export_as_csv
 
 
 @admin.register(Account)
@@ -30,6 +31,7 @@ class GoPlannerAccountAdmin(BaseUserAdmin):
             )
         })
     )
+    actions = [export_as_csv]
 
 
 @admin.register(User)
@@ -42,6 +44,8 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = (
         'account__phone_no', 'account__alternate_no', 'account__aadhar_no')
     raw_id_fields = ('account', 'campaign', 'enterprise')
+    fk_fields = ['account', 'campaign']
+    actions = [export_as_csv]
     exclude = ['user_type', ]
 
 
@@ -78,6 +82,8 @@ class CampaignAdmin(admin.ModelAdmin):
 class EnterpriseAdmin(admin.ModelAdmin):
     list_display = ('name', 'promocode', 'enterprise_type', 'hexa_code')
     search_fields = ('name', 'promocode__code',)
+    fk_fields = ['promocode']
+    actions = [export_as_csv]
     list_filter = ('enterprise_type', 'promocode__code')
     exclude = ['enterprise_type', ]
 
@@ -127,3 +133,4 @@ class ReferralAdmin(admin.ModelAdmin):
 class PromoCodeAdmin(admin.ModelAdmin):
     list_display = ('code',)
     search_fields = ('code',)
+    actions = [export_as_csv]

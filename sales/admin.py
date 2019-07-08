@@ -9,6 +9,7 @@ from sales.models import (
     Nominee, Policy, ProposerDocument)
 from payment.models import ApplicationRequestLog
 from utils import constants as Constants
+from utils.script import export_as_csv
 
 
 class HealthInsuranceInline(admin.StackedInline):
@@ -64,7 +65,26 @@ class ApplicationAdmin(admin.ModelAdmin):
         'app_client__user__account__first_name',
         'app_client__user__account__last_name',
     )
-    actions = ['send_to_Aggregator', 'generate_Aggregator_Payment_Link']
+    fk_fields = [
+        'proposer', 'quote',
+        'proposer__user', 'proposer__user',
+        'proposer__user__account', 'proposer__user__enterprise',
+        'proposer__user__campaign', 'proposer__address',
+        'proposer__address__pincode',
+        'proposer__address__pincode__state',
+        'quote__opportunity', 'quote__opportunity__lead',
+        'quote__opportunity__lead__user',
+        'quote__opportunity__lead__user__account',
+        'quote__opportunity__lead__user__enterprise',
+        'quote__opportunity__lead__user__campaign',
+        'quote__opportunity__lead__contact',
+        'quote__opportunity__lead__contact__address',
+        'quote__opportunity__lead__contact__address__pincode',
+        'quote__opportunity__lead__contact__address__pincode__state',
+        'quote__opportunity__lead__category'
+    ]
+    actions = ['send_to_Aggregator', 'generate_Aggregator_Payment_Link',
+    export_as_csv]
     _inlines_class_set = dict(
         healthinsurance=HealthInsuranceInline
     )

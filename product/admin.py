@@ -10,6 +10,7 @@ from product.models import (
     CustomerSegment, FeatureMaster, Feature, SumInsuredMaster,
     DeductibleMaster, HealthPremium, FeatureCustomerSegmentScore
 )
+from utils.script import export_as_csv
 
 
 @admin.register(Company)
@@ -72,6 +73,8 @@ class FeatureMasterAdmin(admin.ModelAdmin):
     list_display = ('category', 'name', 'short_description', 'order')
     search_fields = ('category__id',)
     raw_id_fields = ('category',)
+    fk_fields = ['category']
+    actions = [export_as_csv]
 
 
 @admin.register(Feature)
@@ -80,6 +83,13 @@ class Feature(admin.ModelAdmin):
     search_fields = ('feature_master__name', 'product_variant__name')
     raw_id_fields = ('feature_master', 'product_variant')
     list_filter = ('product_variant__name', 'feature_master__name',)
+    fk_fields = [
+        'feature_master', 'feature_master__category',
+        'product_variant', 'product_variant__company_category',
+        'product_variant__company_category__company',
+        'product_variant__company_category__category',
+    ]
+    actions = [export_as_csv]
 
 
 @admin.register(SumInsuredMaster)
@@ -108,11 +118,23 @@ class HealthPremiumAdmin(admin.ModelAdmin):
         ('product_variant__company_category__company',
         CheckBoxListFilter), ('sum_insured', CheckBoxListFilter),
         'adults', 'childrens', 'citytier', 'ignore']
+    fk_fields = ['product_variant', 'product_variant__company_category',
+        'product_variant__company_category__category',
+        'product_variant__company_category__company']
+    actions = [export_as_csv]
 
 
 @admin.register(FeatureCustomerSegmentScore)
 class FeatureCustomerSegmentScoreAdmin(admin.ModelAdmin):
     list_display = ('feature_master', 'customer_segment', 'score')
     raw_id_fields = ('feature_master',)
+    fk_fields = [
+        'feature_master', 'feature_master__category',
+        'product_variant', 'product_variant__company_category',
+        'product_variant__company_category__company',
+        'product_variant__company_category__category',
+        'customer_segment'
+    ]
+    actions = [export_as_csv]
     search_fields = ('feature_master__name',)
     list_filter = ('feature_master__name', 'customer_segment')
