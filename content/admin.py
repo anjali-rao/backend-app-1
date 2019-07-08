@@ -44,6 +44,8 @@ class NetworkHospitalAdmin(admin.ModelAdmin):
         'pincode__city', 'pincode__state__name')
     list_filter = ('pincode__state__name', )
     raw_id_fields = ('pincode', 'company')
+    fk_fields = ['company', 'pincode', 'pincode__state']
+    actions = [export_as_csv]
 
 
 @admin.register(NewsletterSubscriber)
