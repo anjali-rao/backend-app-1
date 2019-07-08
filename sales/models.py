@@ -266,9 +266,8 @@ class Application(BaseModel):
             attachments=[dict(
                 fallback='Required plain-text summary of the attachment.',
                 color={
-                    'success': '#36a64f',
-                    'warning': '',
-                    'error': ''
+                    'success': '#36a64f', 'warning': '#ff9966',
+                    'error': '#cc3300'
                 }[mode_type],
                 pretext=event, author_name=mode,
                 title='Open Application', title_link=link, text=event,
