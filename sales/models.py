@@ -513,7 +513,7 @@ class HealthInsurance(Insurance):
         return response
 
     def get_insurance_fields(self):
-        data = list()
+        field_data = list()
         from sales.serializers import (
             MemberSerializer, GetInsuranceFieldsSerializer)
         members = self.application.active_members or Member.objects.filter(
@@ -529,23 +529,28 @@ class HealthInsurance(Insurance):
                         members.get(id=member['id'])).data
                     row['value'] = member['value']
                     members_data.append(row)
-#                for member in MemberSerializer(members, many=True).data:
-#                    for row in getattr(self, field.name):
-#                        member['value'] = False
-#                        if row['id'] == member['id']:
-#                            member['value'] = row['value']
-#                        members_data.append(member)
-            serializer = GetInsuranceFieldsSerializer(data=dict(
-                text=field.help_text, field_name=field.name,
-                field_requirements=[{
-                    'relation': "None",
-                    'value': getattr(self, field.name)
-                }] if field.__class__.__name__ in [
-                    'BooleanField', 'IntegerField'] else members_data
-            ))
+            if field.__class__.__name__ == 'BooleanField':
+                data = dict(
+                    text=field.help_text, field_name=field.name,
+                    field_requirements=[{
+                        'relation': 'None',
+                        'value': getattr(self, field.name)
+                    }])
+            elif field.__class__.__name__ == 'IntegerField':
+                data = dict(
+                    text=field.help_text, field_name=field.name,
+                    field_requirements=[{
+                        'relation': 'None',
+                        'consumption': getattr(self, field.name)
+                    }])
+            else:
+                data = dict(
+                    text=field.help_text, field_name=field.name,
+                    field_requirements=members_data)
+            serializer = GetInsuranceFieldsSerializer(data=data)
             serializer.is_valid(raise_exception=True)
-            data.append(serializer.data)
-        return data
+            field_data.append(serializer.data)
+        return field_data
 
 
 class TravelInsurance(Insurance):
