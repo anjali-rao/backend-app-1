@@ -376,3 +376,23 @@ class JourneyCompleted(generics.RetrieveAPIView):
                 ignore=False, document_type='cheque').exists():
             obj.opted_paymode = 'offline'
         return obj
+
+
+class GetApplicationDetails(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = ApplicationSummarySerializer
+    queryset = Application.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        if not hasattr(instance, instance.application_type):
+            raise mixins.APIException(constants.APPLICATION_UNMAPPED)
+
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        insurance = getattr(instance, instance.application_type)
+
+        data['%s_fields' % (
+            instance.application_type)] = insurance.get_insurance_fields()
+        return Response(data)
