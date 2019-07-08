@@ -115,4 +115,15 @@ class GetCollateral(generics.ListAPIView):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return self.request.user.get_collaterals()
+        queryset = self.request.user.get_collaterals()
+        query_params = self.request.query_params
+        if 'collateral_type' in query_params:
+            queryset = queryset.filter(
+                collateral_type=query_params['collateral_type'])
+        if 'collateral_file_type' in query_params:
+            queryset = queryset.filter(
+                collateral_file_type=query_params['collateral_file_type'])
+        if 'category' in query_params:
+            queryset = queryset.filter(
+                category__name=query_params['category'])
+        return queryset

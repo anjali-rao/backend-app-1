@@ -91,7 +91,7 @@ class Collateral(BaseModel):
     url = models.URLField()
     collateral_type = models.CharField(
         max_length=16, choices=get_choices(Constants.COLLATERALS_TYPE))
-    collateral = models.CharField(
+    collateral_file_type = models.CharField(
         max_length=32, choices=get_choices(Constants.COLLATERALS_CHOICES))
     promocode = models.ForeignKey('users.PromoCode', on_delete=models.PROTECT)
     short_descripton = models.CharField(max_length=256, null=True, blank=True)
