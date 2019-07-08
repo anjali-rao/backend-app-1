@@ -130,7 +130,7 @@ class BankBranchAdmin(admin.ModelAdmin):
 @admin.register(Collateral)
 class CollateralAdmin(admin.ModelAdmin):
     list_display = (
-        'name', 'collateral_type', 'collateral', 'url', 'promocode')
+        'name', 'collateral_type', 'collateral_file_type', 'url', 'promocode')
     search_fields = (
-        'name', 'url', 'collateral_type', 'collateral', 'promocode')
-    list_filter = ('collateral_type', 'collateral', 'promocode')
+        'name', 'url', 'collateral_type', 'collateral_file_type', 'promocode')
+    list_filter = ('collateral_type', 'collateral_file_type', 'promocode')
