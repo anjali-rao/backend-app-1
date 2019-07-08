@@ -130,12 +130,7 @@ class Application(BaseModel):
         if self.status == 'submitted' and self.stage == 'completed':
             self.create_client()
             self.create_policy()
-            self.create_commission()
-        if current.payment_failed != self.payment_failed and self.payment_failed is False: # noqa
-            if hasattr(self, 'commission'):
-                earning = self.commission.earning
-                earning.status = 'application_submitted'
-                earning.save()
+            self.create_commission(current)
         if current.status == 'fresh' and self.status == 'submitted':
             self.send_slack_notification()
 
@@ -246,14 +241,20 @@ class Application(BaseModel):
             lead.save()
         self.app_client_id = lead.id
 
-    def create_commission(self):
+    def create_commission(self, current):
         from earnings.models import Commission
         cc = self.quote.premium.product_variant.company_category
         amount = self.quote.premium.commission + cc.company.commission + cc.category.commission + self.quote.opportunity.lead.user.enterprise.commission # noqa
-        commission, created = Commission.objects.get_or_create(
-            application_id=self.id, amount=self.premium * amount)
-        commission.updated = True
-        commission.save()
+        if not hasattr(self, 'commission'):
+            commission = Commission(
+                application_id=self.id, amount=self.premium * amount)
+            if current.payment_failed != self.payment_failed and self.payment_failed is False: # noqa
+                commission.status = 'application_submitted'
+            commission.save()
+            commission.updated = True
+            commission.save()
+            commission.earning.user.account.send_sms(
+                commission.earning.get_earning_message(self))
 
     def send_slack_request(self, event, mode, mode_type='success'):
         import requests
@@ -582,11 +583,6 @@ class Policy(BaseModel):
     policy_file = models.FileField(
         upload_to=Constants.POLICY_UPLOAD_PATH,
         null=True, blank=True)
-
-    def save(self, *args, **kwargs):
-        if not self.__class__.objects.filter(pk=self.id).exists():
-            self.application.create_commission()
-        super(self.__class__, self).save(*args, **kwargs)
 
 
 @receiver(post_save, sender=Application, dispatch_uid="action%s" % str(now()))

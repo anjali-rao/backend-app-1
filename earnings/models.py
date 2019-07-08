@@ -35,7 +35,7 @@ class Earning(BaseModel):
             if current.status != self.status:
                 self.handle_status_change(current)
         except self.__class__.DoesNotExist:
-            self.user.account.send_sms(self.get_earning_message())
+            pass
         cache.delete('USER_EARNINGS:%s' % self.user_id)
         super(self.__class__, self).save(*args, **kwargs)
 
