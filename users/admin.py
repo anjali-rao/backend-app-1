@@ -42,6 +42,7 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = (
         'account__phone_no', 'account__alternate_no', 'account__aadhar_no')
     raw_id_fields = ('account', 'campaign', 'enterprise')
+    exclude = ['user_type', ]
 
 
 @admin.register(AccountDetail)
@@ -77,7 +78,8 @@ class CampaignAdmin(admin.ModelAdmin):
 class EnterpriseAdmin(admin.ModelAdmin):
     list_display = ('name', 'promocode', 'enterprise_type', 'hexa_code')
     search_fields = ('name', 'promocode__code',)
-    list_filter = ('enterprise_type',)
+    list_filter = ('enterprise_type', 'promocode__code')
+    exclude = ['enterprise_type', ]
 
 
 @admin.register(State)
