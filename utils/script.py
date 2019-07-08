@@ -13,9 +13,8 @@ def export_as_csv(self, request, queryset):
     fk_fields = []
     if hasattr(self, 'fk_fields'):
         fk_fields = [f.split('__') for f in self.fk_fields]
-
     primary_field_names = [
-        field.name for field in meta.fields if field.name not in fk_fields
+        field.name for field in meta.fields if [field.name] not in fk_fields
     ]
     header = False
 
