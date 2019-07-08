@@ -43,9 +43,9 @@ class Account(AbstractUser):
     def send_notification(self, **kwargs):
         return getattr(self, 'send_%s' % kwargs['type'])(kwargs)
 
-    def send_sms(self, kwargs):
+    def send_sms(self, message):
         from users.tasks import send_sms
-        send_sms.delay(self.phone_no, kwargs['message'])
+        send_sms.delay(self.phone_no, message)
 
     def get_default_user(self):
         users = self.user_set.filter(is_active=True)
@@ -525,8 +525,5 @@ def user_post_save(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Account, dispatch_uid="action%s" % str(now()))
 def account_post_save(sender, instance, created, **kwargs):
     if created:
-        message = dict(
-            message=(Constants.USER_CREATION_MESSAGE % (instance.phone_no)),
-            type='sms')
-        instance.send_notification(**message)
+        # instance.send_sms(Constants.USER_CREATION_MESSAGE % (instance.phone_no))
         AccountDetail.objects.create(account_id=instance.id)

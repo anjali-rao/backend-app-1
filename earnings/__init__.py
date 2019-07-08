@@ -1,0 +1,22 @@
+REASONS = [
+    'Customer unavailable',
+    'Advisor unavailable',
+    'Cheque incorrect',
+    'Application incomplete',
+    'High Age',
+    'Abnormal BMI',
+    'High Premium',
+    'Past medical',
+    'Customer unreachable',
+    'Customer unavailable',
+    'Underwriter Rejected',
+    'Details incomplete',
+    'Payment incomplete',
+    'Query incomplete',
+    'additional documents to be attached',
+    'payment incomplete',
+    'application incomplete',
+    'Bank details incorrect',
+    'Account does not exist',
+    'Neft error'
+]
