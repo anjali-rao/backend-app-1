@@ -4,7 +4,7 @@ from django.utils.crypto import get_random_string
 def get_choices(choice_type, extra=None):
     choices = [(x, x.replace('_', ' ').title()) for x in choice_type]
     if extra:
-        choices.append((extra, extra))
+        choices.append((extra, extra.title()))
     return tuple(choices)
 
 
@@ -36,6 +36,8 @@ def parse_phone_no(phone_no):
         phone_no = phone_no[1:]
         return len(phone_no) == 10, phone_no
     if len(phone_no) > 10 and '+91' in phone_no:
-        phone_no = phone_no.replace('+91', '')
+        return True, phone_no
+    if len(phone_no) > 10 and '91' in phone_no:
+        phone_no = phone_no.replace('91', '')
         return len(phone_no) == 10, phone_no
-    return False, phone_no
+    return True, phone_no

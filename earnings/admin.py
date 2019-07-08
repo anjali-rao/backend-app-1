@@ -37,7 +37,7 @@ class EarningAdmin(admin.ModelAdmin):
 
 @admin.register(Commission)
 class CommisionAdmin(admin.ModelAdmin):
-    list_display = ('earning', 'updated')
+    list_display = ('earning', 'application', 'updated')
     raw_id_fields = ('earning', 'application')
     fk_fields = ['earning', 'earning__user', 'earning__user__account',
     'earning__user__campaign', 'earning__user__enterprise', 'application',
@@ -59,6 +59,7 @@ class CommisionAdmin(admin.ModelAdmin):
     'application__quote__opportunity__lead__category'
     ]
     actions = [export_as_csv]
+    search_fields = ('application__reference_no',)
 
 
 @admin.register(Incentive)

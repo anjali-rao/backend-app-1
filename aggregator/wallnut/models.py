@@ -203,7 +203,8 @@ class Application(BaseModel):
             amount=self.premium
         )
         log = ApplicationRequestLog.objects.create(
-            application_id=self.reference_app.id, url=url, request_type='GET')
+            application_id=self.reference_app.id, url=url, request_type='POST',
+            payload=data)
         response = requests.post(url, data=data).json()
         log.response = response
         log.save()

@@ -5,7 +5,8 @@ from sales.views import (
     RetrieveUpdateApplicationMembers, CreateApplicationNominee,
     UpdateInsuranceFields, ApplicationSummary, CreateExistingPolicies,
     GetInsuranceFields, SubmitApplication, GetApplicationPaymentLink,
-    UpdateApplication, VerifyProposerPhoneno, UploadProposerDocuments
+    UpdateApplication, VerifyProposerPhoneno, UploadProposerDocuments,
+    JourneyCompleted
 )
 
 urlpatterns = [
@@ -22,5 +23,6 @@ urlpatterns = [
     path('application/<int:pk>/update', UpdateApplication.as_view()),
     path('application/<int:pk>/verify', VerifyProposerPhoneno.as_view()),
     path('application/<int:pk>/upload', UploadProposerDocuments.as_view()),
+    path('application/<int:pk>/journey-complete', JourneyCompleted.as_view()) # noqa
 
 ]

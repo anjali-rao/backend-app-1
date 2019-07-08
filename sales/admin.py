@@ -51,20 +51,19 @@ class QuoteAdmin(admin.ModelAdmin):
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = (
-        'reference_no', 'application_type', 'variant_name', 'status', 'stage',
-        'terms_and_conditions', 'aggregator_operation', 'payment_link',
-        'payment_captured', 'created')
+        'reference_no', 'application_type', 'app_client', 'variant_name',
+        'status', 'stage', 'terms_and_conditions', 'aggregator_operation',
+        'payment_link', 'created')
     list_filter = ('application_type', 'terms_and_conditions', 'status')
     raw_id_fields = ('proposer', 'quote')
     search_fields = (
         'reference_no', 'quote__id', 'quote__opportunity__lead__id', 'id',
         'proposer__phone_no', 'proposer__address__pincode__pincode',
-        'proposer__first_name', 'proposer__last_name', 'proposer__middle_name'
+        'proposer__first_name', 'proposer__last_name',
         'proposer__phone_no', 'proposer__address__pincode__city',
-        'quote__opportunity__lead__user__account__phone_no',
-        'quote__opportunity__lead__user__account__first_name',
-        'quote__opportunity__lead__user__account__middle_name',
-        'quote__opportunity__lead__user__account__last_name',
+        'app_client__user__account__phone_no',
+        'app_client__user__account__first_name',
+        'app_client__user__account__last_name',
     )
     fk_fields = [
         'proposer', 'quote',
@@ -144,16 +143,6 @@ class ApplicationAdmin(admin.ModelAdmin):
                 return format_html(
                     '<a href="{0}" target="__newtab">{1}</a>',
                     obj.application.get_payment_link(), 'Open Link')
-            return format_html(
-                '<img src="/static/admin/img/icon-no.svg" alt="True">')
-        return None
-
-    def payment_captured(self, obj):
-        if hasattr(obj, 'application'):
-            if obj.application.payment_captured:
-                return format_html(
-                    '<a href="{0}">{0}</a>',
-                    obj.application.payment_captured)
             return format_html(
                 '<img src="/static/admin/img/icon-no.svg" alt="True">')
         return None

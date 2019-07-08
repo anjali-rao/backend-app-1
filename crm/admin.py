@@ -46,6 +46,10 @@ class OpportunityInline(admin.ModelAdmin):
     ]
     actions = [export_as_csv]
 
+    def get_queryset(self, request):
+        queryset = super(self.__class__, self).get_queryset(request)
+        return queryset.exclude(quote=None)
+
     def get_inline_instances(self, request, obj=None):
         inlines = list()
         if obj is not None and hasattr(obj, obj.category_name):
@@ -63,6 +67,10 @@ class LeadAdmin(admin.ModelAdmin):
     search_fields = ('user__account__phone_no', 'id',)
     raw_id_fields = ('user', 'contact',)
     inlines = (NotesInline,)
+
+    def get_queryset(self, request):
+        queryset = super(self.__class__, self).get_queryset(request)
+        return queryset.exclude(contact=None)
 
 
 @admin.register(Contact)

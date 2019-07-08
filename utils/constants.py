@@ -25,11 +25,12 @@ APPLICATION_STATUS = (
     ('payment_due', 'Payment due'))
 APPLICATION_STAGES = (
     'proposer_details', 'insured_members', 'nominee_details',
-    'health_details', 'summary', 'payment_due', 'completed')
+    'health_details', 'summary', 'payment_due', 'completed',
+    'payment_failed', 'subscriber')
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
     'ration_card', 'passport', 'birth_certificate', 'cancelled_cheque',
-    'photo', 'educational_document')
+    'photo', 'educational_document', 'cheque')
 
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('all', 'sales_brochure', 'claim_form')
@@ -138,6 +139,8 @@ PASSWORD_REQUIRED = 'Password is required.'
 PROMO_MESSAGE = 'Hi %s, Welcome to OneCover, download our app and become super advisor https://tinyurl.com/y2ux5cdj .' # noqa
 PAYMENT_LINK_GENERATION = 'Payment link generated successfully for application (%s). ' # noqa
 SEND_TO_AGGREGATOR = 'Application (%s) successfully send to aggregator.'
+PAYMENT_SUCCESS = 'Application created and payment process done'
+PAYMENT_ERROR = 'Application created and payment process failed'
 
 
 # TTL's (seconds)  ==================================
@@ -244,7 +247,11 @@ BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Bloo
 COMMISSION_TEXT = 'Commission against application no # %s issued on %s to %s'
 REFERRAL_TEXT = 'Referring to %s'
 INCENTIVE_TEXT = 'Incentive for %s'
-
+SUBSCRIBER_THANKYOU = 'Your application #%s for %s has been created and you can access this via the cart.' # noqa
+SUBSCRIBER_WHATSAPP_TEXT = 'Please contact us, in case you are interested in selling the policy.' # noqa
+SUCESSFUL_PAYMENT = 'Your application #%s for %s has been submitted to OneCover. \n Please click here to see the status of your application and commissions' # noqa
+FAILED_HEADER = 'We have experienced a technical glitch. Our developers are working on it to solve it as soon as possible.' # noqa
+FAILED_MESSAGE = 'Nothing to worry though, our advisor success agents will reach out to you shortly.\n\nYour application #%s for %s has been created and you can access it from the cart till we resolve this issue.' # noqa
 
 # Category Opportunity - Mapper  ==================================
 

@@ -136,3 +136,5 @@ class FeatureCustomerSegmentScoreAdmin(admin.ModelAdmin):
         'customer_segment'
     ]
     actions = [export_as_csv]
+    search_fields = ('feature_master__name',)
+    list_filter = ('feature_master__name', 'customer_segment')

@@ -14,8 +14,7 @@ from sales.serializers import (
     TravalInsuranceSerializer, TermsSerializer, ExistingPolicySerializer,
     GetInsuranceFieldsSerializer, ApplicationSummarySerializer,
     VerifyProposerPhonenoSerializer, UploadContactDocumentSerializer,
-    UpdateApplicationSerializer
-)
+    UpdateApplicationSerializer, GetApplicationMessageSerializer)
 
 from django.core.exceptions import ValidationError
 from django.http import Http404
@@ -79,15 +78,16 @@ class RetrieveUpdateProposerDetails(
                 raise mixins.NotFound('Application field not found.')
             if self._obj and contacts:
                 if self._obj.id not in contacts:
-                    self._obj = contacts.first()
+                    self._obj = contacts.latest('modified')
         # May raise a permission denied
         self.check_object_permissions(self.request, self._obj)
         return self._obj
 
     def perform_update(self, serializer):
-        serializer.save(
-            application_id=self.kwargs['pk'],
-            user_id=self.request.user.id)
+        with transaction.atomic():
+            serializer.save(
+                application_id=self.kwargs['pk'],
+                user_id=self.request.user.id)
 
 
 class RetrieveUpdateApplicationMembers(
@@ -272,10 +272,13 @@ class SubmitApplication(generics.UpdateAPIView):
         instance.stage = 'payment_due'
         try:
             response['payment_status'] = instance.aggregator_operation()
-            response['payment_flow'] = 'online' if response['payment_status'] else 'offline' # noqa
-        except Exception:
-            response['payment_status'] = False
-            response['payment_flow'] = 'broker_error'
+            response.update(dict(
+                payment_flow='online' if response['payment_status'] else 'offline', # noqa
+                error=''))
+        except Exception as e:
+            response.update(dict(
+                payment_status=False, payment_flow='broker_error',
+                error=str(e)))
         instance.save()
         return response
 
@@ -304,11 +307,8 @@ class UpdateApplication(generics.UpdateAPIView):
     queryset = Application.objects.all()
 
     def perform_update(self, serializer):
-        try:
-            with transaction.atomic():
-                serializer.save()
-        except IntegrityError:
-            raise mixins.APIException('Action already perfromed.')
+        with transaction.atomic():
+            serializer.save()
 
 
 class VerifyProposerPhoneno(views.APIView):
@@ -335,16 +335,44 @@ class UploadProposerDocuments(generics.UpdateAPIView):
 
     def update(self, request, version, *args, **kwargs):
         with transaction.atomic():
+            data = request.data
+            if 'cancelled_cheque' in data:
+                data['cheque'] = data['cancelled_cheque']
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
             serializer = self.get_serializer(
-                instance.proposer, data=request.data, partial=partial)
+                instance.proposer, data=data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
             instance.refresh_from_db()
             if instance.proposer.proposerdocument_set.filter(
-                    ignore=False, document_type='cancelled_cheque').exists():
-                instance.create_client()
+                    ignore=False, document_type='cheque').exists():
                 instance.status = 'submitted'
+                instance.stage = 'completed'
                 instance.save()
         return Response(serializer.data)
+
+
+class JourneyCompleted(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = GetApplicationMessageSerializer
+    queryset = Application.objects.all()
+
+    def get_object(self):
+        obj = super(self.__class__, self).get_object()
+        with transaction.atomic():
+            if obj.status == 'submitted' and obj.stage == 'completed':
+                obj.status = 'completed'
+                obj.save()
+            elif obj.status == 'fresh':
+                obj.status = 'submitted'
+                obj.stage = 'subscriber'
+                obj.save()
+        obj.refresh_from_db()
+        obj.opted_paymode = 'online'
+        if obj.quote.opportunity.lead.user.user_type == 'subscriber':
+            obj.opted_paymode = 'subscriber'
+        elif obj.proposer.proposerdocument_set.filter(
+                ignore=False, document_type='cheque').exists():
+            obj.opted_paymode = 'offline'
+        return obj

@@ -6,7 +6,7 @@ from sales.models import (
 )
 from crm.models import Contact, Lead
 from users.models import Pincode, Address
-from utils import constants as Constants, mixins
+from utils import constants as Constants, mixins, parse_phone_no
 
 from django.db import transaction, IntegrityError
 
@@ -43,6 +43,11 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
 
     def get_contact(self, validated_data, **kwargs):
         name = validated_data['contact_name'].lower().split(' ')
+        valid, validated_data['contact_no'] = parse_phone_no(
+            validated_data['contact_no'])
+        print(validated_data)
+        if not valid:
+            raise mixins.APIException(Constants.INVALID_PHONE_NO)
         first_name = name[0]
         middle_name = name[1] if len(name) == 3 else ''
         last_name = name[2] if len(name) > 2 else (
@@ -65,6 +70,8 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
             lead.save()
             return
         lead = leads.first()
+        lead.pincode = opportunity.lead.pincode
+        lead.save()
         opportunity.lead_id = lead.id
         opportunity.save()
 
@@ -137,6 +144,10 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
     def get_contact(self, validated_data):
         first_name = validated_data['first_name'].lower()
         last_name = validated_data['last_name'].lower()
+        valid, validated_data['phone_no'] = parse_phone_no(
+            validated_data['phone_no'])
+        if not valid:
+            raise mixins.APIException(Constants.INVALID_PHONE_NO)
         instance, created = Contact.objects.get_or_create(
             phone_no=validated_data['phone_no'],
             first_name=first_name, last_name=last_name,
@@ -417,6 +428,7 @@ class GetInsuranceFieldsSerializer(serializers.Serializer):
 
 
 class ApplicationSummarySerializer(serializers.ModelSerializer):
+    premium_amount = serializers.ReadOnlyField(source='premium')
     proposer_details = serializers.SerializerMethodField()
     insured_members = serializers.SerializerMethodField()
     nominee_details = serializers.SerializerMethodField()
@@ -447,7 +459,7 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
         model = Application
         fields = (
             'proposer_details', 'insured_members', 'nominee_details',
-            'existing_policies'
+            'existing_policies', 'premium_amount'
         )
 
 
@@ -501,6 +513,14 @@ class ClientSerializer(serializers.ModelSerializer):
 
 class UpdateApplicationSerializer(serializers.ModelSerializer):
 
+    def update(self, instance, validated_data):
+        if validated_data.get('payment_failed') is False:
+            instance.status = 'submitted'
+            instance.stage = 'completed'
+        elif validated_data.get('payment_failed'):
+            instance.stage = 'payment_failed'
+        return super(self.__class__, self).update(instance, validated_data)
+
     class Meta:
         model = Application
         fields = ('status', 'payment_failed')
@@ -553,3 +573,59 @@ class UploadContactDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = ('cancelled_cheque',)
+
+
+class GetApplicationMessageSerializer(serializers.ModelSerializer):
+    heading = serializers.SerializerMethodField()
+    body = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    whatsapp = serializers.BooleanField(default=True)
+    whatsapp_text = serializers.SerializerMethodField()
+    home = serializers.BooleanField(default=True)
+    earning = serializers.SerializerMethodField()
+    message_type = serializers.SerializerMethodField()
+
+    def get_heading(self, obj):
+        if obj.opted_paymode == 'subscriber':
+            return 'Thank You!'
+        if obj.payment_failed:
+            return Constants.FAILED_HEADER
+        return 'Thank You!'
+
+    def get_body(self, obj):
+        if obj.opted_paymode == 'subscriber':
+            return Constants.SUBSCRIBER_THANKYOU % (
+                obj.reference_no,
+                obj.quote.opportunity.lead.contact.get_full_name())
+        if obj.payment_failed:
+            return Constants.FAILED_MESSAGE % (
+                obj.reference_no,
+                obj.quote.opportunity.lead.contact.get_full_name())
+        return Constants.SUCESSFUL_PAYMENT % (
+            obj.reference_no,
+            obj.quote.opportunity.lead.contact.get_full_name())
+
+    def get_earning(self, obj):
+        if obj.opted_paymode in [
+                'subscriber', 'offline'] or obj.payment_failed:
+            return False
+        return True
+
+    def get_message_type(self, obj):
+        if obj.payment_failed:
+            return 'warning'
+        return 'success'
+
+    def get_whatsapp_text(self, obj):
+        if obj.opted_paymode == 'offline':
+            Constants.SUBSCRIBER_WHATSAPP_TEXT
+        return 'You can reach out to us via WhatsApp'
+
+    def get_product(self, obj):
+        return SalesApplicationSerializer(obj).data
+
+    class Meta:
+        model = Application
+        fields = (
+            'heading', 'body', 'whatsapp', 'home', 'earning', 'message_type',
+            'product', 'whatsapp_text')

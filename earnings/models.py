@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import constants as Constants, get_choices
+
 from django.core.cache import cache
 from django.utils.timezone import now
 
@@ -25,8 +26,22 @@ class Earning(BaseModel):
         return self.user.__str__()
 
     def save(self, *args, **kwargs):
-        if not self.__class__.objects.filter(
-                pk=self.id).exists() and self.earning_type == 'referral':
+        try:
+            current = self.__class__.objects.get(pk=self.id)
+            if current.status != self.status:
+                if self.status == 'policy_rejected' and hasattr(
+                        self, 'commission'):
+                    app = self.commission.application
+                    client = app.app_client
+                    if client and app.__class__.objects.filter(
+                            app_client_id=client.id).count() == 1:
+                        client.is_client = False
+                        client.save()
+                        app.app_client = None
+                    app.status = 'pending'
+                    app.stage = 'payment_failed'
+                    app.save()
+        except self.__class__.DoesNotExist:
             self.text = (getattr(
                 Constants, ('%s_TEXT' % self.earning_type).upper()
             ) % self.get_text_paramaters())
@@ -52,7 +67,7 @@ class Earning(BaseModel):
 class Commission(BaseModel):
     earning = models.OneToOneField(
         'earnings.Earning', on_delete=models.PROTECT, null=True, blank=True)
-    application = models.ForeignKey(
+    application = models.OneToOneField(
         'sales.Application', on_delete=models.CASCADE)
     amount = models.FloatField(default=0.0)
     updated = models.BooleanField(default=False)
