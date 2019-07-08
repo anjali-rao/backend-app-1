@@ -46,6 +46,7 @@ class UserAdmin(admin.ModelAdmin):
     raw_id_fields = ('account', 'campaign', 'enterprise')
     fk_fields = ['account', 'campaign']
     actions = [export_as_csv]
+    exclude = ['user_type', ]
 
 
 @admin.register(AccountDetail)
@@ -81,9 +82,10 @@ class CampaignAdmin(admin.ModelAdmin):
 class EnterpriseAdmin(admin.ModelAdmin):
     list_display = ('name', 'promocode', 'enterprise_type', 'hexa_code')
     search_fields = ('name', 'promocode__code',)
-    list_filter = ('enterprise_type',)
     fk_fields = ['promocode']
     actions = [export_as_csv]
+    list_filter = ('enterprise_type', 'promocode__code')
+    exclude = ['enterprise_type', ]
 
 
 @admin.register(State)
