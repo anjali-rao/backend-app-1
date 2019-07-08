@@ -234,6 +234,8 @@ class User(BaseModel):
 
     def get_rules(self):
         rules = dict.fromkeys(Constants.PROMO_RULES_KEYS, False)
+        rules['buttons_text'] = dict(
+            recommendation='Buy now', product_detail='Buy now')
         promo_code = self.enterprise.promocode.code.split('-')[1:]
         for rule_code in promo_code:
             if not rule_code.isdigit():
@@ -241,6 +243,8 @@ class User(BaseModel):
             rules.update(Constants.PROMO_RULES[int(rule_code)])
         if self.enterprise.enterprise_type != 'subscriber':
             rules['kyc_allowed'] = True
+            rules['buttons_text']['recommendation'] = 'View plan details'
+            rules['buttons_text']['product_detail'] = 'Save Plan'
         return rules
 
     def get_collaterals(self):
