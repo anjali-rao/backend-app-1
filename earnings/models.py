@@ -35,7 +35,7 @@ class Earning(BaseModel):
             if current.status != self.status:
                 self.handle_status_change(current)
         except self.__class__.DoesNotExist:
-            pass
+            self.user.account.send_sms(self.get_earning_message())
         cache.delete('USER_EARNINGS:%s' % self.user_id)
         super(self.__class__, self).save(*args, **kwargs)
 
@@ -70,14 +70,9 @@ class Earning(BaseModel):
         return cls.objects.filter(**query).aggregate(
             s=models.Sum('amount'))['s'] or 0
 
-    def get_earning_message(self, app=None):
-        return dict(
-            application_submitted='Application # %s has been submitted to insurer.' % (app.reference_no),
-            policy_rejected='Policy Rejected for application # %s,\nReason %s' % (
-                app.reference_no, self.reason),
-            policy_followup='Insurer has asked for more information for application # %s,\n Reason %s' % (
-                app.reference_no, self.reason),
-        ).get(self.status)
+    def get_earning_message(self, app):
+        from earnings import get_earning_message
+        return get_earning_message(self, app)
 
 
 class Commission(BaseModel):
