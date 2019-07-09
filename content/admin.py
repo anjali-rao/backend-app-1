@@ -137,3 +137,22 @@ class CollateralAdmin(admin.ModelAdmin):
     search_fields = (
         'name', 'url', 'collateral_type', 'collateral_file_type', 'promocode')
     list_filter = ('collateral_type', 'collateral_file_type', 'promocode')
+    actions = ['bulk_copy_for_subscribers', 'bulk_copy_for_transactors']
+
+    def bulk_copy_for_subscribers(self, request, queryset):
+        from users.models import PromoCode
+        collaterals = list()
+        for query in queryset:
+            query.pk = None
+            query.promocode = PromoCode.objects.get(code='OCOVR-2-4')
+            collaterals.append(query)
+        Collateral.objects.bulk_create(collaterals)
+
+    def bulk_copy_for_transactors(self, request, queryset):
+        collaterals = list()
+        from users.models import PromoCode
+        for query in queryset:
+            query.pk = None
+            query.promocode = PromoCode.objects.get(code='OCOVR-1-3')
+            collaterals.append(query)
+        Collateral.objects.bulk_create(collaterals)
