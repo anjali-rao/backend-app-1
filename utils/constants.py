@@ -79,6 +79,9 @@ CATEGORY_ORDER = {key: i for i, key in enumerate(['Health', 'Travel'])} # noqa
 RECOMMENDATION_FEATURE_ORDER = {key: i for i, key in enumerate([
     'No Claim Bonus', 'Hospital Coverage', 'Day Care Procedures',
     'Wellness Factors'])}
+PROPOSER_DOCS = [
+    'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
+    'ration_card', 'passport', 'birth_certificate']
 
 
 # ROUGH HANDLING  ==================================

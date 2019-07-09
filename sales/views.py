@@ -73,7 +73,8 @@ class RetrieveUpdateProposerDetails(
         if 'search' in self.request.query_params and self.request.method == 'GET': # noqa
             contacts = Contact.objects.filter(
                 phone_no=self.request.query_params.get('search')
-            ).exclude(last_name='').order_by('modified', 'created')
+            ).exclude(last_name='').exclude(proposerdocument=None).order_by(
+                'modified')
             if not contacts.exists():
                 raise mixins.NotFound('Application field not found.')
             if self._obj and contacts:

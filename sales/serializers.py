@@ -91,15 +91,17 @@ class GetProposalDetailsSerializer(serializers.ModelSerializer):
     flat_no = serializers.SerializerMethodField()
 
     def get_document_type(self, obj):
-        kyc_docs = obj.proposerdocument_set.all()
+        kyc_docs = obj.proposerdocument_set.filter(
+            document_type__in=Constants.PROPOSER_DOCS)
         if kyc_docs.exists():
-            return kyc_docs.latest('modified').document_type
+            return kyc_docs.latest('created').document_type
         return ''
 
     def get_document_number(self, obj):
-        kyc_docs = obj.proposerdocument_set.all()
+        kyc_docs = obj.proposerdocument_set.filter(
+            document_type__in=Constants.PROPOSER_DOCS)
         if kyc_docs.exists():
-            return kyc_docs.latest('modified').document_number
+            return kyc_docs.latest('created').document_number
         return ''
 
     def get_contact_id(self, obj):
@@ -449,7 +451,8 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
             members, many=True).data
 
     def get_nominee_details(self, obj):
-        return NomineeSerializer(self.instance.nominee_set.first()).data
+        return NomineeSerializer(self.instance.nominee_set.exclude(
+            ignore=True).first()).data
 
     def get_existing_policies(self, obj):
         return ExistingPolicySerializer(
