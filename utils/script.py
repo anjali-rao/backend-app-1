@@ -18,7 +18,7 @@ def export_as_csv(self, request, queryset):
     ]
     header = False
 
-    for obj in queryset:
+    for obj in queryset.iterator():
         nested_fields = []
         row = [
             getattr(obj, field) for field in primary_field_names
