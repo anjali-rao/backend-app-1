@@ -266,9 +266,8 @@ class Application(BaseModel):
             attachments=[dict(
                 fallback='Required plain-text summary of the attachment.',
                 color={
-                    'success': '#36a64f',
-                    'warning': '',
-                    'error': ''
+                    'success': '#36a64f', 'warning': '#ff9966',
+                    'error': '#cc3300'
                 }[mode_type],
                 pretext=event, author_name=mode,
                 title='Open Application', title_link=link, text=event,
@@ -406,9 +405,11 @@ class Nominee(BaseModel):
     ignore = models.BooleanField(default=False)
 
     def save(self, *ar, **kw):
-        existing_nominee = self.__class__.objects.filter(pk=self.id)
-        if existing_nominee.exists():
-            existing_nominee.update(ignore=True)
+        if not self.__class__.objects.filter(pk=self.id):
+            existing_nominee = self.__class__.objects.filter(
+                application_id=self.application.id)
+            if existing_nominee.exists():
+                existing_nominee.update(ignore=True)
         super(Nominee, self).save(*ar, **kw)
 
     def get_full_name(self):
