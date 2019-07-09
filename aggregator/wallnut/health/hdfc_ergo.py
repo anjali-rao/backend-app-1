@@ -32,6 +32,9 @@ class HDFCERGOHealthInsurance(object):
         response = requests.post(url, data=data).json()
         log.response = response
         log.save()
+        if 'status' in response and response['status'] == 'false':
+            self.application.aggregator_error = response['message']
+            self.application.save()
         self.wallnut.proposal_id = response['proposal_id']
         self.wallnut.customer_id = response['customer_id']
         return response

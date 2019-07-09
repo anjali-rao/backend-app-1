@@ -277,6 +277,7 @@ class SubmitApplication(generics.UpdateAPIView):
                 payment_flow='online' if response['payment_status'] else 'offline', # noqa
                 error=''))
         except Exception as e:
+            instance.aggregator_error = str(e)
             response.update(dict(
                 payment_status=False, payment_flow='broker_error',
                 error=str(e)))
@@ -295,9 +296,11 @@ class GetApplicationPaymentLink(views.APIView):
                 app.application.insurer_operation()
             data.update(dict(
                 success=True, payment_link=app.application.get_payment_link()))
+            app.refresh_from_db()
             app.stage = 'payment_due'
             app.save()
         except (Application.DoesNotExist, Exception):
+            data['error'] = app.aggregator_error
             data['message'] = 'Could not generate payment link. Please go with offline mode' # noqa
         return Response(data)
 
@@ -344,10 +347,12 @@ class UploadProposerDocuments(generics.UpdateAPIView):
             serializer = self.get_serializer(
                 instance.proposer, data=data, partial=partial)
             serializer.is_valid(raise_exception=True)
+            serializer.save()
             self.perform_update(serializer)
             instance.refresh_from_db()
             if instance.proposer.proposerdocument_set.filter(
                     ignore=False, document_type='cheque').exists():
+                instance.payment_mode = 'offline'
                 instance.status = 'submitted'
                 instance.stage = 'completed'
                 instance.save()
@@ -370,12 +375,12 @@ class JourneyCompleted(generics.RetrieveAPIView):
                 obj.stage = 'subscriber'
                 obj.save()
         obj.refresh_from_db()
-        obj.opted_paymode = 'online'
+        obj.payment_mode = 'Aggregated payment mode'
         if obj.quote.opportunity.lead.user.user_type == 'subscriber':
-            obj.opted_paymode = 'subscriber'
+            obj.payment_mode = 'Subscriber'
         elif obj.proposer.proposerdocument_set.filter(
                 ignore=False, document_type='cheque').exists():
-            obj.opted_paymode = 'offline'
+            obj.payment_mode = 'offline'
         return obj
 
 

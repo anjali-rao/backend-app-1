@@ -33,6 +33,9 @@ class AdityaBirlaHealthInsurance(object):
         response = requests.post(url, data=data).json()
         log.response = response
         log.save()
+        if 'status' in response and response['status'] == 'false':
+            self.application.aggregator_error = response['message']
+            self.application.save()
         self.wallnut.proposal_id = next((
             i for i in response['return_data'].split('&') if 'proposal_id' in i
         ), None).split('=')[1]
@@ -48,6 +51,9 @@ class AdityaBirlaHealthInsurance(object):
         response = requests.post(url, data=data).json()
         log.response = response
         log.save()
+        if 'status' in response and response['status'] == 'false':
+            self.application.aggregator_error = response['message']
+            self.application.save()
         self.wallnut.proposal_id2 = response['proposal_id']
         self.wallnut.customer_id = response['customer_id']
         return response

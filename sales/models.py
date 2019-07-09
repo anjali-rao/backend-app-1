@@ -109,8 +109,8 @@ class Application(BaseModel):
     name_of_insurer = models.CharField(blank=True, max_length=128)
     proposer_verified = models.BooleanField(default=False)
     payment_failed = models.BooleanField(null=True, blank=True)
-    payment_mode = models.CharField(max_length=64, choices=get_choices(
-        Constants.AGGREGATOR_CHOICES), default='offline')
+    payment_mode = models.CharField(max_length=64, default='offline')
+    aggregator_error = models.CharField(max_length=256, null=True, blank=True)
     terms_and_conditions = models.BooleanField(null=True)
 
     def save(self, *args, **kwargs):
@@ -135,18 +135,17 @@ class Application(BaseModel):
             self.send_slack_notification()
 
     def send_slack_notification(self):
-        mode = 'Offline + Online'
         if self.quote.opportunity.lead.user.user_type == 'subscriber':
             event = 'Application created and payment process done'
-            mode = 'Subscriber'
         elif self.payment_mode == 'offline':
             event = 'Application created and payment process done'
-            mode = 'Offline'
         elif self.payment_failed:
             event = Constants.PAYMENT_ERROR
+        elif self.aggregator_error:
+            event = Constants.BROKER_ERROR
         else:
             event = Constants.PAYMENT_SUCCESS
-        self.send_slack_request(event, mode)
+        self.send_slack_request(event)
 
     def aggregator_operation(self):
         premium = self.quote.premium
@@ -158,7 +157,7 @@ class Application(BaseModel):
             Aggregator.objects.create(
                 reference_app_id=self.id,
                 insurance_type=self.application_type)
-            self.payment_mode = 'wallnut'
+            self.payment_mode = 'Aggregated payment mode'
         self.save()
         return self.payment_mode != 'offline'
 
@@ -256,12 +255,18 @@ class Application(BaseModel):
             commission.earning.user.account.send_sms(
                 commission.earning.get_earning_message(self))
 
-    def send_slack_request(self, event, mode, mode_type='success'):
+    def send_slack_request(self, event, mode_type='success'):
         import requests
         client = self.quote.opportunity.lead
         endpoint = 'https://hooks.slack.com/services/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' # noqa
         link = '%s://admin.%s/sales/application/%s/change/' % (
             'http' if ENV == 'localhost:8000' else 'https', ENV, self.id)
+        text = event
+        mode = self.payment_mode
+        if self.aggregator_error:
+            text += '\nError: %s' % (self.aggregator_error)
+            mode = 'Broker Error'
+            mode_type = 'error'
         data = dict(
             attachments=[dict(
                 fallback='Required plain-text summary of the attachment.',
@@ -270,7 +275,7 @@ class Application(BaseModel):
                     'error': '#cc3300'
                 }[mode_type],
                 pretext=event, author_name=mode,
-                title='Open Application', title_link=link, text=event,
+                title='Open Application', title_link=link, text=text,
                 fields=[dict(
                     type='mrkdwn',
                     value="*Application id:*\n%s" % self.reference_no
