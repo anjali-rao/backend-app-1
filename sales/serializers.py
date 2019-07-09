@@ -552,7 +552,7 @@ class VerifyProposerPhonenoSerializer(serializers.ModelSerializer):
 
 
 class UploadContactDocumentSerializer(serializers.ModelSerializer):
-    cancelled_cheque = serializers.FileField(required=False)
+    cheque = serializers.FileField(required=False)
 
     def validate(self, data):
         if not data or not any(
@@ -575,7 +575,7 @@ class UploadContactDocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contact
-        fields = ('cancelled_cheque',)
+        fields = ('cheque',)
 
 
 class GetApplicationMessageSerializer(serializers.ModelSerializer):
@@ -589,14 +589,14 @@ class GetApplicationMessageSerializer(serializers.ModelSerializer):
     message_type = serializers.SerializerMethodField()
 
     def get_heading(self, obj):
-        if obj.opted_paymode == 'subscriber':
+        if obj.payment_mode == 'Subscriber':
             return 'Thank You!'
         if obj.payment_failed:
             return Constants.FAILED_HEADER
         return 'Thank You!'
 
     def get_body(self, obj):
-        if obj.opted_paymode == 'subscriber':
+        if obj.payment_mode == 'Subscriber':
             return Constants.SUBSCRIBER_THANKYOU % (
                 obj.reference_no,
                 obj.quote.opportunity.lead.contact.get_full_name())
@@ -604,23 +604,27 @@ class GetApplicationMessageSerializer(serializers.ModelSerializer):
             return Constants.FAILED_MESSAGE % (
                 obj.reference_no,
                 obj.quote.opportunity.lead.contact.get_full_name())
+        if obj.aggregator_error:
+            return Constants.BROKER_THANKYOU % (
+                obj.reference_no,
+                obj.quote.opportunity.lead.contact.get_full_name())
         return Constants.SUCESSFUL_PAYMENT % (
             obj.reference_no,
             obj.quote.opportunity.lead.contact.get_full_name())
 
     def get_earning(self, obj):
-        if obj.opted_paymode in [
-                'subscriber', 'offline'] or obj.payment_failed:
+        if obj.payment_mode in [
+                'Subscriber', 'offline'] or obj.payment_failed:
             return False
         return True
 
     def get_message_type(self, obj):
-        if obj.payment_failed:
+        if obj.payment_failed or obj.aggregator_error:
             return 'warning'
         return 'success'
 
     def get_whatsapp_text(self, obj):
-        if obj.opted_paymode == 'offline':
+        if obj.payment_mode == 'offline':
             Constants.SUBSCRIBER_WHATSAPP_TEXT
         return 'You can reach out to us via WhatsApp'
 

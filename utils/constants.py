@@ -144,6 +144,7 @@ PAYMENT_LINK_GENERATION = 'Payment link generated successfully for application (
 SEND_TO_AGGREGATOR = 'Application (%s) successfully send to aggregator.'
 PAYMENT_SUCCESS = 'Application created and payment process done'
 PAYMENT_ERROR = 'Application created and payment process failed'
+BROKER_ERROR = 'Application created but failure in payment due to broker' # noqa
 
 
 # TTL's (seconds)  ==================================
@@ -255,6 +256,7 @@ SUBSCRIBER_WHATSAPP_TEXT = 'Please contact us, in case you are interested in sel
 SUCESSFUL_PAYMENT = 'Your application #%s for %s has been submitted to OneCover. \n Please click here to see the status of your application and commissions' # noqa
 FAILED_HEADER = 'We have experienced a technical glitch. Our developers are working on it to solve it as soon as possible.' # noqa
 FAILED_MESSAGE = 'Nothing to worry though, our advisor success agents will reach out to you shortly.\n\nYour application #%s for %s has been created and you can access it from the cart till we resolve this issue.' # noqa
+BROKER_THANKYOU = 'We have experienced a technical glitch. Our developers are working on it to solve it as soon as possible.\n\nNothing to worry though, our advisor success agents will reach out to you shortly.\n\nYour application %s for %s has been created and you can access it from the cart till we resolve this issue.\n\n'# noqa
 
 # Category Opportunity - Mapper  ==================================
 

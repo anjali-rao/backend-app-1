@@ -53,6 +53,9 @@ class BajajAllianzGeneralInsurance(object):
         response = requests.post(url, data=data).json()
         request_log.response = response
         request_log.save()
+        if 'status' in response and response['status'] == 'false':
+            self.application.aggregator_error = response['message']
+            self.application.save()
 
     def save_proposal_data(self):
         data = self.get_data()
@@ -63,6 +66,9 @@ class BajajAllianzGeneralInsurance(object):
         response = requests.post(url, data=data).json()
         log.response = response
         log.save()
+        if 'status' in response and response['status'] == 'false':
+            self.application.aggregator_error = response['message']
+            self.application.save()
         self.wallnut.proposal_id = response['proposal_id']
         self.wallnut.customer_id = response['customer_id']
         return response
