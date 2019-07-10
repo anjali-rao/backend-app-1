@@ -130,7 +130,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         account = self.get_account(validated_data)
         validated_data.update(User.get_promo_code_details(
-            validated_data['promo_code'], account.get_full_name()))
+            validated_data['promo_code'], account.username))
         data = dict(
             account_id=account.id, is_active=True,
             user_type=validated_data['user_type'],
