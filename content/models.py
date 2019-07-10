@@ -100,7 +100,7 @@ class Collateral(BaseModel):
 
     def __str__(self):
         return '%s | %s: %s' % (
-            self.name, self.collateral_type, self.collateral)
+            self.name, self.collateral_type, self.collateral_file_type)
 
     class Meta:
         ordering = ('order',)
