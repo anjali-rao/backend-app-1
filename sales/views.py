@@ -337,15 +337,11 @@ class UploadProposerDocuments(generics.UpdateAPIView):
 
     def update(self, request, version, *args, **kwargs):
         with transaction.atomic():
-            data = request.data
-            if 'cancelled_cheque' in data:
-                data['cheque'] = data['cancelled_cheque']
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
             serializer = self.get_serializer(
-                instance.proposer, data=data, partial=partial)
+                instance.proposer, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
             self.perform_update(serializer)
             instance.refresh_from_db()
             if instance.proposer.proposerdocument_set.filter(
