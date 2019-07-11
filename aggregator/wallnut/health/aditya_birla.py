@@ -144,8 +144,8 @@ class AdityaBirlaHealthInsurance(object):
                 gender_age=self.wallnut.gender_ages
             )),
             nominee_add_same_as_proposer_add='Y',
-            nominee_AddressLine1=proposer.address.full_address,
-            nominee_AddressLine2='',
+            nominee_AddressLine1=address[:50],
+            nominee_AddressLine2=address[51:],
             nominee_AddressLine3='',
             nominee_PinCode=self.wallnut.pincode,
             nominee_Country='IN',
