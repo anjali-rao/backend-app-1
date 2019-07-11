@@ -3,8 +3,7 @@ from __future__ import unicode_literals
 
 from utils.models import BaseModel, models
 from utils import (
-    constants as Constants, get_choices, get_upload_path,
-    genrate_random_string)
+    constants as Constants, get_choices, get_kyc_upload_path)
 
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.contrib.auth.models import AbstractUser
@@ -44,9 +43,9 @@ class Account(AbstractUser):
     def send_notification(self, **kwargs):
         return getattr(self, 'send_%s' % kwargs['type'])(kwargs)
 
-    def send_sms(self, kwargs):
+    def send_sms(self, message):
         from users.tasks import send_sms
-        send_sms.delay(self.phone_no, kwargs['message'])
+        send_sms.delay(self.phone_no, message)
 
     def get_default_user(self):
         users = self.user_set.filter(is_active=True)
@@ -63,8 +62,8 @@ class Account(AbstractUser):
             name = validated_data[field].name.split('.')
             file_name = '%s_%s_%s.%s' % (
                 self.id, name[0], now().date().isoformat(), name[1])
-            doc = Document.objects.create(
-                doc_type=field, account_id=self.id)
+            doc = KYCDocument.objects.create(
+                document_type=field, account_id=self.id)
             doc.file.save(file_name, validated_data[field])
             validated_data[field] = doc.file.url
         return validated_data
@@ -119,11 +118,12 @@ class Account(AbstractUser):
 
     @property
     def profile_pic(self):
-        docs = Document.objects.filter(doc_type='photo', account_id=self.id)
+        docs = KYCDocument.objects.filter(
+            document_type='photo', account_id=self.id)
         if docs.exists():
             return docs.last().file
-        return Document.objects.filter(
-            doc_type='photo', account_id=1).first().file
+        return KYCDocument.objects.filter(
+            document_type='photo', account_id=1).first().file
 
     def __str__(self):
         return 'Account: %s - %s' % (
@@ -211,6 +211,9 @@ class User(BaseModel):
                 category['name'], 1))
         return categories
 
+    def get_companies(self):
+        return self.enterprise.companies.filter(is_active=True)
+
     def get_applications(self, status=None):
         from sales.models import Application
         query = dict(quote__opportunity__lead__user_id=self.id)
@@ -231,6 +234,8 @@ class User(BaseModel):
 
     def get_rules(self):
         rules = dict.fromkeys(Constants.PROMO_RULES_KEYS, False)
+        rules['button_text'] = dict(
+            recommendation='View plan details', product_detail='Save Plan')
         promo_code = self.enterprise.promocode.code.split('-')[1:]
         for rule_code in promo_code:
             if not rule_code.isdigit():
@@ -238,6 +243,8 @@ class User(BaseModel):
             rules.update(Constants.PROMO_RULES[int(rule_code)])
         if self.enterprise.enterprise_type != 'subscriber':
             rules['kyc_allowed'] = True
+            rules['button_text']['recommendation'] = 'Buy Now'
+            rules['button_text']['product_detail'] = 'Buy Now'
         return rules
 
     def get_collaterals(self):
@@ -326,13 +333,8 @@ class Enterprise(BaseModel):
     def save(self, *args, **kwargs):
         try:
             current = self.__class__.objects.get(pk=self.id)
-            if current.enterprise_type != self.enterprise_type and (
-                    self.enterprise_type != 'enterprise'):
-                users = User.objects.filter(enterprise_id=self.id)
-                if users.exists():
-                    user = users.get()
-                    user.user_type = self.enterprise_type
-                    user.save()
+            if current.promocode != self.promocode:
+                self.update_enterprise_type()
         except self.__class__.DoesNotExist:
             if self.promocode.code == 'OCOVR-1-3':
                 self.enterprise_type = 'pos'
@@ -340,6 +342,19 @@ class Enterprise(BaseModel):
 
     def __str__(self):
         return self.name
+
+    def update_enterprise_type(self):
+        users = User.objects.filter(enterprise_id=self.id)
+        if not users.exists():
+            return
+        user = users.get()
+        if self.promocode.code == 'OCOVR-1-3':
+            self.enterprise_type = user.user_type = 'pos'
+        elif self.promocode.code == 'OCOVR-2-4':
+            self.enterprise_type = user.user_type = 'subscriber'
+        else:
+            self.enterprise_type = user.user_type = 'enterprise'
+        user.save()
 
 
 class SubcriberEnterprise(BaseModel):
@@ -391,14 +406,23 @@ class Referral(BaseModel):
         'users.User', null=True, blank=True, on_delete=models.CASCADE)
 
 
-class Document(BaseModel):
+class KYCDocument(BaseModel):
     account = models.ForeignKey('users.Account', on_delete=models.CASCADE)
-    doc_type = models.CharField(
+    document_type = models.CharField(
         choices=get_choices(Constants.KYC_DOC_TYPES), max_length=16)
-    file = models.FileField(upload_to=get_upload_path)
+    document_number = models.CharField(max_length=64, null=True, blank=True)
+    file = models.FileField(upload_to=get_kyc_upload_path)
+    ignore = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        previous = self.__class__.objects.filter(
+            document_type=self.document_type, account_id=self.id)
+        if previous.exists():
+            previous.update(ignore=True)
+        super(self.__class__, self).save(*args, **kwargs)
 
     def __str__(self):
-        return self.doc_type
+        return self.document_type
 
 
 class BankAccount(BaseModel):
@@ -501,8 +525,5 @@ def user_post_save(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Account, dispatch_uid="action%s" % str(now()))
 def account_post_save(sender, instance, created, **kwargs):
     if created:
-        message = dict(
-            message=(Constants.USER_CREATION_MESSAGE % (instance.phone_no)),
-            type='sms')
-        instance.send_notification(**message)
+        # instance.send_sms(Constants.USER_CREATION_MESSAGE % (instance.phone_no))
         AccountDetail.objects.create(account_id=instance.id)

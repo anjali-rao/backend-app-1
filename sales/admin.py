@@ -6,9 +6,10 @@ from django.utils.html import format_html
 
 from sales.models import (
     Quote, Application, HealthInsurance, Member,
-    Nominee, Policy)
+    Nominee, Policy, ProposerDocument)
 from payment.models import ApplicationRequestLog
 from utils import constants as Constants
+from utils.script import export_as_csv
 
 
 class HealthInsuranceInline(admin.StackedInline):
@@ -50,18 +51,40 @@ class QuoteAdmin(admin.ModelAdmin):
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = (
-        'reference_no', 'application_type', 'variant_name', 'status', 'stage',
-        'terms_and_conditions', 'aggregator_operation', 'payment_link',
-        'payment_captured', 'created')
+        'reference_no', 'application_type', 'app_client', 'variant_name',
+        'status', 'stage', 'terms_and_conditions', 'aggregator_operation',
+        'payment_link', 'created')
     list_filter = ('application_type', 'terms_and_conditions', 'status')
-    raw_id_fields = ('client', 'quote')
+    raw_id_fields = ('proposer', 'quote')
     search_fields = (
         'reference_no', 'quote__id', 'quote__opportunity__lead__id', 'id',
-        'client__phone_no', 'client__address__pincode__pincode',
-        'client__first_name', 'client__last_name',
-        'client__address__pincode__city',
+        'proposer__phone_no', 'proposer__address__pincode__pincode',
+        'proposer__first_name', 'proposer__last_name',
+        'proposer__phone_no', 'proposer__address__pincode__city',
+        'app_client__user__account__phone_no',
+        'app_client__user__account__first_name',
+        'app_client__user__account__last_name',
     )
-    actions = ['send_to_Aggregator', 'generate_Aggregator_Payment_Link']
+    fk_fields = [
+        'proposer', 'quote',
+        'proposer__user', 'proposer__user',
+        'proposer__user__account', 'proposer__user__enterprise',
+        'proposer__user__campaign', 'proposer__address',
+        'proposer__address__pincode',
+        'proposer__address__pincode__state',
+        'quote__opportunity', 'quote__opportunity__lead',
+        'quote__opportunity__lead__user',
+        'quote__opportunity__lead__user__account',
+        'quote__opportunity__lead__user__enterprise',
+        'quote__opportunity__lead__user__campaign',
+        'quote__opportunity__lead__contact',
+        'quote__opportunity__lead__contact__address',
+        'quote__opportunity__lead__contact__address__pincode',
+        'quote__opportunity__lead__contact__address__pincode__state',
+        'quote__opportunity__lead__category'
+    ]
+    actions = ['send_to_Aggregator', 'generate_Aggregator_Payment_Link',
+    export_as_csv]
     _inlines_class_set = dict(
         healthinsurance=HealthInsuranceInline
     )
@@ -124,16 +147,6 @@ class ApplicationAdmin(admin.ModelAdmin):
                 '<img src="/static/admin/img/icon-no.svg" alt="True">')
         return None
 
-    def payment_captured(self, obj):
-        if hasattr(obj, 'application'):
-            if obj.application.payment_captured:
-                return format_html(
-                    '<a href="{0}">{0}</a>',
-                    obj.application.payment_captured)
-            return format_html(
-                '<img src="/static/admin/img/icon-no.svg" alt="True">')
-        return None
-
 
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
@@ -154,6 +167,14 @@ class PolicyAdmin(admin.ModelAdmin):
     list_display = ('application', 'policy_number', 'policy_file', 'created')
     search_fields = (
         'application__quote__lead__user_phone_no',
-        'application__client_phone_no', 'application__client_email')
+        'application__proposer_phone_no', 'application__proposer_email')
     list_filter = ('application__quote__opportunity__category',)
     raw_id_fields = ('application',)
+
+
+@admin.register(ProposerDocument)
+class ProposerDocumentAdmin(admin.ModelAdmin):
+    list_display = ('contact', 'document_type', 'file')
+    search_fields = ('contact__phone_no',)
+    raw_id_fields = ('contact',)
+    list_filter = ('document_type',)

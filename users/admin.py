@@ -7,8 +7,9 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from extended_filters.filters import DateRangeFilter
 
 from users.models import (
-    Account, User, Campaign, AccountDetail, Document, BankAccount,
+    Account, User, Campaign, AccountDetail, KYCDocument, BankAccount,
     Enterprise, State, Pincode, Address, IPAddress, Referral, PromoCode)
+from utils.script import export_as_csv
 
 
 @admin.register(Account)
@@ -30,6 +31,7 @@ class GoPlannerAccountAdmin(BaseUserAdmin):
             )
         })
     )
+    actions = [export_as_csv]
 
 
 @admin.register(User)
@@ -42,6 +44,9 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = (
         'account__phone_no', 'account__alternate_no', 'account__aadhar_no')
     raw_id_fields = ('account', 'campaign', 'enterprise')
+    fk_fields = ['account', 'campaign']
+    actions = [export_as_csv]
+    exclude = ['user_type', ]
 
 
 @admin.register(AccountDetail)
@@ -52,12 +57,12 @@ class AccountDetailsAdmin(admin.ModelAdmin):
     raw_id_fields = ('account',)
 
 
-@admin.register(Document)
-class DocumentsAdmin(admin.ModelAdmin):
-    list_display = ('account', 'doc_type', 'file')
+@admin.register(KYCDocument)
+class KYCDocumentsAdmin(admin.ModelAdmin):
+    list_display = ('account', 'document_type', 'file')
     search_fields = ('account__username', 'account__phone_no')
     raw_id_fields = ('account',)
-    list_filter = ('doc_type',)
+    list_filter = ('document_type',)
 
 
 @admin.register(BankAccount)
@@ -77,7 +82,10 @@ class CampaignAdmin(admin.ModelAdmin):
 class EnterpriseAdmin(admin.ModelAdmin):
     list_display = ('name', 'promocode', 'enterprise_type', 'hexa_code')
     search_fields = ('name', 'promocode__code',)
-    list_filter = ('enterprise_type',)
+    fk_fields = ['promocode']
+    actions = [export_as_csv]
+    list_filter = ('enterprise_type', 'promocode__code')
+    exclude = ['enterprise_type', ]
 
 
 @admin.register(State)
@@ -125,3 +133,4 @@ class ReferralAdmin(admin.ModelAdmin):
 class PromoCodeAdmin(admin.ModelAdmin):
     list_display = ('code',)
     search_fields = ('code',)
+    actions = [export_as_csv]

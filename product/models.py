@@ -26,7 +26,8 @@ class Category(BaseModel):
 
 
 class Company(BaseModel):
-    name = models.CharField(max_length=128, db_index=True)
+    name = models.CharField(
+        max_length=128, db_index=True, verbose_name="Company Name")
     short_name = models.CharField(max_length=128)
     categories = models.ManyToManyField('product.Category')
     logo = models.ImageField(
@@ -38,10 +39,10 @@ class Company(BaseModel):
     spoc = models.TextField(null=True, blank=True)
     toll_free_number = ArrayField(
         models.CharField(max_length=32), default=list, blank=True, null=True)
-    is_active = models.BooleanField(default=False)
     long_description = models.TextField(null=True, blank=True)
     small_description = models.TextField(null=True, blank=True)
     commission = models.FloatField(default=0.0)
+    is_active = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -75,13 +76,15 @@ class ProductVariant(BaseModel):
         on_delete=models.CASCADE)
     parent = models.ForeignKey(
         'self', null=True, blank=True, on_delete=models.CASCADE)
-    name = models.CharField(max_length=256, default="")
+    name = models.CharField(
+        max_length=256, default="", verbose_name="Product Name")
     parent_product = models.CharField(
         max_length=128, null=True, blank=True, default='GoPlannr')
     feature_variant = models.CharField(max_length=256, default='base')
     short_description = models.CharField(max_length=128, null=True, blank=True)
     long_description = models.TextField(null=True, blank=True)
-    aggregator_available = models.BooleanField(default=False)
+    online_process = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     chronic = models.BooleanField(default=True)
 
     def get_product_details(self):
@@ -200,8 +203,8 @@ class HealthPremium(BaseModel):
         'product.DeductibleMaster', null=True, blank=True,
         on_delete=models.CASCADE)
     sum_insured = models.IntegerField(default=0.0)
-    suminsured_range = IntegerRangeField(default=(0, 300000), db_index=True)
-    age_range = IntegerRangeField(default=(0, 100), db_index=True)
+    suminsured_range = IntegerRangeField(db_index=True)
+    age_range = IntegerRangeField(db_index=True)
     adults = models.IntegerField(null=True, blank=True, db_index=True)
     childrens = models.IntegerField(null=True, blank=True, db_index=True)
     citytier = models.CharField(
@@ -212,14 +215,14 @@ class HealthPremium(BaseModel):
     premium = GenericRelation(
         'sales.quote', related_query_name='healthinsurance',
         object_id_field='premium_id')
+    online_process = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
     ignore = models.BooleanField(default=False)
 
     def get_details(self):
-        return {
-            'sum_insured': self.sum_insured,
-            'amount': self.amount,
-            'commision': self.commission_amount
-        }
+        return dict(
+            sum_insured=self.sum_insured, amount=self.amount,
+            commision=self.commission_amount)
 
     @cached_property
     def commission_amount(self):
@@ -233,4 +236,5 @@ class HealthPremium(BaseModel):
         return round((self.gst * self.base_premium) + self.base_premium, 2)
 
     def __str__(self):
-        return '%s | %s' % (self.sum_insured, self.age_range)
+        return '%s | %s | %s' % (
+            self.sum_insured, self.product_variant.name, self.age_range)

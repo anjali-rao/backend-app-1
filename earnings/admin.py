@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from earnings.models import Earning, Commission, Incentive
-
+from utils.script import export_as_csv
 
 class CommissionInline(admin.StackedInline):
     model = Commission
@@ -37,8 +37,29 @@ class EarningAdmin(admin.ModelAdmin):
 
 @admin.register(Commission)
 class CommisionAdmin(admin.ModelAdmin):
-    list_display = ('earning', 'updated')
+    list_display = ('earning', 'application', 'updated')
     raw_id_fields = ('earning', 'application')
+    fk_fields = ['earning', 'earning__user', 'earning__user__account',
+    'earning__user__campaign', 'earning__user__enterprise', 'application',
+    'application__proposer', 'application__quote',
+    'application__proposer__user', 'application__proposer__user',
+    'application__proposer__user__account', 'application__proposer__user__enterprise',
+    'application__proposer__user__campaign', 'application__proposer__address',
+    'application__proposer__address__pincode',
+    'application__proposer__address__pincode__state',
+    'application__quote__opportunity', 'application__quote__opportunity__lead',
+    'application__quote__opportunity__lead__user',
+    'application__quote__opportunity__lead__user__account',
+    'application__quote__opportunity__lead__user__enterprise',
+    'application__quote__opportunity__lead__user__campaign',
+    'application__quote__opportunity__lead__contact',
+    'application__quote__opportunity__lead__contact__address',
+    'application__quote__opportunity__lead__contact__address__pincode',
+    'application__quote__opportunity__lead__contact__address__pincode__state',
+    'application__quote__opportunity__lead__category'
+    ]
+    actions = [export_as_csv]
+    search_fields = ('application__reference_no',)
 
 
 @admin.register(Incentive)

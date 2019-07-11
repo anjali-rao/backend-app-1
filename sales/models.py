@@ -16,6 +16,8 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 
 from questionnaire.models import Response
 from utils.mixins import RecommendationException
+from utils import get_proposer_upload_path
+from goplannr.settings import ENV
 
 
 class Quote(BaseModel):
@@ -67,12 +69,33 @@ class Quote(BaseModel):
                 company_category.company.name,
                 company_category.company.website or '-'))]
 
+    @cached_property
+    def health_checkup(self):
+        return 1500 * self.opportunity.category_opportunity.adults
+
+    @cached_property
+    def wellness_reward(self):
+        return round(
+            self.opportunity.category_opportunity.wellness_reward * self.premium.amount, 2) # noqa
+
+    @cached_property
+    def tax_saving(self):
+        return round(
+            self.opportunity.category_opportunity.tax_saving * self.premium.amount, 2) # noqa
+
+    @cached_property
+    def effective_premium(self):
+        return round(self.premium.amount - (
+            self.health_checkup + self.wellness_reward + self.tax_saving))
+
 
 class Application(BaseModel):
+    app_client = models.ForeignKey(
+        'crm.Lead', on_delete=models.PROTECT, null=True, blank=True)
     reference_no = models.CharField(max_length=10, unique=True, db_index=True)
     premium = models.FloatField(default=0.0)
     suminsured = models.FloatField(default=0.0)
-    client = models.ForeignKey(
+    proposer = models.ForeignKey(
         'crm.Contact', null=True, on_delete=models.PROTECT)
     application_type = models.CharField(
         max_length=32, choices=get_choices(Constants.APPLICATION_TYPES))
@@ -84,24 +107,53 @@ class Application(BaseModel):
         choices=get_choices(Constants.APPLICATION_STAGES))
     previous_policy = models.BooleanField(default=False)
     name_of_insurer = models.CharField(blank=True, max_length=128)
-    client_verified = models.BooleanField(default=False)
-    payment_mode = models.CharField(max_length=64, choices=get_choices(
-        Constants.AGGREGATOR_CHOICES), default='offline')
+    proposer_verified = models.BooleanField(default=False)
+    payment_failed = models.BooleanField(null=True, blank=True)
+    payment_mode = models.CharField(max_length=64, default='offline')
+    aggregator_error = models.CharField(max_length=256, null=True, blank=True)
     terms_and_conditions = models.BooleanField(null=True)
 
     def save(self, *args, **kwargs):
         try:
             current = self.__class__.objects.get(pk=self.id)
-            if current.terms_and_conditions != self.terms_and_conditions and self.terms_and_conditions: # noqa
-                self.status = 'submitted'
+            if self.status != current.status:
+                self.handle_status_change(current)
+            if (current.payment_failed != self.payment_failed and self.payment_failed) or self.status == 'completed': # noqa
+                self.send_slack_notification()
+            if self.status == 'payment_due' and self.aggregator_error != current.aggregator_error:
+                self.send_slack_notification()
         except self.__class__.DoesNotExist:
             self.generate_reference_no()
             self.application_type = self.company_category.category.name.lower(
             ).replace(' ', '')
         super(Application, self).save(*args, **kwargs)
 
+    def handle_status_change(self, current):
+        if self.status == 'submitted' and self.stage == 'completed':
+            self.create_client()
+            self.create_policy()
+            self.create_commission(current)
+        if current.status == 'fresh' and self.status == 'submitted':
+            self.send_slack_notification()
+
+    def send_slack_notification(self):
+        event = None
+        if self.quote.opportunity.lead.user.user_type == 'subscriber':
+            event = 'Application created and payment process done'
+        elif self.payment_mode == 'offline':
+            event = 'Application created and payment process done'
+        elif self.payment_failed:
+            event = Constants.PAYMENT_ERROR
+        elif self.aggregator_error:
+            event = Constants.BROKER_ERROR
+        else:
+            event = Constants.PAYMENT_SUCCESS
+        if event:
+            self.send_slack_request(event)
+
     def aggregator_operation(self):
-        if not self.quote.premium.product_variant.aggregator_available:
+        premium = self.quote.premium
+        if not premium.product_variant.online_process or not premium.online_process:  # noqa
             return False
         self.status = 'payment_due'
         from aggregator.wallnut.models import Application as Aggregator
@@ -109,13 +161,9 @@ class Application(BaseModel):
             Aggregator.objects.create(
                 reference_app_id=self.id,
                 insurance_type=self.application_type)
-            self.payment_mode = 'wallnut'
+            self.payment_mode = 'Aggregated payment mode'
         self.save()
-        return self.quote.premium.product_variant.aggregator_available
-        from aggregator.wallnut.models import Application as Aggregator
-        if not hasattr(self, 'application'):
-            Aggregator.objects.create(
-                reference_app_id=self.id, insurance_type=self.application_type)
+        return self.payment_mode != 'offline'
 
     def update_fields(self, **kw):
         updated = False
@@ -178,16 +226,77 @@ class Application(BaseModel):
 
     def send_propser_otp(self):
         from users.models import Account
-        Account.send_otp('APP-%s:' % self.reference_no, self.client.phone_no)
+        Account.send_otp('APP-%s:' % self.reference_no, self.proposer.phone_no)
 
     def create_policy(self):
-        return Policy.objects.create(application_id=self.id)
+        return Policy.objects.get_or_create(application_id=self.id)
 
     def invalidate_cache(self):
         from django.core.cache import cache
         cache.delete('USER_CART:%s' % self.quote.opportunity.lead.user_id)
         cache.delete('USER_CONTACTS:%s' % self.quote.opportunity.lead.user_id)
         cache.delete('USER_EARNINGS:%s' % self.quote.opportunity.lead.user_id)
+
+    def create_client(self, save=False):
+        lead = self.quote.opportunity.lead
+        if not lead.is_client:
+            lead.is_client = True
+            lead.save()
+        self.app_client_id = lead.id
+
+    def create_commission(self, current):
+        from earnings.models import Commission
+        cc = self.quote.premium.product_variant.company_category
+        amount = self.quote.premium.commission + cc.company.commission + cc.category.commission + self.quote.opportunity.lead.user.enterprise.commission # noqa
+        if not hasattr(self, 'commission'):
+            commission = Commission(
+                application_id=self.id, amount=self.premium * amount)
+            if current.payment_failed != self.payment_failed and self.payment_failed is False: # noqa
+                commission.status = 'application_submitted'
+            commission.save()
+            commission.updated = True
+            commission.save()
+            commission.earning.user.account.send_sms(
+                commission.earning.get_earning_message(self))
+
+    def send_slack_request(self, event, mode_type='success'):
+        import requests
+        client = self.quote.opportunity.lead
+        endpoint = 'https://hooks.slack.com/services/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' # noqa
+        link = '%s://admin.%s/sales/application/%s/change/' % (
+            'http' if ENV == 'localhost:8000' else 'https', ENV, self.id)
+        text = event
+        mode = self.payment_mode
+        if self.aggregator_error:
+            text += '\nError: %s' % (self.aggregator_error)
+            mode = 'Broker Error'
+            mode_type = 'error'
+        data = dict(
+            attachments=[dict(
+                fallback='Required plain-text summary of the attachment.',
+                color={
+                    'success': '#36a64f', 'warning': '#ff9966',
+                    'error': '#cc3300'
+                }[mode_type],
+                pretext=event, author_name=mode,
+                title='Open Application', title_link=link, text=text,
+                fields=[dict(
+                    type='mrkdwn',
+                    value="*Application id:*\n%s" % self.reference_no
+                ), dict(
+                    type='mrkdwn',
+                    value="*Advisor Name:*\n%s" % client.user.get_full_name()
+                ), dict(
+                    type='mrkdwn',
+                    value="*Advisor phone:*\n%s" % client.user.account.phone_no
+                )],
+                thumb_url='https://onecover.in/favicon.png',
+                footer='Post application flow',
+                footer_icon='https://onecover.in/favicon.png',
+                ts=now().timestamp()
+            )]
+        )
+        return requests.post(endpoint, json=data)
 
     @property
     def adults(self):
@@ -213,6 +322,10 @@ class Application(BaseModel):
     @cached_property
     def people_listed(self):
         return self.active_members.count()
+
+    @cached_property
+    def client(self):
+        return self.app_client
 
     def __str__(self):
         return '%s - %s - %s' % (
@@ -244,8 +357,7 @@ class Member(BaseModel):
         choices=get_choices(Constants.GENDER), max_length=16, null=True)
     occupation = models.CharField(
         choices=get_choices(Constants.OCCUPATION_CHOICES), max_length=32,
-        null=True, blank=True
-    )
+        null=True, blank=True)
     height = models.FloatField(default=0.0)
     weight = models.FloatField(default=0.0)
     ignore = models.BooleanField(default=None, db_index=True, null=True)
@@ -302,9 +414,11 @@ class Nominee(BaseModel):
     ignore = models.BooleanField(default=False)
 
     def save(self, *ar, **kw):
-        existing_nominee = self.__class__.objects.filter(pk=self.id)
-        if existing_nominee.exists():
-            existing_nominee.update(ignore=True)
+        if not self.__class__.objects.filter(pk=self.id):
+            existing_nominee = self.__class__.objects.filter(
+                application_id=self.application.id)
+            if existing_nominee.exists():
+                existing_nominee.update(ignore=True)
         super(Nominee, self).save(*ar, **kw)
 
     def get_full_name(self):
@@ -378,6 +492,12 @@ class HealthInsurance(Insurance):
         quote = opportunity.get_quotes().first()
         if not quote:
             raise RecommendationException('No quote found for this creteria')
+        previous_quote = self.application.quote
+        if quote.id != previous_quote.id:
+            previous_quote.status = 'rejected'
+            previous_quote.save()
+        quote.status = 'accepted'
+        quote.save()
         self.application.quote_id = quote.id
         self.application.premium = quote.premium.amount
         self.application.suminsured = quote.premium.sum_insured
@@ -392,7 +512,9 @@ class HealthInsurance(Insurance):
             if isinstance(field_value, list):
                 values = list()
                 for row in field_value:
-                    values.append(Member.objects.get(id=row['id']).relation)
+                    if row['value']:
+                        values.append(
+                            Member.objects.get(id=row['id']).relation)
                 field_value = None
                 if values:
                     field_value = ", ".join(values)
@@ -402,30 +524,65 @@ class HealthInsurance(Insurance):
         return response
 
     def get_insurance_fields(self):
-        data = list()
+        field_data = list()
         from sales.serializers import (
             MemberSerializer, GetInsuranceFieldsSerializer)
         members = self.application.active_members or Member.objects.filter(
             application_id=self.application_id)
-        members = MemberSerializer(members, many=True).data
         for field in self._meta.fields:
             if field.name in Constants.INSURANCE_EXCLUDE_FIELDS:
                 continue
-            serializer = GetInsuranceFieldsSerializer(data=dict(
-                text=field.help_text,
-                field_name=field.name,
-                field_requirements=[{
-                    'relation': "None"
-                }] if field.__class__.__name__ in [
-                    'BooleanField', 'IntegerField'] else members
-            ))
+            if field.__class__.__name__ not in [
+                    'BooleanField', 'IntegerField']:
+                members_data = list()
+                for member in getattr(self, field.name):
+                    row = MemberSerializer(
+                        members.get(id=member['id'])).data
+                    row['value'] = member['value']
+                    members_data.append(row)
+            if field.__class__.__name__ == 'BooleanField':
+                data = dict(
+                    text=field.help_text, field_name=field.name,
+                    field_requirements=[{
+                        'relation': 'None',
+                        'value': getattr(self, field.name)
+                    }])
+            elif field.__class__.__name__ == 'IntegerField':
+                data = dict(
+                    text=field.help_text, field_name=field.name,
+                    field_requirements=[{
+                        'relation': 'None',
+                        'consumption': getattr(self, field.name)
+                    }])
+            else:
+                data = dict(
+                    text=field.help_text, field_name=field.name,
+                    field_requirements=members_data)
+            serializer = GetInsuranceFieldsSerializer(data=data)
             serializer.is_valid(raise_exception=True)
-            data.append(serializer.data)
-        return data
+            field_data.append(serializer.data)
+        return field_data
 
 
 class TravelInsurance(Insurance):
     name = models.CharField(max_length=32)
+
+
+class ProposerDocument(BaseModel):
+    contact = models.ForeignKey('crm.Contact', on_delete=models.CASCADE)
+    document_number = models.CharField(max_length=64, null=True, blank=True)
+    document_type = models.CharField(
+        choices=get_choices(Constants.KYC_DOC_TYPES), max_length=16)
+    file = models.FileField(
+        upload_to=get_proposer_upload_path, null=True, blank=True)
+    ignore = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        previous = self.__class__.objects.filter(
+            document_type=self.document_type, contact_id=self.contact_id)
+        if previous.exists():
+            previous.update(ignore=True)
+        super(self.__class__, self).save(*args, **kwargs)
 
 
 class Policy(BaseModel):

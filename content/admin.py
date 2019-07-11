@@ -2,12 +2,12 @@
 from __future__ import unicode_literals
 
 from django.contrib import admin
-from django.utils.html import format_html
 
 from content.models import (
     Faq, HelpFile, ContactUs, NetworkHospital, NewsletterSubscriber,
     PromoBook, HelpLine, Playlist, EnterprisePlaylist, Article,
     Coverages, Note, Appointment, Bank, BankBranch, Collateral)
+from utils.script import export_as_csv
 
 
 @admin.register(Faq)
@@ -43,6 +43,8 @@ class NetworkHospitalAdmin(admin.ModelAdmin):
         'pincode__city', 'pincode__state__name')
     list_filter = ('pincode__state__name', )
     raw_id_fields = ('pincode', 'company')
+    fk_fields = ['company', 'pincode', 'pincode__state']
+    actions = [export_as_csv]
 
 
 @admin.register(NewsletterSubscriber)
@@ -56,6 +58,7 @@ class NewsletterSubscriberAdmin(admin.ModelAdmin):
 class PromoBookAdmin(admin.ModelAdmin):
     list_display = ('phone_no',)
     search_fields = ('phone_no',)
+    actions = [export_as_csv]
 
 
 @admin.register(HelpLine)
@@ -130,6 +133,26 @@ class BankBranchAdmin(admin.ModelAdmin):
 @admin.register(Collateral)
 class CollateralAdmin(admin.ModelAdmin):
     list_display = (
-        'name', 'collateral_type', 'collateral', 'url', 'promocode')
-    search_fields = ('collateral_type', 'collateral', 'url', 'promocode')
-    list_filter = ('collateral_type', 'collateral')
+        'name', 'collateral_type', 'collateral_file_type', 'url', 'promocode')
+    search_fields = (
+        'name', 'url', 'collateral_type', 'collateral_file_type', 'promocode')
+    list_filter = ('collateral_type', 'collateral_file_type', 'promocode')
+    actions = ['bulk_copy_for_subscribers', 'bulk_copy_for_transactors']
+
+    def bulk_copy_for_subscribers(self, request, queryset):
+        from users.models import PromoCode
+        collaterals = list()
+        for query in queryset:
+            query.pk = None
+            query.promocode = PromoCode.objects.get(code='OCOVR-2-4')
+            collaterals.append(query)
+        Collateral.objects.bulk_create(collaterals)
+
+    def bulk_copy_for_transactors(self, request, queryset):
+        collaterals = list()
+        from users.models import PromoCode
+        for query in queryset:
+            query.pk = None
+            query.promocode = PromoCode.objects.get(code='OCOVR-1-3')
+            collaterals.append(query)
+        Collateral.objects.bulk_create(collaterals)

@@ -11,7 +11,8 @@ from crm.serializers import (
     QuoteSerializer, QuoteDetailsSerializer, Quote,
     QuotesCompareSerializer, QuoteRecommendationSerializer,
     UpdateLeadSerializer, LeadDetailSerializer, Lead,
-    NotesSerializer, CreateLeadSerializer, Opportunity
+    NotesSerializer, CreateLeadSerializer, Opportunity,
+    SharedQuoteDetailsSerializer
 )
 
 from django.db import transaction, IntegrityError
@@ -130,6 +131,11 @@ class GetRecommendatedQuotes(generics.ListAPIView):
             'Curently we are unable to suggest any quote. please try again.')
 
 
+class GetSharedQuoteDetails(generics.RetrieveAPIView):
+    serializer_class = SharedQuoteDetailsSerializer
+    queryset = Quote.objects.all()
+
+
 class GetLeadDetails(generics.RetrieveAPIView):
     authentication_classes = (UserAuthentication,)
     serializer_class = LeadDetailSerializer
@@ -155,7 +161,7 @@ class AddLeadNotes(generics.CreateAPIView):
             return Response(dict(
                 message='Notes added successfully', lead_id=lead.id
             ), status=status.HTTP_201_CREATED)
-        except IntegrityError as e:
+        except IntegrityError:
             pass
         raise mixins.APIException(
             'Unable to process request currently. Please try again')

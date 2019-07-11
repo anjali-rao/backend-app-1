@@ -13,8 +13,8 @@ from sales.serializers import (
     CreateNomineeSerializer, MemberSerializer, HealthInsuranceSerializer,
     TravalInsuranceSerializer, TermsSerializer, ExistingPolicySerializer,
     GetInsuranceFieldsSerializer, ApplicationSummarySerializer,
-    UpdateApplicationSerializers, VerifyProposerPhonenoSerializer
-)
+    VerifyProposerPhonenoSerializer, UploadContactDocumentSerializer,
+    UpdateApplicationSerializer, GetApplicationMessageSerializer)
 
 from django.core.exceptions import ValidationError
 from django.http import Http404
@@ -66,27 +66,29 @@ class RetrieveUpdateProposerDetails(
         filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
         try:
             application = _get_object_or_404(queryset, **filter_kwargs)
-            self._obj = application.client or application.quote.opportunity.lead.contact # noqa
+            self._obj = application.proposer or application.quote.opportunity.lead.contact # noqa
         except (TypeError, ValueError, ValidationError):
             self._obj = Http404
 
         if 'search' in self.request.query_params and self.request.method == 'GET': # noqa
             contacts = Contact.objects.filter(
                 phone_no=self.request.query_params.get('search')
-            ).exclude(last_name='').order_by('modified', 'created')
+            ).exclude(last_name='').exclude(proposerdocument=None).order_by(
+                'modified')
             if not contacts.exists():
                 raise mixins.NotFound('Application field not found.')
             if self._obj and contacts:
                 if self._obj.id not in contacts:
-                    self._obj = contacts.first()
+                    self._obj = contacts.latest('modified')
         # May raise a permission denied
         self.check_object_permissions(self.request, self._obj)
         return self._obj
 
     def perform_update(self, serializer):
-        serializer.save(
-            application_id=self.kwargs['pk'],
-            user_id=self.request.user.id)
+        with transaction.atomic():
+            serializer.save(
+                application_id=self.kwargs['pk'],
+                user_id=self.request.user.id)
 
 
 class RetrieveUpdateApplicationMembers(
@@ -270,10 +272,13 @@ class SubmitApplication(generics.UpdateAPIView):
         response = serializer.data
         instance.stage = 'payment_due'
         try:
-            instance.aggregator_operation()
-            response['payment_status'] = True
-        except Exception:
-            response['payment_status'] = False
+            response['payment_status'] = instance.aggregator_operation()
+            response.update(dict(error=''))
+        except Exception as e:
+            instance.aggregator_error = str(e)
+            response.update(dict(
+                payment_status=False,
+                error='No Product found.'))
         instance.save()
         return response
 
@@ -289,17 +294,23 @@ class GetApplicationPaymentLink(views.APIView):
                 app.application.insurer_operation()
             data.update(dict(
                 success=True, payment_link=app.application.get_payment_link()))
+            app.refresh_from_db()
             app.stage = 'payment_due'
             app.save()
         except (Application.DoesNotExist, Exception):
+            data['error'] = app.aggregator_error
             data['message'] = 'Could not generate payment link. Please go with offline mode' # noqa
         return Response(data)
 
 
-class UpdateApplicationStatus(generics.UpdateAPIView):
+class UpdateApplication(generics.UpdateAPIView):
     authentication_classes = (UserAuthentication,)
-    serializer_class = UpdateApplicationSerializers
+    serializer_class = UpdateApplicationSerializer
     queryset = Application.objects.all()
+
+    def perform_update(self, serializer):
+        with transaction.atomic():
+            serializer.save()
 
 
 class VerifyProposerPhoneno(views.APIView):
@@ -311,9 +322,75 @@ class VerifyProposerPhoneno(views.APIView):
             serializer = VerifyProposerPhonenoSerializer(
                 instance, data=request.data)
             serializer.is_valid(raise_exception=True)
-            serializer.save(client_verified=True)
+            serializer.save(proposer_verified=True)
             response = serializer.data
             response['payment_status'] = instance.payment_mode != 'offline'
             return Response(serializer.data)
         except Application.DoesNotExist:
             raise mixins.APIException(constants.INVALID_APPLICATION_ID)
+
+
+class UploadProposerDocuments(generics.UpdateAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = UploadContactDocumentSerializer
+    queryset = Application.objects.all()
+
+    def update(self, request, version, *args, **kwargs):
+        with transaction.atomic():
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+            serializer = self.get_serializer(
+                instance.proposer, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            instance.refresh_from_db()
+            if instance.proposer.proposerdocument_set.filter(
+                    ignore=False, document_type='cheque').exists():
+                instance.payment_mode = 'offline'
+                instance.status = 'submitted'
+                instance.stage = 'completed'
+                instance.save()
+        return Response(serializer.data)
+
+
+class JourneyCompleted(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = GetApplicationMessageSerializer
+    queryset = Application.objects.all()
+
+    def get_object(self):
+        obj = super(self.__class__, self).get_object()
+        with transaction.atomic():
+            if obj.status == 'submitted' and obj.stage == 'completed':
+                obj.status = 'completed'
+            elif obj.status == 'fresh':
+                obj.status = 'submitted'
+                obj.stage = 'subscriber'
+            obj.payment_mode = 'Aggregated payment mode'
+            if obj.quote.opportunity.lead.user.user_type == 'subscriber':
+                obj.payment_mode = 'Subscriber'
+            elif obj.proposer.proposerdocument_set.filter(
+                    ignore=False, document_type='cheque').exists():
+                obj.payment_mode = 'offline'
+            obj.save()
+        return obj
+
+
+class GetApplicationDetails(generics.RetrieveAPIView):
+    authentication_classes = (UserAuthentication,)
+    serializer_class = ApplicationSummarySerializer
+    queryset = Application.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        if not hasattr(instance, instance.application_type):
+            raise mixins.APIException(constants.APPLICATION_UNMAPPED)
+
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        insurance = getattr(instance, instance.application_type)
+
+        data['%s_fields' % (
+            instance.application_type)] = insurance.get_insurance_fields()
+        return Response(data)

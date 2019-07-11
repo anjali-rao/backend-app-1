@@ -62,7 +62,7 @@ class Application(BaseModel):
             self.reference_app.reference_no, self.premium,
             self.reference_app.quote.premium.product_variant.__str__(),
             self.get_payment_link())
-        send_sms.delay(self.reference_app.client.phone_no, message)
+        send_sms.delay(self.reference_app.proposer.phone_no, message)
 
     def handle_creation(self):
         self.section = Constant.SECTION.get(
@@ -163,7 +163,6 @@ class Application(BaseModel):
         log.response = response
         log.save()
         self.raw_quote = self.get_live_quote(response['quote_data'])
-        self.premium = self.raw_quote['total_premium']
         self.company_name = re.sub('[ .]', '', self.raw_quote['company_name'])
         reference_app = self.reference_app
         reference_app.premium = self.raw_quote['total_premium']
@@ -176,9 +175,13 @@ class Application(BaseModel):
             ), quote_data)
         quote = next(data)
         premium = int(self.reference_app.premium)
+        product = self.reference_app.quote.premium.product_variant
+        if product.parent and product.company_category.company.short_name == 'Aditya Birla': # noqa
+            return quote
         while int(quote['total_premium']) not in range(
                 premium - 100, premium + 100):
             quote = next(data)
+        self.premium = quote['total_premium']
         return quote
 
     def get_user_id(self):
@@ -187,20 +190,21 @@ class Application(BaseModel):
         url = self._host % 'save_user_info'
         app = self.reference_app
         data = dict(
-            first_name=app.client.first_name,
-            dob=app.client.dob.strftime('%d-%M-%Y'),
-            last_name=app.client.last_name, email=app.client.email,
-            gender=Constant.GENDER.get(app.client.gender, 'M'),
-            mobile_no=app.client.phone_no, alternate_mobile='',
-            occupation=Constant.OCCUPATION_CODE[app.client.occupation],
+            first_name=app.proposer.first_name,
+            dob=app.proposer.dob.strftime('%d-%M-%Y'),
+            last_name=app.proposer.last_name, email=app.proposer.email,
+            gender=Constant.GENDER.get(app.proposer.gender, 'M'),
+            mobile_no=app.proposer.phone_no, alternate_mobile='',
+            occupation=Constant.OCCUPATION_CODE[app.proposer.occupation],
             pincode=self.pincode, city=self.city, state=self.state,
-            address=app.client.address.full_address, user_id='',
+            address=app.proposer.address.full_address, user_id='',
             dealstage=self.dealstage, insu_id=self.insurer_code,
             insurance_type=self.section.title() + ' Insurance',
             amount=self.premium
         )
         log = ApplicationRequestLog.objects.create(
-            application_id=self.reference_app.id, url=url, request_type='GET')
+            application_id=self.reference_app.id, url=url, request_type='POST',
+            payload=data)
         response = requests.post(url, data=data).json()
         log.response = response
         log.save()
@@ -234,7 +238,7 @@ class Application(BaseModel):
         else:
             proposer = proposers.first()
         proposer.marital_status = Constant.get_marital_status(
-            proposer.relation) or self.reference_app.client.marital_status.title() # noqa
+            proposer.relation) or self.reference_app.proposer.marital_status.title() # noqa
         return proposer
 
     @cached_property

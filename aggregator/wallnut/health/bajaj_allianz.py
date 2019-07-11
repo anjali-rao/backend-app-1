@@ -53,6 +53,9 @@ class BajajAllianzGeneralInsurance(object):
         response = requests.post(url, data=data).json()
         request_log.response = response
         request_log.save()
+        if 'status' in response and response['status'] == 'false':
+            self.application.aggregator_error = response['message']
+            self.application.save()
 
     def save_proposal_data(self):
         data = self.get_data()
@@ -63,6 +66,9 @@ class BajajAllianzGeneralInsurance(object):
         response = requests.post(url, data=data).json()
         log.response = response
         log.save()
+        if 'status' in response and response['status'] == 'false':
+            self.application.aggregator_error = response['message']
+            self.application.save()
         self.wallnut.proposal_id = response['proposal_id']
         self.wallnut.customer_id = response['customer_id']
         return response
@@ -84,6 +90,7 @@ class BajajAllianzGeneralInsurance(object):
         return response
 
     def get_data(self):
+        proposer = self.application.proposer
         data = dict(
             quote_refresh='N', state_id=self.wallnut.state_code,
             city_id=self.wallnut.city_code, quote=self.wallnut.quote_id,
@@ -105,17 +112,17 @@ class BajajAllianzGeneralInsurance(object):
                 self.wallnut.proposer.marital_status),
             profession=self.get_profession_code(
                 self.wallnut.proposer.occupation),
-            email=self.application.client.email,
-            mobile=self.application.client.phone_no,
-            addLine1=self.application.client.address.full_address[:40],
-            addLine2=self.application.client.address.full_address[41:],
+            email=proposer.email,
+            mobile=proposer.phone_no,
+            addLine1=proposer.address.full_address[:40],
+            addLine2=proposer.address.full_address[41:],
             addLine3=self.city_mapper(self.wallnut.city),
             addLine4=self.wallnut.state.upper(),
             health_insu_id=self.wallnut.insurer_code,
             termStartDate=now().strftime('%d-%m-%Y'),
             extraColumn3='0', stringval8='N', stringval9='N',
             stringval10='N', stringval11='N',
-            Pincode=self.application.client.address.pincode.pincode)
+            Pincode=proposer.address.pincode.pincode)
         count = 1
 
         local_data_values = 'health_pay_mode=%s#health_state_id=%s#health_quote_refresh=N#health_sum_insured=%s#health_premium=%s#health_insu_id=14#health_sum_insured_range=%s#health_user_id=14252#health_policy_period=1#health_pay_type=%s#health_pay_mode_text=%s#health_quote=%s#health_city_id=%s#health_pay_type_text=%s#health_me=%s#gender_age=%s#pincode=%s' % ( # noqa
@@ -164,7 +171,7 @@ class BajajAllianzGeneralInsurance(object):
                 NomineeRelationship_1=self.get_relationship_code(
                     nominee.relation),
                 monthlyIncome_1=str(int(Constant.INCOME.get(
-                    self.application.client.annual_income) / 12))
+                    self.application.proposer.annual_income) / 12))
             ))
         return member_details
 

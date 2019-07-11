@@ -2,11 +2,11 @@ from rest_framework import serializers
 
 from sales.models import (
     Application, Member, Nominee, Quote, HealthInsurance,
-    TravelInsurance, ExistingPolicies
+    TravelInsurance, ExistingPolicies, ProposerDocument
 )
-from crm.models import Contact, KYCDocument, Lead
+from crm.models import Contact, Lead
 from users.models import Pincode, Address
-from utils import constants as Constants, mixins
+from utils import constants as Constants, mixins, parse_phone_no
 
 from django.db import transaction, IntegrityError
 
@@ -43,6 +43,11 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
 
     def get_contact(self, validated_data, **kwargs):
         name = validated_data['contact_name'].lower().split(' ')
+        valid, validated_data['contact_no'] = parse_phone_no(
+            validated_data['contact_no'])
+        print(validated_data)
+        if not valid:
+            raise mixins.APIException(Constants.INVALID_PHONE_NO)
         first_name = name[0]
         middle_name = name[1] if len(name) == 3 else ''
         last_name = name[2] if len(name) > 2 else (
@@ -65,6 +70,8 @@ class CreateApplicationSerializer(serializers.ModelSerializer):
             lead.save()
             return
         lead = leads.first()
+        lead.pincode = opportunity.lead.pincode
+        lead.save()
         opportunity.lead_id = lead.id
         opportunity.save()
 
@@ -84,15 +91,17 @@ class GetProposalDetailsSerializer(serializers.ModelSerializer):
     flat_no = serializers.SerializerMethodField()
 
     def get_document_type(self, obj):
-        kyc_docs = obj.kycdocument_set.all()
+        kyc_docs = obj.proposerdocument_set.filter(
+            document_type__in=Constants.PROPOSER_DOCS)
         if kyc_docs.exists():
-            return kyc_docs.latest('modified').document_type
+            return kyc_docs.latest('created').document_type
         return ''
 
     def get_document_number(self, obj):
-        kyc_docs = obj.kycdocument_set.all()
+        kyc_docs = obj.proposerdocument_set.filter(
+            document_type__in=Constants.PROPOSER_DOCS)
         if kyc_docs.exists():
-            return kyc_docs.latest('modified').document_number
+            return kyc_docs.latest('created').document_number
         return ''
 
     def get_contact_id(self, obj):
@@ -137,6 +146,10 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
     def get_contact(self, validated_data):
         first_name = validated_data['first_name'].lower()
         last_name = validated_data['last_name'].lower()
+        valid, validated_data['phone_no'] = parse_phone_no(
+            validated_data['phone_no'])
+        if not valid:
+            raise mixins.APIException(Constants.INVALID_PHONE_NO)
         instance, created = Contact.objects.get_or_create(
             phone_no=validated_data['phone_no'],
             first_name=first_name, last_name=last_name,
@@ -170,14 +183,14 @@ class UpdateContactDetailsSerializer(serializers.ModelSerializer):
                     dob=validated_data['dob']))
             self.instance = super(
                 UpdateContactDetailsSerializer, self).save(**kwargs)
-            kycdocument, created = KYCDocument.objects.get_or_create(
+            kycdocument, created = ProposerDocument.objects.get_or_create(
                 document_type=validated_data['document_type'],
-                contact_id=self.instance.id)
+                contact_id=self.instance.id, ignore=False)
             kycdocument.document_number = validated_data['document_number']
             kycdocument.save()
             self.instance.update_fields(**update_fields)
             app.update_fields(**dict(
-                status='pending', client_id=self.instance.id,
+                status='pending', proposer_id=self.instance.id,
                 stage='insured_members'))
 
     def create(self, valid_data):
@@ -417,13 +430,14 @@ class GetInsuranceFieldsSerializer(serializers.Serializer):
 
 
 class ApplicationSummarySerializer(serializers.ModelSerializer):
+    premium_amount = serializers.ReadOnlyField(source='premium')
     proposer_details = serializers.SerializerMethodField()
     insured_members = serializers.SerializerMethodField()
     nominee_details = serializers.SerializerMethodField()
     existing_policies = serializers.SerializerMethodField()
 
     def get_proposer_details(self, obj):
-        proposer = self.instance.client or self.instance.quote.opportunity.lead.contact # noqa
+        proposer = self.instance.proposer or self.instance.quote.opportunity.lead.contact # noqa
         return GetProposalDetailsSerializer(proposer).data
 
     def get_insured_members(self, obj):
@@ -437,7 +451,8 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
             members, many=True).data
 
     def get_nominee_details(self, obj):
-        return NomineeSerializer(self.instance.nominee_set.first()).data
+        return NomineeSerializer(self.instance.nominee_set.exclude(
+            ignore=True).first()).data
 
     def get_existing_policies(self, obj):
         return ExistingPolicySerializer(
@@ -447,7 +462,7 @@ class ApplicationSummarySerializer(serializers.ModelSerializer):
         model = Application
         fields = (
             'proposer_details', 'insured_members', 'nominee_details',
-            'existing_policies'
+            'existing_policies', 'premium_amount'
         )
 
 
@@ -469,7 +484,7 @@ class SalesApplicationSerializer(serializers.ModelSerializer):
         return self.context.get('section', '-')
 
     def get_proposer_name(self, obj):
-        instance = obj.client or obj.quote.opportunity.lead.contact
+        instance = obj.proposer or obj.quote.opportunity.lead.contact
         return instance.get_full_name()
 
     class Meta:
@@ -485,12 +500,12 @@ class ClientSerializer(serializers.ModelSerializer):
         source='quote.premium.product_variant.logo')
     product_name = serializers.ReadOnlyField(
         source='quote.premium.product_variant.product_short_name')
-    full_name = serializers.SerializerMethodField()
-    status = serializers.ReadOnlyField(source='get_status_display')
+    full_name = serializers.ReadOnlyField(
+        source='quote.opportunity.lead.contact.get_full_name')
+    status = serializers.SerializerMethodField()
 
-    def get_full_name(self, obj):
-        instance = obj.client or obj.quote.opportunity.lead.contact
-        return instance.get_full_name()
+    def get_status(self, obj):
+        return ''
 
     class Meta:
         model = Application
@@ -499,11 +514,19 @@ class ClientSerializer(serializers.ModelSerializer):
             'status', 'company_logo')
 
 
-class UpdateApplicationSerializers(serializers.ModelSerializer):
+class UpdateApplicationSerializer(serializers.ModelSerializer):
+
+    def update(self, instance, validated_data):
+        if validated_data.get('payment_failed') is False:
+            instance.status = 'submitted'
+            instance.stage = 'completed'
+        elif validated_data.get('payment_failed'):
+            instance.stage = 'payment_failed'
+        return super(self.__class__, self).update(instance, validated_data)
 
     class Meta:
         model = Application
-        fields = ('status', )
+        fields = ('status', 'payment_failed')
 
     @property
     def data(self):
@@ -525,4 +548,91 @@ class VerifyProposerPhonenoSerializer(serializers.ModelSerializer):
         model = Application
         fields = (
             'otp', 'application_id', 'application_reference_no',
-            'client_verified')
+            'proposer_verified')
+
+
+class UploadContactDocumentSerializer(serializers.ModelSerializer):
+    cheque = serializers.FileField(required=False)
+
+    def validate(self, data):
+        if not data or not any(
+                x in data.keys() for x in Constants.KYC_DOC_TYPES):
+            raise serializers.ValidationError(
+                Constants.NO_FIELDS_INPUT_OR_INVALID_FIELDS)
+        return super(self.__class__, self).validate(data)
+
+    def update(self, instance, validated_data):
+        for doc in validated_data:
+            if any(x in validated_data.keys() for x in Constants.KYC_DOC_TYPES): # noqa
+                self.instance.upload_docs(
+                    validated_data, set(validated_data).intersection(
+                        set(Constants.KYC_DOC_TYPES)))
+        return self.instance
+
+    @property
+    def data(self):
+        return dict(message='Document uploaded successfully.')
+
+    class Meta:
+        model = Contact
+        fields = ('cheque',)
+
+
+class GetApplicationMessageSerializer(serializers.ModelSerializer):
+    heading = serializers.SerializerMethodField()
+    body = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    whatsapp = serializers.BooleanField(default=True)
+    whatsapp_text = serializers.SerializerMethodField()
+    home = serializers.BooleanField(default=True)
+    earning = serializers.SerializerMethodField()
+    message_type = serializers.SerializerMethodField()
+
+    def get_heading(self, obj):
+        if obj.payment_mode == 'Subscriber':
+            return 'Thank You!'
+        if obj.payment_failed:
+            return Constants.FAILED_HEADER
+        return 'Thank You!'
+
+    def get_body(self, obj):
+        if obj.payment_mode == 'Subscriber':
+            return Constants.SUBSCRIBER_THANKYOU % (
+                obj.reference_no,
+                obj.quote.opportunity.lead.contact.get_full_name())
+        if obj.payment_failed:
+            return Constants.FAILED_MESSAGE % (
+                obj.reference_no,
+                obj.quote.opportunity.lead.contact.get_full_name())
+        if obj.aggregator_error:
+            return Constants.BROKER_THANKYOU % (
+                obj.reference_no,
+                obj.quote.opportunity.lead.contact.get_full_name())
+        return Constants.SUCESSFUL_PAYMENT % (
+            obj.reference_no,
+            obj.quote.opportunity.lead.contact.get_full_name())
+
+    def get_earning(self, obj):
+        if obj.payment_mode in [
+                'Subscriber', 'offline'] or obj.payment_failed:
+            return False
+        return True
+
+    def get_message_type(self, obj):
+        if obj.payment_failed or obj.aggregator_error:
+            return 'warning'
+        return 'success'
+
+    def get_whatsapp_text(self, obj):
+        if obj.payment_mode == 'offline':
+            Constants.SUBSCRIBER_WHATSAPP_TEXT
+        return 'You can reach out to us via WhatsApp'
+
+    def get_product(self, obj):
+        return SalesApplicationSerializer(obj).data
+
+    class Meta:
+        model = Application
+        fields = (
+            'heading', 'body', 'whatsapp', 'home', 'earning', 'message_type',
+            'product', 'whatsapp_text')

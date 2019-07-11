@@ -19,6 +19,7 @@ class Lead(BaseModel):
         'users.Campaign', null=True, blank=True, on_delete=models.CASCADE)
     pincode = models.CharField(max_length=6, null=True)
     bookmark = models.BooleanField(default=False)
+    is_client = models.BooleanField(default=False)
     ignore = models.BooleanField(default=False)
 
     class Meta:
@@ -52,7 +53,7 @@ class Opportunity(BaseModel):
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
-        if self.category:
+        if hasattr(self, 'category'):
             self.category_name = self.category.name.replace(' ', '').lower()
             if hasattr(self, self.category_name):
                 self.category_opportunity = getattr(self, self.category_name)
@@ -115,7 +116,7 @@ class Opportunity(BaseModel):
 
     @property
     def companies_id(self):
-        return self.lead.user.enterprise.companies.values_list('id', flat=True)
+        return self.lead.user.get_companies().values_list('id', flat=True)
 
 
 class Contact(BaseModel):
@@ -126,7 +127,7 @@ class Contact(BaseModel):
     gender = models.CharField(
         max_length=16, choices=get_choices(Constants.GENDER),
         null=True, blank=True)
-    phone_no = models.CharField(max_length=20, null=True, blank=True)
+    phone_no = models.CharField(max_length=40, null=True, blank=True)
     first_name = models.CharField(max_length=32, blank=True)
     middle_name = models.CharField(max_length=32, blank=True)
     last_name = models.CharField(max_length=32, blank=True)
@@ -156,16 +157,42 @@ class Contact(BaseModel):
             setattr(self, field, kw[field])
         self.save()
 
-    def is_kyc_required(self):
-        kyc_docs = self.kycdocument_set.all()
-        if kyc_docs.exists():
-            return kyc_docs.latest('modified').file is not None
-        return False
-
     def get_full_name(self):
         full_name = '%s %s %s' % (
             self.first_name, self.middle_name, self.last_name)
         return full_name.strip().title()
+
+    def upload_docs(self, validated_data, fields):
+        from sales.models import ProposerDocument
+        for field in fields:
+            name = validated_data[field].name.split('.')
+            file_name = '%s_%s_%s.%s' % (
+                self.id, name[0], now().date().isoformat(), name[1])
+            doc, created = ProposerDocument.objects.get_or_create(
+                document_type=field, contact_id=self.id, ignore=False)
+            doc.file.save(file_name, validated_data[field])
+            validated_data[field] = doc.file.url
+        return validated_data
+
+    @property
+    def calling_no(self):
+        if len(self.phone_no) == 10:
+            return '+91%s' % self.phone_no
+        if '+91' in self.phone_no and len(self.phone_no) == 13:
+            return self.phone_no
+        if '91' in self.phone_no[:2] and len(self.phone_no) > 10:
+            return '+%s' % self.phone_no
+        return self.phone_no
+
+    @property
+    def whatsapp_no(self):
+        if len(self.phone_no) == 10:
+            return '+91%s' % self.phone_no
+        if '+91' in self.phone_no and len(self.phone_no) == 13:
+            return self.phone_no
+        if '91' in self.phone_no[:2] and len(self.phone_no) > 10:
+            return '+' % self.phone_no
+        return self.phone_no
 
 
 class KYCDocument(BaseModel):

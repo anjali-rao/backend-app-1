@@ -3,9 +3,10 @@ from __future__ import unicode_literals
 
 from django.contrib import admin
 
-from crm.models import Lead, Contact, KYCDocument, Opportunity
+from crm.models import Lead, Contact, Opportunity
 from crm.opportunity.models import HealthInsurance
 from content.models import Note
+from utils.script import export_as_csv
 
 
 class HealthInsuranceInline(admin.StackedInline):
@@ -36,6 +37,18 @@ class OpportunityInline(admin.ModelAdmin):
     _inlines_class_set = dict(
         healthinsurance=HealthInsuranceInline
     )
+    fk_fields = [
+    'lead', 'lead__user',
+    'lead__user__account', 'lead__user__enterprise',
+    'lead__user__campaign', 'lead__contact',
+    'lead__contact__address', 'lead__contact__address__pincode',
+    'lead__contact__address__pincode__state', 'lead__category'
+    ]
+    actions = [export_as_csv]
+
+    def get_queryset(self, request):
+        queryset = super(self.__class__, self).get_queryset(request)
+        return queryset.exclude(quote=None)
 
     def get_inline_instances(self, request, obj=None):
         inlines = list()
@@ -55,6 +68,10 @@ class LeadAdmin(admin.ModelAdmin):
     raw_id_fields = ('user', 'contact',)
     inlines = (NotesInline,)
 
+    def get_queryset(self, request):
+        queryset = super(self.__class__, self).get_queryset(request)
+        return queryset.exclude(contact=None)
+
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
@@ -66,10 +83,9 @@ class ContactAdmin(admin.ModelAdmin):
     def contact(self, obj):
         return obj.get_full_name()
 
-
-@admin.register(KYCDocument)
-class KYCDocumentAdmin(admin.ModelAdmin):
-    list_display = ('contact', 'document_type', 'document_number')
-    raw_id_fields = ('contact',)
-    list_filter = ('document_type',)
-    search_fields = ('docunent_number', 'contact__phone_no')
+# @admin.register(KYCDocument)
+# class KYCDocumentAdmin(admin.ModelAdmin):
+#     list_display = ('contact', 'document_type', 'document_number')
+#     raw_id_fields = ('contact',)
+#     list_filter = ('document_type',)
+#     search_fields = ('docunent_number', 'contact__phone_no')

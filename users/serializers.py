@@ -8,11 +8,9 @@ from users.models import (
     User, Account, Enterprise, AccountDetail, Pincode,
     Address, BankAccount)
 from content.models import BankBranch
-from content.serializers import CollateralSerializer
 
 from earnings.serializers import EarningSerializer
-from crm.serializers import LeadSerializer, Lead
-from sales.serializers import ClientSerializer
+from crm.serializers import LeadSerializer, Lead, ClientSerializer
 
 from django.db import transaction
 
@@ -132,7 +130,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         account = self.get_account(validated_data)
         validated_data.update(User.get_promo_code_details(
-            validated_data['promo_code'], account.get_full_name()))
+            validated_data['promo_code'], account.username))
         data = dict(
             account_id=account.id, is_active=True,
             user_type=validated_data['user_type'],
@@ -238,13 +236,21 @@ class UserSerializer(serializers.ModelSerializer):
     profile_pic = serializers.FileField(
         source='account.profile_pic', default='')
     referral_code = serializers.ReadOnlyField(source='referral.code')
+    is_staff = serializers.ReadOnlyField(source='account.is_staff')
+    promo_code = serializers.ReadOnlyField(
+        source='enterprise.promocode.code', default='')
+    profile_url = serializers.SerializerMethodField()
+
+    def get_profile_url(self, obj):
+        return 'https://advisor.onecover.in/%s' % obj.account.username
 
     class Meta:
         model = User
         fields = (
             'user_id', 'first_name', 'last_name', 'email', 'phone_no',
             'gender', 'flat_no', 'street', 'city', 'state', 'pincode',
-            'profile_pic', 'rating', 'referral_code')
+            'profile_pic', 'rating', 'referral_code', 'profile_url',
+            'is_staff', 'promo_code')
 
 
 class AuthorizationSerializer(serializers.Serializer):
@@ -291,9 +297,7 @@ class AuthorizationSerializer(serializers.Serializer):
             details=UserSerializer(user).data,
             enterprise=EnterpriseSerializer(user.enterprise).data,
             rules=user.get_rules(),
-            categories=user.get_categories(),
-            collaterals=CollateralSerializer(
-                user.get_collaterals(), many=True).data)
+            categories=user.get_categories())
         return self._data
 
 
@@ -488,11 +492,11 @@ class UserEarningSerializer(serializers.ModelSerializer):
         return obj.get_policies().count()
 
     def get_total_earning(self, obj):
-        return obj.get_earnings()
+        return round(obj.get_earnings(), 2)
 
     def get_total_premium(self, obj):
-        return sum(obj.get_policies().values_list(
-            'application__premium', flat=True))
+        return round(sum(obj.get_policies().values_list(
+            'application__premium', flat=True)), 2)
 
     def get_earning_details(self, obj):
         return EarningSerializer(
@@ -569,19 +573,13 @@ class UserDetailSerializerV3(serializers.ModelSerializer):
     enterprise = EnterpriseSerializer(read_only=True)
     rules = serializers.ReadOnlyField(source='get_rules')
     categories = serializers.ReadOnlyField(source='get_categories')
-    collaterals = serializers.SerializerMethodField()
 
     def get_details(self, obj):
         return UserSerializer(obj).data
 
-    def get_collaterals(self, obj):
-        return CollateralSerializer(
-            obj.get_collaterals(), many=True).data
-
     class Meta:
         model = User
-        fields = (
-            'details', 'enterprise', 'rules', 'categories', 'collaterals')
+        fields = ('details', 'enterprise', 'rules', 'categories')
 
 
 class ContactSerializers(serializers.ModelSerializer):
@@ -591,12 +589,15 @@ class ContactSerializers(serializers.ModelSerializer):
     def get_leads(self, obj):
         return LeadSerializer(
             Lead.objects.filter(
-                user_id=obj.id,
-                ignore=False).exclude(contact=None), many=True).data
+                user_id=obj.id, is_client=False,
+                ignore=False).exclude(contact=None),
+            many=True).data
 
     def get_clients(self, obj):
         return ClientSerializer(
-            obj.get_applications(status=['completed']), many=True).data
+            Lead.objects.filter(
+                user_id=obj.id, ignore=False, is_client=True
+            ).exclude(contact=None), many=True).data
 
     class Meta:
         model = User
@@ -619,7 +620,7 @@ class AdvisorSerializer(serializers.ModelSerializer):
 
     def get_products(self, obj):
         data = list()
-        companies = obj.enterprise.companies.all()
+        companies = obj.get_companies()
         from product.serializers import BrandSerializers
         for category in obj.enterprise.categories.filter(is_active=True):
             data.append(dict(

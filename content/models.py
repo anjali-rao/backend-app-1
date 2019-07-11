@@ -85,18 +85,25 @@ class PromoBook(BaseModel):
 
 class Collateral(BaseModel):
     name = models.CharField(max_length=256)
+    thumbnail = models.URLField(null=True, blank=True)
+    category = models.ForeignKey(
+        'product.Category', null=True, blank=True, on_delete=models.PROTECT)
     url = models.URLField()
     collateral_type = models.CharField(
         max_length=16, choices=get_choices(Constants.COLLATERALS_TYPE))
-    collateral = models.CharField(
+    collateral_file_type = models.CharField(
         max_length=32, choices=get_choices(Constants.COLLATERALS_CHOICES))
     promocode = models.ForeignKey('users.PromoCode', on_delete=models.PROTECT)
     short_descripton = models.CharField(max_length=256, null=True, blank=True)
     long_descripton = models.TextField(null=True, blank=True)
+    order = models.IntegerField(default=0)
 
     def __str__(self):
         return '%s | %s: %s' % (
-            self.name, self.collateral_type, self.collateral)
+            self.name, self.collateral_type, self.collateral_file_type)
+
+    class Meta:
+        ordering = ('order',)
 
 
 class Playlist(BaseModel):

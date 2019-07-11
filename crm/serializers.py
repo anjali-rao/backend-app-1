@@ -4,7 +4,7 @@ from content.models import NetworkHospital
 from content.serializers import NotesSerializer
 from crm.models import Lead, Contact, Opportunity
 from sales.models import Quote
-from utils import constants as Constants, mixins
+from utils import constants as Constants, mixins, parse_phone_no
 
 from django.db import transaction
 
@@ -41,6 +41,10 @@ class LeadCRUDSerializer(serializers.ModelSerializer):
 
     def get_contact(self, validated_data, **kwargs):
         name = validated_data['contact_name'].lower().split(' ')
+        valid, validated_data['contact_phone_no'] = parse_phone_no(
+            validated_data['contact_phone_no'])
+        if not valid:
+            raise mixins.APIException(Constants.INVALID_PHONE_NO)
         first_name = name[0]
         middle_name = name[1] if len(name) == 3 else ''
         last_name = name[2] if len(name) > 2 else (
@@ -177,6 +181,15 @@ class LeadSerializer(serializers.ModelSerializer):
         model = Lead
         fields = (
             'id', 'category', 'full_name', 'stage', 'bookmark', 'created')
+
+
+class ClientSerializer(serializers.ModelSerializer):
+    full_name = serializers.ReadOnlyField(
+        source='contact.get_full_name')
+
+    class Meta:
+        model = Lead
+        fields = ('id', 'full_name', 'created')
 
 
 class QuoteSerializer(serializers.ModelSerializer):
@@ -346,7 +359,7 @@ class QuoteRecommendationSerializer(serializers.ModelSerializer):
         fields = (
             'quote_id', 'opportunity_id', 'sum_insured', 'premium',
             'tax_saving', 'wellness_rewards', 'health_checkups',
-            'product', 'features', 'lead_id')
+            'product', 'features', 'lead_id', 'recommendation_score')
 
 
 class LeadDetailSerializer(serializers.ModelSerializer):
@@ -356,6 +369,8 @@ class LeadDetailSerializer(serializers.ModelSerializer):
     logo = serializers.FileField(source='category.logo', default='')
     stage = serializers.ReadOnlyField(source='get_stage_display')
     phone_no = serializers.ReadOnlyField(source='contact.phone_no')
+    calling_no = serializers.ReadOnlyField(source='contact.calling_no')
+    whatsapp_no = serializers.ReadOnlyField(source='contact.whatsapp_no')
     address = serializers.ReadOnlyField(source='contact.address.full_address')
     quotes = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
@@ -372,4 +387,32 @@ class LeadDetailSerializer(serializers.ModelSerializer):
         model = Lead
         fields = (
             'lead_id', 'phone_no', 'logo', 'address', 'stage', 'quotes',
-            'created', 'notes', 'full_name')
+            'created', 'notes', 'full_name', 'whatsapp_no', 'calling_no')
+
+
+class SharedQuoteDetailsSerializer(serializers.ModelSerializer):
+    suminsured = serializers.ReadOnlyField(source='premium.sum_insured')
+    premium = serializers.ReadOnlyField(source='premium.amount')
+    benefits = serializers.SerializerMethodField()
+    company_details = serializers.SerializerMethodField()
+
+    def get_benefits(self, obj):
+        benefits = []
+        for f in obj.get_feature_details().exclude(
+                short_description__in=['Not Covered', 'Not covered', '']):
+            benefits.append({
+                'name': f['feature_master__name'].title(),
+                'description': f['short_description']})
+        return benefits
+
+    def get_company_details(self, obj):
+        details = obj.premium.product_variant.get_product_details()
+        details.update(obj.premium.product_variant.get_basic_details())
+        return details
+
+    class Meta:
+        model = Quote
+        fields = (
+            'suminsured', 'premium', 'benefits', 'company_details',
+            'tax_saving', 'wellness_reward', 'health_checkup',
+            'effective_premium')

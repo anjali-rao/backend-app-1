@@ -25,11 +25,12 @@ APPLICATION_STATUS = (
     ('payment_due', 'Payment due'))
 APPLICATION_STAGES = (
     'proposer_details', 'insured_members', 'nominee_details',
-    'health_details', 'summary', 'payment_due', 'completed')
+    'health_details', 'summary', 'payment_due', 'completed',
+    'payment_failed', 'subscriber')
 KYC_DOC_TYPES = (
     'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
     'ration_card', 'passport', 'birth_certificate', 'cancelled_cheque',
-    'photo', 'educational_document')
+    'photo', 'educational_document', 'cheque')
 
 QUESTION_COICES = ('mcq', 'single')
 HELP_FILES_TYPE = ('all', 'sales_brochure', 'claim_form')
@@ -55,9 +56,17 @@ MARITAL_STATUS = ('married', 'single', 'divorced')
 PLAYLIST_CHOICES = ('marketing', 'training')
 REQUEST_CHOICES = ['GET', 'POST', 'PUT', 'PATCH']
 AGGREGATOR_CHOICES = ['offline', 'wallnut']
-EARNING_STATUS = ('paid', 'pending', 'processing')
-COLLATERALS_TYPE = ('marketing', 'training')
-COLLATERALS_CHOICES = ('videos', 'gifs')
+EARNING_STATUS = (
+    'collecting_application', 'collection_incomplete',
+    'application_collected', 'application_submitted', 'uw_pending',
+    'medical_scheduled', 'medical_completed', 'medical_incomplete',
+    'policy_issued', 'policy_rejected', 'policy_followup',
+    'application_resubmitted', 'loading_applied', 'loading_paid',
+    'commission_due', 'commission_paid', 'commission_payment_error')
+
+COLLATERALS_TYPE = ('marketing', 'training', 'engagement')
+COLLATERALS_CHOICES = (
+    'png', 'youtube', 'pdf', 'blog_article')
 ACTIVE_AGGREGATOR_COMPANIES = [
     'Aditya Birla Health Insurance', 'HDFC ERGO General Insurance',
     'Bajaj Allianz GIC']
@@ -70,6 +79,9 @@ CATEGORY_ORDER = {key: i for i, key in enumerate(['Health', 'Travel'])} # noqa
 RECOMMENDATION_FEATURE_ORDER = {key: i for i, key in enumerate([
     'No Claim Bonus', 'Hospital Coverage', 'Day Care Procedures',
     'Wellness Factors'])}
+PROPOSER_DOCS = [
+    'pancard', 'aadhaar_card', 'driving_license', 'bank_passbook',
+    'ration_card', 'passport', 'birth_certificate']
 
 
 # ROUGH HANDLING  ==================================
@@ -97,6 +109,9 @@ HEALTHINSURANCE_FIELDS = [
     'blood_diseases'
 ]
 INSURANCE_EXCLUDE_FIELDS = ['id', 'created', 'modified', 'application']
+SUM_INSURED = [
+    100000, 300000, 500000, 700000, 1000000, 1500000, 2000000, 2500000,
+    5000000, 7500000, 10000000, 20000000]
 
 
 # Defaults ==================================
@@ -127,6 +142,9 @@ PASSWORD_REQUIRED = 'Password is required.'
 PROMO_MESSAGE = 'Hi %s, Welcome to OneCover, download our app and become super advisor https://tinyurl.com/y2ux5cdj .' # noqa
 PAYMENT_LINK_GENERATION = 'Payment link generated successfully for application (%s). ' # noqa
 SEND_TO_AGGREGATOR = 'Application (%s) successfully send to aggregator.'
+PAYMENT_SUCCESS = 'Application created and payment process done'
+PAYMENT_ERROR = 'Application created and payment process failed'
+BROKER_ERROR = 'Application created but failure in payment due to broker' # noqa
 
 
 # TTL's (seconds)  ==================================
@@ -187,6 +205,7 @@ DUPLICATE_ACCOUNT = 'Account already exists with the provided details.'
 OPPORTUNITY_DOES_NOT_EXIST = 'Opportunity id provided does not exists or invalid' # noqa
 OPPORTUNITY_ID_REQUIRED = 'Invalid or missing opportunity id'
 OPPORTUNITY_OR_OPPERATION_ID_REQUIRED = 'Category id or opportunity id is required to perform opperation' # noqa
+NO_FIELDS_INPUT_OR_INVALID_FIELDS = 'No fields provided or invalid fields provided' # noqa
 
 
 # Creation Fields  ==================================
@@ -229,10 +248,15 @@ ENT_DISEASE = 'Disease of Eye, Ear, Nose, Throat, Thyroid'
 CARDIOVASCULAR_DISEASE = 'Tuberculosis (TB), any Respiratory / Lung disease'
 RESPIRATORY_DISEASES = 'Any form of Heart Disease, Peripheral Vascular Disease, procedures like Angioplasty/PTCA/By Pass Surgery, valve replacement etc' # noqa
 BLOOD_DISODER = 'Diabetes, High blood pressure, High Cholesterol, Anaemia / Blood disorder (whether treated or not)' # noqa
-COMMISSION_TEXT = 'Commission for policy # %s issued on %s to %s'
+COMMISSION_TEXT = 'Commission against application no # %s issued on %s to %s'
 REFERRAL_TEXT = 'Referring to %s'
 INCENTIVE_TEXT = 'Incentive for %s'
-
+SUBSCRIBER_THANKYOU = 'Your application #%s for %s has been created and you can access this via the cart.' # noqa
+SUBSCRIBER_WHATSAPP_TEXT = 'Please contact us, in case you are interested in selling the policy.' # noqa
+SUCESSFUL_PAYMENT = 'Your application #%s for %s has been submitted to OneCover. \n Please click here to see the status of your application and commissions' # noqa
+FAILED_HEADER = 'We have experienced a technical glitch. Our developers are working on it to solve it as soon as possible.' # noqa
+FAILED_MESSAGE = 'Nothing to worry though, our advisor success agents will reach out to you shortly.\n\nYour application #%s for %s has been created and you can access it from the cart till we resolve this issue.' # noqa
+BROKER_THANKYOU = 'We have experienced a technical glitch. Our developers are working on it to solve it as soon as possible.\n\nNothing to worry though, our advisor success agents will reach out to you shortly.\n\nYour application %s for %s has been created and you can access it from the cart till we resolve this issue.\n\n'# noqa
 
 # Category Opportunity - Mapper  ==================================
 
