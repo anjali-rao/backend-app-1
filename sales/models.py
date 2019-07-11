@@ -120,6 +120,8 @@ class Application(BaseModel):
                 self.handle_status_change(current)
             if (current.payment_failed != self.payment_failed and self.payment_failed) or self.status == 'completed': # noqa
                 self.send_slack_notification()
+            if self.status == 'payment_due' and self.aggregator_error != current.aggregator_error:
+                self.send_slack_notification()
         except self.__class__.DoesNotExist:
             self.generate_reference_no()
             self.application_type = self.company_category.category.name.lower(
@@ -135,6 +137,7 @@ class Application(BaseModel):
             self.send_slack_notification()
 
     def send_slack_notification(self):
+        event = None
         if self.quote.opportunity.lead.user.user_type == 'subscriber':
             event = 'Application created and payment process done'
         elif self.payment_mode == 'offline':
@@ -145,7 +148,8 @@ class Application(BaseModel):
             event = Constants.BROKER_ERROR
         else:
             event = Constants.PAYMENT_SUCCESS
-        self.send_slack_request(event)
+        if event:
+            self.send_slack_request(event)
 
     def aggregator_operation(self):
         premium = self.quote.premium

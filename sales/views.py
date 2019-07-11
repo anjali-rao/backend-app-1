@@ -337,15 +337,11 @@ class UploadProposerDocuments(generics.UpdateAPIView):
 
     def update(self, request, version, *args, **kwargs):
         with transaction.atomic():
-            data = request.data
-            if 'cancelled_cheque' in data:
-                data['cheque'] = data['cancelled_cheque']
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
             serializer = self.get_serializer(
-                instance.proposer, data=data, partial=partial)
+                instance.proposer, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
             self.perform_update(serializer)
             instance.refresh_from_db()
             if instance.proposer.proposerdocument_set.filter(
@@ -367,18 +363,16 @@ class JourneyCompleted(generics.RetrieveAPIView):
         with transaction.atomic():
             if obj.status == 'submitted' and obj.stage == 'completed':
                 obj.status = 'completed'
-                obj.save()
             elif obj.status == 'fresh':
                 obj.status = 'submitted'
                 obj.stage = 'subscriber'
-                obj.save()
-        obj.refresh_from_db()
-        obj.payment_mode = 'Aggregated payment mode'
-        if obj.quote.opportunity.lead.user.user_type == 'subscriber':
-            obj.payment_mode = 'Subscriber'
-        elif obj.proposer.proposerdocument_set.filter(
-                ignore=False, document_type='cheque').exists():
-            obj.payment_mode = 'offline'
+            obj.payment_mode = 'Aggregated payment mode'
+            if obj.quote.opportunity.lead.user.user_type == 'subscriber':
+                obj.payment_mode = 'Subscriber'
+            elif obj.proposer.proposerdocument_set.filter(
+                    ignore=False, document_type='cheque').exists():
+                obj.payment_mode = 'offline'
+            obj.save()
         return obj
 
 
