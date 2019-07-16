@@ -61,7 +61,7 @@ def get_marital_status(relation):
 
 # COMMUNICATIONS  ==============================================
 
-PAYMENT_MESSAGE = 'Hi %s. Thankyou for choosing OneCover.\nYour application(# %s) has been submitted successfully.\nYour payment of Rs.%s is due against your %s plan.\nClick on the link to pay now\n%s\n\nRegards\nTeam OneCover' # noqa
+PAYMENT_MESSAGE = 'Hi %s. Thankyou for choosing One Assure.\nYour application(# %s) has been submitted successfully.\nYour payment of Rs.%s is due against your %s plan.\nClick on the link to pay now\n%s\n\nRegards\nTeam One Assure' # noqa
 
 # ENDPOINTS  ==============================================
 

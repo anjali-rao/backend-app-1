@@ -242,7 +242,7 @@ class UserSerializer(serializers.ModelSerializer):
     profile_url = serializers.SerializerMethodField()
 
     def get_profile_url(self, obj):
-        return 'https://advisor.onecover.in/%s' % obj.account.username
+        return 'https://advisor.oneassure.in/%s' % obj.account.username
 
     class Meta:
         model = User

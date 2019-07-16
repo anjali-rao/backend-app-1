@@ -290,9 +290,9 @@ class Application(BaseModel):
                     type='mrkdwn',
                     value="*Advisor phone:*\n%s" % client.user.account.phone_no
                 )],
-                thumb_url='https://onecover.in/favicon.png',
+                thumb_url='https://oneassure.in/favicon.png',
                 footer='Post application flow',
-                footer_icon='https://onecover.in/favicon.png',
+                footer_icon='https://oneassure.in/favicon.png',
                 ts=now().timestamp()
             )]
         )
